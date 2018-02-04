@@ -6,11 +6,9 @@ namespace NotPseudo
     {
         public Node()
         {
-            // Space
+            Childrens = new List<Node>();
         }
 
-        public NodeType Type { get; set; }
         public List<Node> Childrens { get; set; }
-        public object Value { get; set; }
     }
 }

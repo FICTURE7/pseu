@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using NotPseudo.CodeGen;
+using NotPseudo.Transpilers;
 
 namespace NotPseudo
 {
@@ -9,23 +9,18 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Running lexer on helloworld.pseudo...");
+            Console.WriteLine("Running syntatic analysis on helloworld.pseudo...");
 
             var src = File.ReadAllText("sample/helloworld.pseudo");
             var lexer = new Lexer(src);
             var parser = new Parser(lexer);
 
-            parser.Walk();
+            var ast = parser.Parse();
 
-            /*
-            var tokens = new List<Token>();
-            var token = default(Token);
-            while (token == null || token.Type != TokenType.EoF)
-            {
-                token = lexer.Lex();
-                Console.WriteLine($"{token.Type}: '{token.Value}'");
-            }
-            */
+            var gen = new VisualBasicTranspiler();
+            var code = gen.Generate(ast);
+
+            Console.WriteLine(code);
         }
     }
 }

@@ -1,11 +1,11 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace NotPseudo.CodeGen
+namespace NotPseudo.Transpilers
 {
-    public class CSharpCodeGen : RoslynCodeGen
+    public class CSharpTranspiler : RoslynTranspiler
     {
-        public CSharpCodeGen()
+        public CSharpTranspiler()
         {
             Initialize(SyntaxGenerator.GetGenerator(Workspace, LanguageNames.CSharp));
         }

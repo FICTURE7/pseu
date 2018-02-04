@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
+using NotPseudo.Syntax;
 
-namespace NotPseudo.CodeGen
+namespace NotPseudo.Transpilers
 {
-    public abstract class RoslynCodeGen : ICodeGen
+    public abstract class RoslynTranspiler : ITranspiler
     {
         private SyntaxGenerator _generator;
         private readonly AdhocWorkspace _workspace;
 
-        protected RoslynCodeGen()
+        protected RoslynTranspiler()
         {
             _workspace = new AdhocWorkspace();
         }
@@ -28,36 +29,48 @@ namespace NotPseudo.CodeGen
 
         public string Generate(Node node)
         {
-            throw new NotImplementedException();
-        }
+            if (node == null)
+                throw new ArgumentNullException(nameof(node));
 
-        public string Generate(List<Token> tokens)
-        {
-            if (tokens == null)
-                throw new ArgumentNullException(nameof(tokens));
+            var statements = new List<SyntaxNode>();
+            foreach (var child in node.Childrens)
+            {
+                if (child is OutputStatement)
+                {
+                    var stmt = (OutputStatement)child;
+                    var outputStmt = _generator.InvocationExpression(
+                        _generator.IdentifierName("Console.WriteLine"),
+                        arguments: new SyntaxNode[]{ TranspileExpression(stmt.Expression) }
+                    );
+
+                    statements.Add(outputStmt);
+                }
+            }
 
             var methodDecl = _generator.MethodDeclaration(
                 name: "Main",
                 modifiers: DeclarationModifiers.Static,
-                accessibility: Accessibility.Public,
-                statements: new SyntaxNode[]
-                {
-                    _generator.InvocationExpression(
-                        _generator.IdentifierName("Console.WriteLine"),
-                        arguments: new SyntaxNode[]{ _generator.LiteralExpression("Hello World") }
-                    )
-                }
+                statements: statements
             );
 
             var classDecl = _generator.ClassDeclaration(
                 name: "Program",
-                modifiers: DeclarationModifiers.Static,
                 members: new SyntaxNode[] { methodDecl }
             );
 
             var newNode = _generator.CompilationUnit(classDecl).NormalizeWhitespace();
 
             return newNode.ToString();
+        }
+
+        private SyntaxNode TranspileExpression(Node node)
+        {
+            if (node is StringLiteralNode)
+            {
+                var strNode = (StringLiteralNode)node;
+                return _generator.LiteralExpression(strNode.Value);
+            }
+            return null;
         }
     }
 }
