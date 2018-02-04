@@ -1,0 +1,6 @@
+# VSCode
+.vscode/
+
+# Builds
+obj/
+bin/
