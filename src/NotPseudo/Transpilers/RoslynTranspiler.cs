@@ -36,15 +36,9 @@ namespace NotPseudo.Transpilers
             foreach (var child in node.Childrens)
             {
                 if (child is OutputStatement)
-                {
-                    var stmt = (OutputStatement)child;
-                    var outputStmt = _generator.InvocationExpression(
-                        _generator.IdentifierName("Console.WriteLine"),
-                        arguments: new SyntaxNode[]{ TranspileExpression(stmt.Expression) }
-                    );
-
-                    statements.Add(outputStmt);
-                }
+                    statements.Add(TranspileOutputStatement((OutputStatement)child));
+                else if (child is VariableDeclarationStatement)
+                    statements.Add(TranspileVariableDeclarationStatement((VariableDeclarationStatement)child));
             }
 
             var methodDecl = _generator.MethodDeclaration(
@@ -61,6 +55,25 @@ namespace NotPseudo.Transpilers
             var newNode = _generator.CompilationUnit(classDecl).NormalizeWhitespace();
 
             return newNode.ToString();
+        }
+
+        private SyntaxNode TranspileVariableDeclarationStatement(VariableDeclarationStatement stmt)
+        {
+            var varDeclStmt = _generator.LocalDeclarationStatement(
+                type: _generator.IdentifierName(stmt.Type),
+                identifier: stmt.Name
+            );
+            return varDeclStmt;
+        }
+
+        private SyntaxNode TranspileOutputStatement(OutputStatement stmt)
+        {
+            var outputStmt = _generator.InvocationExpression(
+                _generator.IdentifierName("Console.WriteLine"),
+                arguments: new SyntaxNode[] { TranspileExpression(stmt.Expression) }
+            );
+
+            return outputStmt;
         }
 
         private SyntaxNode TranspileExpression(Node node)

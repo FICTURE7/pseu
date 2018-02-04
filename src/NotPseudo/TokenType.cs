@@ -3,9 +3,12 @@ namespace NotPseudo
     public enum TokenType
     {
         None,
+        Colon,
+        Equal,
         StringLiteral,
         NumberLiteral,
-        Identifier,
+        IdentifierOrKeyword,
+        EoL,
         EoF
     }
 }

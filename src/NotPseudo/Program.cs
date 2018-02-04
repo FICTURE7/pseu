@@ -9,18 +9,28 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Running syntatic analysis on helloworld.pseudo...");
+            /*
+            Transpile<VisualBasicTranspiler>("sample/helloworld.pseudo");
+            Transpile<VisualBasicTranspiler>("sample/more-helloworld.pseudo");
+            */
+            Transpile<VisualBasicTranspiler>("sample/even-more-helloworld.pseudo");
+        }
 
-            var src = File.ReadAllText("sample/helloworld.pseudo");
+        private static void Transpile<T>(string srcPath) where T : ITranspiler, new()
+        {
+            Console.WriteLine($"Running syntatic analysis on {Path.GetFileName(srcPath)}...");
+            Console.WriteLine("-------------------");
+            var src = File.ReadAllText(srcPath);
             var lexer = new Lexer(src);
             var parser = new Parser(lexer);
 
             var ast = parser.Parse();
 
-            var gen = new VisualBasicTranspiler();
+            var gen = new T();
             var code = gen.Generate(ast);
 
             Console.WriteLine(code);
+            Console.WriteLine("-------------------");
         }
     }
 }

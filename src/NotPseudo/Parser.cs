@@ -20,8 +20,14 @@ namespace NotPseudo
 
         public Node Parse()
         {
-            var node = Walk();
-            _root.Childrens.Add(node);
+            while (true)
+            {
+                var node = Walk();
+                _root.Childrens.Add(node);
+
+                if (_token.Type == TokenType.EoF)
+                    break;
+            }
 
             return _root;
         }
@@ -29,12 +35,18 @@ namespace NotPseudo
         private Node Walk()
         {
             _token = _lexer.Lex();
-            if (_token.Type == TokenType.Identifier)
+            if (_token.Type == TokenType.IdentifierOrKeyword)
             {
                 switch (_token.Value)
                 {
                     case "OUTPUT":
                         return ParseOutputStatement(_token);
+
+                    case "DECLARE":
+                        return ParseVariableDeclarationStatement(_token);
+
+                    default:
+                        break;
                 }
             }
             else if (_token.Type == TokenType.StringLiteral)
@@ -44,11 +56,53 @@ namespace NotPseudo
             return null;
         }
 
+        private VariableDeclarationStatement ParseVariableDeclarationStatement(Token token)
+        {
+            var identifierToken = _lexer.Lex();
+            if (identifierToken.Type != TokenType.IdentifierOrKeyword)
+                throw new System.Exception("Expected variable name identifier.");
+
+            var identifier = identifierToken.Value;
+
+            var colonToken = _lexer.Lex();
+            if (colonToken.Type != TokenType.Colon)
+                throw new System.Exception("Expected colon.");
+
+            var typeToken = _lexer.Lex();
+            if (typeToken.Type != TokenType.IdentifierOrKeyword)
+                throw new System.Exception("Expected variable type identifier.");
+
+            var type = typeToken.Value;
+
+            var stmt = new VariableDeclarationStatement
+            {
+                Name = identifier,
+                Type = type
+            };
+
+            /*TODO: Expect '=' expression maybe? */
+
+            _token = _lexer.Lex();
+
+            if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
+                throw new System.Exception("Expected EoL or EoF.");
+
+            return stmt;
+        }
+
         private OutputStatement ParseOutputStatement(Token token)
         {
-            var node = new OutputStatement();
-            node.Expression = Walk();
-            return node;
+            var stmt = new OutputStatement();
+
+            /*TODO: Check if node returned by walk is a valid one. */
+            stmt.Expression = Walk();
+
+            _token = _lexer.Lex();
+
+            if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
+                throw new System.Exception("Expected EoL or EoF.");
+
+            return stmt;
         }
 
         private Node ParseStringLiteral(Token token)

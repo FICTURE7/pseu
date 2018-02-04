@@ -12,8 +12,10 @@ namespace NotPseudo
 
         public Lexer(string src)
         {
-            _src = src ?? throw new ArgumentNullException(nameof(src));
+            if (src == null)
+                throw new ArgumentNullException(nameof(src));
 
+            _src = src;
             _index = 0;
         }
 
@@ -30,12 +32,31 @@ namespace NotPseudo
             if (c == InvalidChar)
                 return Create(null, TokenType.EoF);
 
-            if (char.IsLetter(c))
+            /*TODO: Do proper scanning of end of lines. */
+            if (c == '\n')
+                return ScanEndOfLine();
+            else if (c == ':')
+                return ScanColon();
+            else if (c == '=')
+                return ScanEqual();
+            else if (char.IsLetter(c))
                 return ScanIdentifier();
             else if (c == '"')
                 return ScanStringLiteral();
 
             throw new Exception("Unknown token.");
+        }
+
+        private Token ScanEqual()
+        {
+            AdvanceChar();
+            return Create(null, TokenType.Equal);
+        }
+
+        private Token ScanColon()
+        {
+            AdvanceChar();
+            return Create(null, TokenType.Colon);
         }
 
         private Token ScanIdentifier()
@@ -52,11 +73,12 @@ namespace NotPseudo
 
             Debug.Assert(!char.IsLetter(CurrentChar()), "Current character should not be a letter.");
 
-            return Create(value, TokenType.Identifier);
+            return Create(value, TokenType.IdentifierOrKeyword);
         }
 
         private Token ScanStringLiteral()
         {
+            /*TODO: Escaped characters and stuff. */
             char c = NextChar();
             string value = string.Empty;
 
@@ -67,7 +89,7 @@ namespace NotPseudo
 
                 if (c == InvalidChar)
                 {
-                    /*TOOD: Add error, the string literal is unterminated. */
+                    /*TODO: Add error, the string literal is unterminated. */
                     break;
                 }
             }
@@ -78,16 +100,30 @@ namespace NotPseudo
             return Create(value, TokenType.StringLiteral);
         }
 
+        private Token ScanEndOfLine()
+        {
+            AdvanceChar();
+            return Create(null, TokenType.EoL);
+        }
+
         private void SkipSpaces()
         {
             char c = CurrentChar();
+            if (c == '\n')
+                return;
+
             if (c == InvalidChar)
                 return;
 
             while (char.IsWhiteSpace(c))
                 c = NextChar();
 
-            Debug.Assert(!char.IsWhiteSpace(_src[_index]), "Current character should not be a whitespace.");
+            Debug.Assert(!char.IsWhiteSpace(CurrentChar()), "Current character should not be a whitespace.");
+        }
+
+        private void AdvanceChar()
+        {
+            _index++;
         }
 
         private char CurrentChar()
