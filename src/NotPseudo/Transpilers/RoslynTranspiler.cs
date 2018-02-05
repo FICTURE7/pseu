@@ -39,6 +39,8 @@ namespace NotPseudo.Transpilers
                     statements.Add(TranspileOutputStatement((OutputStatement)child));
                 else if (child is VariableDeclarationStatement)
                     statements.Add(TranspileVariableDeclarationStatement((VariableDeclarationStatement)child));
+                else if (child is AssignStatement)
+                    statements.Add(TranspileAssignStatement((AssignStatement)child));
             }
 
             var methodDecl = _generator.MethodDeclaration(
@@ -57,11 +59,20 @@ namespace NotPseudo.Transpilers
             return newNode.ToString();
         }
 
+        private SyntaxNode TranspileAssignStatement(AssignStatement stmt)
+        {
+            var assignStmt = _generator.AssignmentStatement(
+                left: _generator.IdentifierName(stmt.Identifier),
+                right: TranspileExpression(stmt.Expression)
+            );
+            return assignStmt;
+        }
+
         private SyntaxNode TranspileVariableDeclarationStatement(VariableDeclarationStatement stmt)
         {
             var varDeclStmt = _generator.LocalDeclarationStatement(
-                type: _generator.IdentifierName(stmt.Type),
-                identifier: stmt.Name
+                type: TranspileType(stmt.Type),
+                identifier: stmt.Identifier
             );
             return varDeclStmt;
         }
@@ -78,12 +89,28 @@ namespace NotPseudo.Transpilers
 
         private SyntaxNode TranspileExpression(Node node)
         {
-            if (node is StringLiteralNode)
+            if (node is StringLiteralExpression)
             {
-                var strNode = (StringLiteralNode)node;
+                var strNode = (StringLiteralExpression)node;
                 return _generator.LiteralExpression(strNode.Value);
             }
+            else if (node is VariableStatement)
+            {
+                var varNode = (VariableStatement)node;
+                return _generator.IdentifierName(varNode.Identifier);
+            }
             return null;
+        }
+
+        private SyntaxNode TranspileType(string type)
+        {
+            switch(type)
+            {
+                case "STRING":
+                    return _generator.TypeExpression(SpecialType.System_String);
+            }
+
+            return _generator.IdentifierName(type);
         }
     }
 }

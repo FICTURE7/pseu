@@ -3,11 +3,18 @@ using System.Diagnostics;
 
 namespace NotPseudo
 {
+    /* The tokenizer/lexer. */
     public class Lexer : ILexer
     {
+        /* 
+            A character which represents an invalid character,
+            usually used to indicate end of file. 
+         */
         private const char InvalidChar = char.MaxValue;
 
+        /* Index of were we are in the source. */
         private int _index;
+        /* Source code we're lexing. */
         private readonly string _src;
 
         public Lexer(string src)
@@ -39,46 +46,74 @@ namespace NotPseudo
                 return ScanColon();
             else if (c == '=')
                 return ScanEqual();
-            else if (char.IsLetter(c))
-                return ScanIdentifier();
             else if (c == '"')
                 return ScanStringLiteral();
+            else if (char.IsNumber(c))
+                return ScanNumberLiteral();
+            else if (char.IsLetter(c))
+                return ScanIdentifierOrKeyword();
 
             throw new Exception("Unknown token.");
         }
 
         private Token ScanEqual()
         {
+            Debug.Assert(CurrentChar() == '=', "Current character was not an equal character.");
+
             AdvanceChar();
             return Create(null, TokenType.Equal);
         }
 
         private Token ScanColon()
         {
+            Debug.Assert(CurrentChar() == ':', "Current character was not a colon character.");
+
             AdvanceChar();
             return Create(null, TokenType.Colon);
         }
 
-        private Token ScanIdentifier()
+        private Token ScanEndOfLine()
         {
-            /*TODO: Identifiers should be able to start with '_'. */
+            Debug.Assert(CurrentChar() == '\n', "Current character was not a line feed character.");
+
+            AdvanceChar();
+            return Create(null, TokenType.EoL);
+        }
+
+        private Token ScanNumberLiteral()
+        {
+            /*TODO: Decimals and stuffs. */
             var c = CurrentChar();
             var value = string.Empty;
 
-            while (char.IsLetter(c))
+            while (char.IsNumber(c))
             {
                 value += c;
                 c = NextChar();
             }
 
-            Debug.Assert(!char.IsLetter(CurrentChar()), "Current character should not be a letter.");
+            return Create(value, TokenType.NumberLiteral);
+        }
+
+        private Token ScanIdentifierOrKeyword()
+        {
+            var c = CurrentChar();
+            var value = string.Empty;
+
+            while (char.IsLetter(c) || c == '_')
+            {
+                value += c;
+                c = NextChar();
+            }
+
+            Debug.Assert(!char.IsLetter(CurrentChar()) && c != '_', "Current character should not be a letter or '_'.");
 
             return Create(value, TokenType.IdentifierOrKeyword);
         }
 
         private Token ScanStringLiteral()
         {
-            /*TODO: Escaped characters and stuff. */
+            /* TODO: Escaped characters and stuff. */
             char c = NextChar();
             string value = string.Empty;
 
@@ -95,15 +130,9 @@ namespace NotPseudo
             }
 
             /* Skip the closing '"' character since we already processed it. */
-            NextChar();
+            AdvanceChar();
 
             return Create(value, TokenType.StringLiteral);
-        }
-
-        private Token ScanEndOfLine()
-        {
-            AdvanceChar();
-            return Create(null, TokenType.EoL);
         }
 
         private void SkipSpaces()

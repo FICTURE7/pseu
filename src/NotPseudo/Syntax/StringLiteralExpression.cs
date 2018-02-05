@@ -1,6 +1,6 @@
 namespace NotPseudo.Syntax
 {
-    public class StringLiteralNode : Node
+    public class StringLiteralExpression : Node
     {
         public string Value { get; set; }
     }

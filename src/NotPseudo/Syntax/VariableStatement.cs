@@ -1,8 +1,7 @@
 namespace NotPseudo.Syntax
 {
-    public class AssignStatement : Node
+    public class VariableStatement : Node
     {
         public string Identifier { get; set; }
-        public Node Expression { get; set; }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using NotPseudo.Syntax;
 
@@ -25,6 +26,7 @@ namespace NotPseudo
                 var node = Walk();
                 _root.Childrens.Add(node);
 
+                /* Keep parsing until we reach end of file. */
                 if (_token.Type == TokenType.EoF)
                     break;
             }
@@ -46,12 +48,39 @@ namespace NotPseudo
                         return ParseVariableDeclarationStatement(_token);
 
                     default:
-                        break;
+                        /* Assume its an assign statement. */
+                        return ParsePossibleAssignStatement(_token);
                 }
             }
             else if (_token.Type == TokenType.StringLiteral)
             {
                 return ParseStringLiteral(_token);
+            }
+            else if (_token.Type == TokenType.NumberLiteral)
+            {
+                //return ParseNumberLiteral(_token);
+            }
+            return null;
+        }
+
+        private Node ParsePossibleAssignStatement(Token token)
+        {
+            var nextToken = _lexer.Lex();
+            if (nextToken.Type == TokenType.Equal)
+            {
+                var expression = Walk();
+                var stmt = new AssignStatement
+                {
+                    Identifier = token.Value,
+                    Expression = expression
+                };
+
+                _token = _lexer.Lex();
+
+                if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
+                    throw new Exception("Expected EoL or EoF.");
+
+                return stmt;
             }
             return null;
         }
@@ -60,23 +89,23 @@ namespace NotPseudo
         {
             var identifierToken = _lexer.Lex();
             if (identifierToken.Type != TokenType.IdentifierOrKeyword)
-                throw new System.Exception("Expected variable name identifier.");
+                throw new Exception("Expected variable name identifier.");
 
             var identifier = identifierToken.Value;
 
             var colonToken = _lexer.Lex();
             if (colonToken.Type != TokenType.Colon)
-                throw new System.Exception("Expected colon.");
+                throw new Exception("Expected colon.");
 
             var typeToken = _lexer.Lex();
             if (typeToken.Type != TokenType.IdentifierOrKeyword)
-                throw new System.Exception("Expected variable type identifier.");
+                throw new Exception("Expected variable type identifier.");
 
             var type = typeToken.Value;
 
             var stmt = new VariableDeclarationStatement
             {
-                Name = identifier,
+                Identifier = identifier,
                 Type = type
             };
 
@@ -85,7 +114,7 @@ namespace NotPseudo
             _token = _lexer.Lex();
 
             if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
-                throw new System.Exception("Expected EoL or EoF.");
+                throw new Exception("Expected EoL or EoF.");
 
             return stmt;
         }
@@ -95,19 +124,42 @@ namespace NotPseudo
             var stmt = new OutputStatement();
 
             /*TODO: Check if node returned by walk is a valid one. */
-            stmt.Expression = Walk();
+            stmt.Expression = ParseOutputStatementExpression();
 
             _token = _lexer.Lex();
 
             if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
-                throw new System.Exception("Expected EoL or EoF.");
+                throw new Exception("Expected EoL or EoF.");
 
             return stmt;
         }
 
+        private Node ParseOutputStatementExpression()
+        {
+            _token = _lexer.Lex();
+            if (_token.Type == TokenType.StringLiteral)
+                return ParseStringLiteral(_token);
+            else if (_token.Type == TokenType.IdentifierOrKeyword)
+            {
+                var identifierToken = _token;
+
+                /*
+                _token = _lexer.Lex();
+                if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
+                    throw new Exception("Expected EoL or EoF.");
+                */
+
+                return new VariableStatement
+                {
+                    Identifier = identifierToken.Value
+                };
+            }
+            return null;
+        }
+
         private Node ParseStringLiteral(Token token)
         {
-            return new StringLiteralNode { Value = token.Value };
+            return new StringLiteralExpression { Value = token.Value };
         }
 
         private static bool IsBuiltInFunction(Token token)
