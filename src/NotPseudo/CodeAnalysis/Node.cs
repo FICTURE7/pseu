@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace NotPseudo
+namespace NotPseudo.CodeAnalysis
 {
     public class Node
     {

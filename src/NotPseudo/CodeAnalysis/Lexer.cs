@@ -1,7 +1,8 @@
 using System;
 using System.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
-namespace NotPseudo
+namespace NotPseudo.CodeAnalysis
 {
     /* The tokenizer/lexer. */
     public class Lexer : ILexer
@@ -12,12 +13,16 @@ namespace NotPseudo
          */
         private const char InvalidChar = char.MaxValue;
 
+        /* Line number we're at. */
+        private int _line;
+        /* Column number we're at. */
+        private int _column;
         /* Index of were we are in the source. */
         private int _index;
         /* Source code we're lexing. */
-        private readonly string _src;
+        private readonly SourceText _src;
 
-        public Lexer(string src)
+        public Lexer(SourceText src)
         {
             if (src == null)
                 throw new ArgumentNullException(nameof(src));
@@ -77,6 +82,8 @@ namespace NotPseudo
             Debug.Assert(CurrentChar() == '\n', "Current character was not a line feed character.");
 
             AdvanceChar();
+            _column++;
+            _line = 0;
             return Create(null, TokenType.EoL);
         }
 
@@ -153,6 +160,7 @@ namespace NotPseudo
         private void AdvanceChar()
         {
             _index++;
+            _line++;
         }
 
         private char CurrentChar()
@@ -168,6 +176,7 @@ namespace NotPseudo
             if (++_index > _src.Length - 1)
                 return InvalidChar;
 
+            _line++;
             return _src[_index];
         }
 
@@ -181,7 +190,14 @@ namespace NotPseudo
 
         private Token Create(string value, TokenType type)
         {
-            return new Token { Value = value, Type = type };
+            return new Token
+            {
+                Text = value,
+                Type = type,
+
+                Column = _column,
+                Line = _line
+            };
         }
     }
 }

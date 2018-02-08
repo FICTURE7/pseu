@@ -1,3 +1,5 @@
+using NotPseudo.CodeAnalysis;
+
 namespace NotPseudo.Transpilers
 {
     public interface ITranspiler

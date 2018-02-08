@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
-using NotPseudo.Syntax;
+using NotPseudo.CodeAnalysis;
+using NotPseudo.CodeAnalysis.Syntax;
 
 namespace NotPseudo.Transpilers
 {

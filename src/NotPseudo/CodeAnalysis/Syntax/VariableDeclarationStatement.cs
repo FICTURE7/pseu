@@ -1,4 +1,4 @@
-namespace NotPseudo.Syntax
+namespace NotPseudo.CodeAnalysis.Syntax
 {
     public class VariableDeclarationStatement : Node
     {

@@ -1,4 +1,4 @@
-namespace NotPseudo
+namespace NotPseudo.CodeAnalysis
 {
     public enum TokenType
     {

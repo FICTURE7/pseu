@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using NotPseudo.Syntax;
+using NotPseudo.CodeAnalysis.Syntax;
 
-namespace NotPseudo
+namespace NotPseudo.CodeAnalysis
 {
     public class Parser : IParser
     {
@@ -39,7 +39,7 @@ namespace NotPseudo
             _token = _lexer.Lex();
             if (_token.Type == TokenType.IdentifierOrKeyword)
             {
-                switch (_token.Value)
+                switch (_token.Text)
                 {
                     case "OUTPUT":
                         return ParseOutputStatement(_token);
@@ -71,7 +71,7 @@ namespace NotPseudo
                 var expression = Walk();
                 var stmt = new AssignStatement
                 {
-                    Identifier = token.Value,
+                    Identifier = token.Text,
                     Expression = expression
                 };
 
@@ -91,7 +91,7 @@ namespace NotPseudo
             if (identifierToken.Type != TokenType.IdentifierOrKeyword)
                 throw new Exception("Expected variable name identifier.");
 
-            var identifier = identifierToken.Value;
+            var identifier = identifierToken.Text;
 
             var colonToken = _lexer.Lex();
             if (colonToken.Type != TokenType.Colon)
@@ -101,7 +101,7 @@ namespace NotPseudo
             if (typeToken.Type != TokenType.IdentifierOrKeyword)
                 throw new Exception("Expected variable type identifier.");
 
-            var type = typeToken.Value;
+            var type = typeToken.Text;
 
             var stmt = new VariableDeclarationStatement
             {
@@ -151,7 +151,7 @@ namespace NotPseudo
 
                 return new VariableStatement
                 {
-                    Identifier = identifierToken.Value
+                    Identifier = identifierToken.Text
                 };
             }
             return null;
@@ -159,12 +159,12 @@ namespace NotPseudo
 
         private Node ParseStringLiteral(Token token)
         {
-            return new StringLiteralExpression { Value = token.Value };
+            return new StringLiteralExpression { Value = token.Text };
         }
 
         private static bool IsBuiltInFunction(Token token)
         {
-            return token.Value == "OUTPUT";
+            return token.Text == "OUTPUT";
         }
     }
 }
