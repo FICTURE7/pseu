@@ -1,6 +1,6 @@
 namespace NotPseudo.CodeAnalysis.Syntax
 {
-    public class VariableStatement : Node
+    public class IdentifierExpression : Node
     {
         public string Identifier { get; set; }
     }

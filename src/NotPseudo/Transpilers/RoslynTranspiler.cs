@@ -38,8 +38,8 @@ namespace NotPseudo.Transpilers
             {
                 if (child is OutputStatement)
                     statements.Add(TranspileOutputStatement((OutputStatement)child));
-                else if (child is VariableDeclarationStatement)
-                    statements.Add(TranspileVariableDeclarationStatement((VariableDeclarationStatement)child));
+                else if (child is VariableDeclaration)
+                    statements.Add(TranspileVariableDeclaration((VariableDeclaration)child));
                 else if (child is AssignStatement)
                     statements.Add(TranspileAssignStatement((AssignStatement)child));
             }
@@ -60,6 +60,11 @@ namespace NotPseudo.Transpilers
             return newNode.ToString();
         }
 
+        private SyntaxNode TranspileForStatement(ForStatement stmt)
+        {
+            return null;
+        }
+
         private SyntaxNode TranspileAssignStatement(AssignStatement stmt)
         {
             var assignStmt = _generator.AssignmentStatement(
@@ -69,7 +74,7 @@ namespace NotPseudo.Transpilers
             return assignStmt;
         }
 
-        private SyntaxNode TranspileVariableDeclarationStatement(VariableDeclarationStatement stmt)
+        private SyntaxNode TranspileVariableDeclaration(VariableDeclaration stmt)
         {
             var varDeclStmt = _generator.LocalDeclarationStatement(
                 type: TranspileType(stmt.Type),
@@ -95,9 +100,9 @@ namespace NotPseudo.Transpilers
                 var strNode = (StringLiteralExpression)node;
                 return _generator.LiteralExpression(strNode.Value);
             }
-            else if (node is VariableStatement)
+            else if (node is IdentifierExpression)
             {
-                var varNode = (VariableStatement)node;
+                var varNode = (IdentifierExpression)node;
                 return _generator.IdentifierName(varNode.Identifier);
             }
             return null;
@@ -113,5 +118,7 @@ namespace NotPseudo.Transpilers
 
             return _generator.IdentifierName(type);
         }
+
+        protected abstract SyntaxNode TranspileForStatement(ForStatement stmt);
     }
 }

@@ -13,10 +13,6 @@ namespace NotPseudo.CodeAnalysis
          */
         private const char InvalidChar = char.MaxValue;
 
-        /* Line number we're at. */
-        private int _line;
-        /* Column number we're at. */
-        private int _column;
         /* Index of were we are in the source. */
         private int _index;
         /* Source code we're lexing. */
@@ -82,8 +78,7 @@ namespace NotPseudo.CodeAnalysis
             Debug.Assert(CurrentChar() == '\n', "Current character was not a line feed character.");
 
             AdvanceChar();
-            _column++;
-            _line = 0;
+
             return Create(null, TokenType.EoL);
         }
 
@@ -97,6 +92,8 @@ namespace NotPseudo.CodeAnalysis
             {
                 value += c;
                 c = NextChar();
+
+                /*TODO: Check if end of file. */
             }
 
             return Create(value, TokenType.NumberLiteral);
@@ -111,6 +108,8 @@ namespace NotPseudo.CodeAnalysis
             {
                 value += c;
                 c = NextChar();
+
+                /*TODO: Check if end of file. */
             }
 
             Debug.Assert(!char.IsLetter(CurrentChar()) && c != '_', "Current character should not be a letter or '_'.");
@@ -160,7 +159,6 @@ namespace NotPseudo.CodeAnalysis
         private void AdvanceChar()
         {
             _index++;
-            _line++;
         }
 
         private char CurrentChar()
@@ -176,7 +174,6 @@ namespace NotPseudo.CodeAnalysis
             if (++_index > _src.Length - 1)
                 return InvalidChar;
 
-            _line++;
             return _src[_index];
         }
 
@@ -194,9 +191,6 @@ namespace NotPseudo.CodeAnalysis
             {
                 Text = value,
                 Type = type,
-
-                Column = _column,
-                Line = _line
             };
         }
     }

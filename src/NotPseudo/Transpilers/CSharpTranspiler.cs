@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
+using NotPseudo.CodeAnalysis.Syntax;
 
 namespace NotPseudo.Transpilers
 {
@@ -8,6 +9,11 @@ namespace NotPseudo.Transpilers
         public CSharpTranspiler()
         {
             Initialize(SyntaxGenerator.GetGenerator(Workspace, LanguageNames.CSharp));
+        }
+
+        protected override SyntaxNode TranspileForStatement(ForStatement stmt)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

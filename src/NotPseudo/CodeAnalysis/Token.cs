@@ -6,8 +6,6 @@ namespace NotPseudo.CodeAnalysis
     {
         public TextSpan Span;
         public TokenType Type;
-        public int Column;
-        public int Line;
         public string Text;
     }
 }
