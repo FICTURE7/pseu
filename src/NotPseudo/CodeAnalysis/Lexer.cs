@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace NotPseudo.CodeAnalysis
 {
-    /* The tokenizer/lexer. */
+    /* The lexer/tokenizer. */
     public class Lexer : ILexer
     {
         /* 
@@ -14,7 +14,7 @@ namespace NotPseudo.CodeAnalysis
         private const char InvalidChar = char.MaxValue;
 
         /* Index of were we are in the source. */
-        private int _index;
+        private int _pos;
         /* Source code we're lexing. */
         private readonly SourceText _src;
 
@@ -24,174 +24,172 @@ namespace NotPseudo.CodeAnalysis
                 throw new ArgumentNullException(nameof(src));
 
             _src = src;
-            _index = 0;
+            _pos = 0;
         }
 
         public Token Lex()
         {
-            /* Skip whitespaces including \t and stuff. */
-            SkipSpaces();
-            return ScanToken();
+            return null;
         }
 
-        private Token ScanToken()
-        {
-            var c = CurrentChar();
-            if (c == InvalidChar)
-                return Create(null, TokenType.EoF);
+        // private Token ScanToken()
+        // {
+        //     var c = CurrentChar();
+        //     if (c == InvalidChar)
+        //         return Create(null, TokenType.EoF);
 
-            /*TODO: Do proper scanning of end of lines. */
-            if (c == '\n')
-                return ScanEndOfLine();
-            else if (c == ':')
-                return ScanColon();
-            else if (c == '=')
-                return ScanEqual();
-            else if (c == '"')
-                return ScanStringLiteral();
-            else if (char.IsNumber(c))
-                return ScanNumberLiteral();
-            else if (char.IsLetter(c))
-                return ScanIdentifierOrKeyword();
+        //     /*TODO: Do proper scanning of end of lines. */
+        //     if (c == '\n')
+        //         return ScanEndOfLine();
+        //     else if (c == ':')
+        //         return ScanColon();
+        //     else if (c == '=')
+        //         return ScanEqual();
+        //     else if (c == '"')
+        //         return ScanStringLiteral();
+        //     else if (char.IsNumber(c))
+        //         return ScanNumberLiteral();
+        //     else if (char.IsLetter(c))
+        //         return ScanIdentifierOrKeyword();
 
-            throw new Exception("Unknown token.");
-        }
+        //     throw new Exception("Unknown token.");
+        // }
 
-        private Token ScanEqual()
-        {
-            Debug.Assert(CurrentChar() == '=', "Current character was not an equal character.");
+        // private Token ScanEqual()
+        // {
+        //     Debug.Assert(CurrentChar() == '=', "Current character was not an equal character.");
 
-            AdvanceChar();
-            return Create(null, TokenType.Equal);
-        }
+        //     AdvanceChar();
+        //     return Create(null, TokenType.Equal);
+        // }
 
-        private Token ScanColon()
-        {
-            Debug.Assert(CurrentChar() == ':', "Current character was not a colon character.");
+        // private Token ScanColon()
+        // {
+        //     Debug.Assert(CurrentChar() == ':', "Current character was not a colon character.");
 
-            AdvanceChar();
-            return Create(null, TokenType.Colon);
-        }
+        //     AdvanceChar();
+        //     return Create(null, TokenType.Colon);
+        // }
 
-        private Token ScanEndOfLine()
-        {
-            Debug.Assert(CurrentChar() == '\n', "Current character was not a line feed character.");
+        // private Token ScanEndOfLine()
+        // {
+        //     Debug.Assert(CurrentChar() == '\n', "Current character was not a line feed character.");
 
-            AdvanceChar();
+        //     AdvanceChar();
 
-            return Create(null, TokenType.EoL);
-        }
+        //     return Create(null, TokenType.EoL);
+        // }
 
-        private Token ScanNumberLiteral()
-        {
-            /*TODO: Decimals and stuffs. */
-            var c = CurrentChar();
-            var value = string.Empty;
+        // private Token ScanNumberLiteral()
+        // {
+        //     /*TODO: Decimals and stuffs. */
+        //     var c = CurrentChar();
+        //     var value = string.Empty;
 
-            while (char.IsNumber(c))
-            {
-                value += c;
-                c = NextChar();
+        //     while (char.IsNumber(c))
+        //     {
+        //         value += c;
+        //         c = NextChar();
 
-                /*TODO: Check if end of file. */
-            }
+        //         /*TODO: Check if end of file. */
+        //     }
 
-            return Create(value, TokenType.NumberLiteral);
-        }
+        //     return Create(value, TokenType.NumberLiteral);
+        // }
 
-        private Token ScanIdentifierOrKeyword()
-        {
-            var c = CurrentChar();
-            var value = string.Empty;
+        // private Token ScanIdentifierOrKeyword()
+        // {
+        //     var c = CurrentChar();
+        //     var value = string.Empty;
 
-            while (char.IsLetter(c) || c == '_')
-            {
-                value += c;
-                c = NextChar();
+        //     while (char.IsLetter(c) || c == '_')
+        //     {
+        //         value += c;
+        //         c = NextChar();
 
-                /*TODO: Check if end of file. */
-            }
+        //         /*TODO: Check if end of file. */
+        //     }
 
-            Debug.Assert(!char.IsLetter(CurrentChar()) && c != '_', "Current character should not be a letter or '_'.");
+        //     Debug.Assert(!char.IsLetter(CurrentChar()) && c != '_', "Current character should not be a letter or '_'.");
 
-            return Create(value, TokenType.IdentifierOrKeyword);
-        }
+        //     return Create(value, TokenType.IdentifierOrKeyword);
+        // }
 
-        private Token ScanStringLiteral()
-        {
-            /* TODO: Escaped characters and stuff. */
-            char c = NextChar();
-            string value = string.Empty;
+        // private Token ScanStringLiteral()
+        // {
+        //     /* TODO: Escaped characters and stuff. */
+        //     char c = NextChar();
+        //     string value = string.Empty;
 
-            while (c != '"')
-            {
-                value += c;
-                c = NextChar();
+        //     while (c != '"')
+        //     {
+        //         value += c;
+        //         c = NextChar();
 
-                if (c == InvalidChar)
-                {
-                    /*TODO: Add error, the string literal is unterminated. */
-                    break;
-                }
-            }
+        //         if (c == InvalidChar)
+        //         {
+        //             /*TODO: Add error, the string literal is unterminated. */
+        //             break;
+        //         }
+        //     }
 
-            /* Skip the closing '"' character since we already processed it. */
-            AdvanceChar();
+        //     /* Skip the closing '"' character since we already processed it. */
+        //     AdvanceChar();
 
-            return Create(value, TokenType.StringLiteral);
-        }
+        //     return Create(value, TokenType.StringLiteral);
+        // }
 
-        private void SkipSpaces()
-        {
-            char c = CurrentChar();
-            if (c == '\n')
-                return;
+        // private void SkipWhiteSpaces()
+        // {
+        //     char c = CurrentChar();
+        //     if (c == '\n')
+        //         return;
 
-            if (c == InvalidChar)
-                return;
+        //     if (c == InvalidChar)
+        //         return;
 
-            while (char.IsWhiteSpace(c))
-                c = NextChar();
+        //     while (char.IsWhiteSpace(c))
+        //         c = NextChar();
 
-            Debug.Assert(!char.IsWhiteSpace(CurrentChar()), "Current character should not be a whitespace.");
-        }
+        //     Debug.Assert(!char.IsWhiteSpace(CurrentChar()), "Current character should not be a whitespace.");
+        // }
 
-        private void AdvanceChar()
-        {
-            _index++;
-        }
+        // private void AdvanceChar()
+        // {
+        //     _index++;
+        // }
 
-        private char CurrentChar()
-        {
-            if (_index > _src.Length - 1)
-                return InvalidChar;
+        // private char CurrentChar()
+        // {
+        //     if (_index > _src.Length - 1)
+        //         return InvalidChar;
 
-            return _src[_index];
-        }
+        //     return _src[_index];
+        // }
 
-        private char NextChar()
-        {
-            if (++_index > _src.Length - 1)
-                return InvalidChar;
+        // private char NextChar()
+        // {
+        //     if (++_index > _src.Length - 1)
+        //         return InvalidChar;
 
-            return _src[_index];
-        }
+        //     return _src[_index];
+        // }
 
-        private char PeekChar()
-        {
-            if (_index + 1 > _src.Length - 1)
-                return InvalidChar;
+        // private char PeekChar()
+        // {
+        //     if (_index + 1 > _src.Length - 1)
+        //         return InvalidChar;
 
-            return _src[_index + 1];
-        }
+        //     return _src[_index + 1];
+        // }
 
-        private Token Create(string value, TokenType type)
-        {
-            return new Token
-            {
-                Text = value,
-                Type = type,
-            };
-        }
+        // private Token Create(string value, TokenType type)
+        // {
+        //     return new Token
+        //     {
+        //         Text = value,
+        //         Type = type,
+        //     };
+        // }
     }
 }

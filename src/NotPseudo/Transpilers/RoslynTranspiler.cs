@@ -60,10 +60,13 @@ namespace NotPseudo.Transpilers
             return newNode.ToString();
         }
 
+
+        /*
         private SyntaxNode TranspileForStatement(ForStatement stmt)
         {
             return null;
         }
+        */
 
         private SyntaxNode TranspileAssignStatement(AssignStatement stmt)
         {
