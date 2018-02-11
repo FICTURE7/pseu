@@ -6,224 +6,204 @@ namespace NotPseudo.CodeAnalysis
 {
     public class Parser : IParser
     {
+        /* Current token we're processing. */
         private Token _token;
+        /* Root node. */
         private readonly Node _root;
-        private readonly Lexer _lexer;
+        /* Lexer thats going to provide the token to process. */
+        private readonly ILexer _lexer;
 
-        public Parser(Lexer lexer)
+        public Parser(ILexer lexer)
         {
             if (lexer == null)
                 throw new ArgumentNullException(nameof(lexer));
 
             _lexer = lexer;
+            _token = lexer.Lex();
             _root = new Node();
         }
 
+        /*
+            EBNF-like Definition
+            ----------------
+            DIV: '/'
+            MUL: '*'
+            PLUS: '+'
+            MINUS: '-'
+
+            LPAREN: '('
+            RPAREN: ')'
+
+            ASSIGN: '<-'
+            COLON: ':'
+            LF: '\n'
+
+            DECLARE: "DECLARE"
+
+            program: statement
+
+            empty:
+            statement: assign-statement | declare-statement | empty
+            assign-statement: identifier ASSIGN expression
+            declare-statement: DECLARE identifier COLON identifier
+
+            expression: term ((DIV | MUL) term)*
+            term: factor ((PLUS | MINUS) factor)*
+            factor: (PLUS | MINUS) INTEGER | identifier | LPAREN expression RPAREN
+            identifier: STRING
+         */
+
         public Node Parse()
         {
-            return Parse(_root);
+            return ParseProgram();
         }
 
-        private Node Parse(Node root)
+        private Node ParseProgram()
         {
-            while (true)
-            {
-                var node = Walk();
-                if (_token.Type != TokenType.EoL && node == null)
-                    throw new Exception("Unable to walk down tokens.");
-
-                root.Childrens.Add(node);
-
-                /* Keep parsing until we reach end of file. */
-                if (_token.Type == TokenType.EoF)
-                    break;
-            }
-
-            return root;
+            return ParseStatement();
         }
 
-        private Node Walk()
+        private Node ParseStatement()
         {
-            _token = _lexer.Lex();
+            if (_token.Type == TokenType.DeclareKeyword)
+                return ParseDeclareStatement();
+            else if (_token.Type == TokenType.Identifier)
+                return ParseAssignStatement();
 
-            if (_token.Type == TokenType.IdentifierOrKeyword)
-            {
-                switch (_token.Text)
-                {
-                    case "OUTPUT":
-                        return ParseOutputStatement(_token);
-
-                    case "DECLARE":
-                        return ParseVariableDeclaration(_token);
-
-                    case "FOR":
-                        return ParseForStatement(_token);
-
-                    case "NEXT":
-                        return ParseNextStatement(_token);
-
-                    default:
-                        /* Assume its an assign statement. */
-                        var node = ParsePossibleAssignStatement(_token);
-                        if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
-                            throw new Exception("Expected EoL or EoF.");
-                        return node;
-                }
-            }
             return null;
         }
 
-        private Node ParseForStatement(Token token)
+        private Node ParseDeclareStatement()
         {
-            var identifierToken = _lexer.Lex();
-            if (identifierToken.Type != TokenType.IdentifierOrKeyword)
-                throw new Exception("Expected identifier.");
+            Eat(TokenType.DeclareKeyword);
 
-            var fromExpression = ParsePossibleAssignStatement(identifierToken);
+            var varIdentToken = _token;
+            Eat(TokenType.Identifier);
+            Eat(TokenType.Colon);
 
-            var toToken = _token;
-            if (toToken.Text != "TO")
-                throw new Exception("Expected TO.");
+            var typeIdentToken = _token;
+            Eat(TokenType.Identifier);
 
-            var toExpression = ParseExpression();
-
-            _token = _lexer.Lex();
-            if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
-                throw new Exception("Expected EoL or EoF.");
-
-            var block = ParseForBlock();
-            return new ForStatement
+            return new VariableDeclaration
             {
-                FromExpression = fromExpression,
-                ToExpression = toExpression,
-                Block = (ForBlock)block
+                Identifier = new IdentifierName { Identifier = varIdentToken.Value },
+                Type = new IdentifierName { Identifier = typeIdentToken.Value }
             };
         }
 
-        private Node ParseForBlock()
+        private Node ParseAssignStatement()
         {
-            var block = new ForBlock();
-            while (true)
-            {
-                var stmt = Walk();
-                if (stmt is NextStatement)
-                {
-                    block.NextStatement = (NextStatement)stmt;
-                    break;
-                }
+            var varIdentToken = _token;
+            Eat(TokenType.Identifier);
+            Eat(TokenType.Assign);
 
-                block.Childrens.Add(stmt);
-            }
-            return block;
-        }
-
-        private Node ParseNextStatement(Token token)
-        {
-            var stmt = new NextStatement();
-
-            _token = _lexer.Lex();
-            if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
-                throw new Exception("Expected EoL or EoF.");
-            return stmt;
-        }
-
-        private Node ParsePossibleAssignStatement(Token token)
-        {
-            var equalToken = _lexer.Lex();
-            if (equalToken.Type == TokenType.Equal)
-            {
-                var expression = ParseExpression();
-                var stmt = new AssignStatement
-                {
-                    Identifier = token.Text,
-                    Expression = expression
-                };
-
-                _token = _lexer.Lex();
-                return stmt;
-            }
+            var expr = ParseExpression();
             return null;
-        }
-
-        private VariableDeclaration ParseVariableDeclaration(Token token)
-        {
-            var identifierToken = _lexer.Lex();
-            if (identifierToken.Type != TokenType.IdentifierOrKeyword)
-                throw new Exception("Expected variable name identifier.");
-
-            var identifier = identifierToken.Text;
-
-            var colonToken = _lexer.Lex();
-            if (colonToken.Type != TokenType.Colon)
-                throw new Exception("Expected colon.");
-
-            var typeToken = _lexer.Lex();
-            if (typeToken.Type != TokenType.IdentifierOrKeyword)
-                throw new Exception("Expected variable type identifier.");
-
-            var type = typeToken.Text;
-
-            var stmt = new VariableDeclaration
-            {
-                Identifier = identifier,
-                Type = type
-            };
-
-            /*TODO: Expect '=' expression maybe? */
-
-            _token = _lexer.Lex();
-
-            if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
-                throw new Exception("Expected EoL or EoF.");
-
-            return stmt;
-        }
-
-        private OutputStatement ParseOutputStatement(Token token)
-        {
-            var stmt = new OutputStatement();
-
-            /*TODO: Check if node returned is a valid one. */
-            stmt.Expression = ParseExpression();
-
-            _token = _lexer.Lex();
-
-            if (_token.Type != TokenType.EoF && _token.Type != TokenType.EoL)
-                throw new Exception("Expected EoL or EoF.");
-
-            return stmt;
         }
 
         private Node ParseExpression()
         {
-            _token = _lexer.Lex();
-            if (_token.Type == TokenType.StringLiteral)
-                return ParseStringLiteralExpression(_token);
-            if (_token.Type == TokenType.NumberLiteral)
-                return ParseNumberLiteralExpression(_token);
-            else if (_token.Type == TokenType.IdentifierOrKeyword)
-                return ParseIdentifierExpression(_token);
+            /*
+                expression: term ((DIV | MUL) term)*
+             */
+            var node = ParseTerm();
+
+            while (_token.Type == TokenType.Multiply || _token.Type == TokenType.Divide)
+            {
+                var token = _token;
+                if (token.Type == TokenType.Divide)
+                    Eat(TokenType.Divide);
+                else if (token.Type == TokenType.Multiply)
+                    Eat(TokenType.Multiply);
+
+                node = new BinaryOperation
+                {
+                    Left = node,
+                    Operation = token,
+                    Right = ParseTerm()
+                };
+            }
+
+            return node;
+        }
+
+        private Node ParseTerm()
+        {
+            /*
+                term: factor ((PLUS | MINUS) factor)*
+             */
+            var node = ParseFactor();
+
+            while (_token.Type == TokenType.Plus || _token.Type == TokenType.Minus)
+            {
+                var token = _token;
+                if (token.Type == TokenType.Plus)
+                    Eat(TokenType.Plus);
+                else if (token.Type == TokenType.Minus)
+                    Eat(TokenType.Multiply);
+
+                node = new BinaryOperation
+                {
+                    Left = node,
+                    Operation = token,
+                    Right = ParseFactor()
+                };
+            }
+
+            return node;
+        }
+
+        private Node ParseFactor()
+        {
+            /*
+                factor: (PLUS | MINUS) INTEGER | identifier | LPAREN expression RPAREN
+             */
+            if (_token.Type == TokenType.Plus)
+            {
+                var token = _token;
+                Eat(TokenType.Plus);
+                return new UnaryOperation { Operation = token, Right = ParseFactor() };
+            }
+            else if (_token.Type == TokenType.Minus)
+            {
+                var token = _token;
+                Eat(TokenType.Minus);
+                return new UnaryOperation { Operation = token, Right = ParseFactor() };
+            }
+            else if (_token.Type == TokenType.NumberLiteral)
+            {
+                var value = _token.Value;
+                Eat(TokenType.NumberLiteral);
+                return new NumberLiteral { Value = int.Parse(value) };
+            }
+            else if (_token.Type == TokenType.Identifier)
+            {
+                var ident = _token.Value;
+                Eat(TokenType.Identifier);
+                return new IdentifierName { Identifier = ident };
+            }
+            else if (_token.Type == TokenType.LeftParenthesis)
+            {
+                Eat(TokenType.LeftParenthesis);
+                var expr = ParseExpression();
+                Eat(TokenType.RightParenthesis);
+
+                return expr;
+            }
+
+            Error();
+
             return null;
         }
 
-        private Node ParseNumberLiteralExpression(Token token)
+        private void Eat(TokenType type)
         {
-            return new NumberLiteralExpression { Value = int.Parse(token.Text) };
+            if (_token.Type == type)
+                _token = _lexer.Lex();
+            else
+                Error();
         }
 
-        private Node ParseIdentifierExpression(Token token)
-        {
-            return new IdentifierExpression { Identifier = token.Text };
-        }
-
-        private Node ParseStringLiteralExpression(Token token)
-        {
-            return new StringLiteralExpression { Value = token.Text };
-        }
-
-        private static bool IsBuiltInFunction(Token token)
-        {
-            return token.Text == "OUTPUT";
-        }
+        private void Error() => throw new Exception("Invalid syntax.");
     }
 }

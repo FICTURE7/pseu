@@ -1,20 +1,22 @@
-using Microsoft.CodeAnalysis.Text;
-
 namespace NotPseudo.CodeAnalysis
 {
     /* Represents a token. */
     public class Token
     {
-        public TextSpan Span;
+        public Token(TokenType type, string value)
+        {
+            Type = type;
+            Value = value;
+        }
 
         /* Type of the token. */
         public TokenType Type;
         /* Text value of the token. */
-        public string Text;
+        public string Value;
 
         public override string ToString()
         {
-            return $"Token({Type}, {Text})";
+            return $"tok({Type}, {Value})";
         }
     }
 }

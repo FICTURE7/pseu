@@ -2,13 +2,9 @@ using System.Collections.Generic;
 
 namespace NotPseudo.CodeAnalysis
 {
+    /* Represents a node in an AST. */
     public class Node
     {
-        public Node()
-        {
-            Childrens = new List<Node>();
-        }
-
-        public List<Node> Childrens { get; set; }
+        // Space
     }
 }

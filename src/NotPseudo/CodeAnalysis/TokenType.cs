@@ -2,13 +2,17 @@ namespace NotPseudo.CodeAnalysis
 {
     public enum TokenType
     {
-        None,
+        Plus,
+        Minus,
+        Divide,
+        Multiply,
         Colon,
-        Equal,
-        StringLiteral,
+        Assign,
+        LeftParenthesis,
+        RightParenthesis,
         NumberLiteral,
-        IdentifierOrKeyword,
-        EoL,
+        Identifier,
+        DeclareKeyword,
         EoF
     }
 }

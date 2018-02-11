@@ -34,6 +34,7 @@ namespace NotPseudo.Transpilers
                 throw new ArgumentNullException(nameof(node));
 
             var statements = new List<SyntaxNode>();
+            /*
             foreach (var child in node.Childrens)
             {
                 if (child is OutputStatement)
@@ -43,6 +44,7 @@ namespace NotPseudo.Transpilers
                 else if (child is AssignStatement)
                     statements.Add(TranspileAssignStatement((AssignStatement)child));
             }
+            */
 
             var methodDecl = _generator.MethodDeclaration(
                 name: "Main",
@@ -79,11 +81,14 @@ namespace NotPseudo.Transpilers
 
         private SyntaxNode TranspileVariableDeclaration(VariableDeclaration stmt)
         {
+            /*
             var varDeclStmt = _generator.LocalDeclarationStatement(
                 type: TranspileType(stmt.Type),
                 identifier: stmt.Identifier
             );
             return varDeclStmt;
+            */
+            return null;
         }
 
         private SyntaxNode TranspileOutputStatement(OutputStatement stmt)

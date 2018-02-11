@@ -15,6 +15,8 @@ namespace NotPseudo.CodeAnalysis
 
         /* Index of were we are in the source. */
         private int _pos;
+        /* Current character we're processing. */
+        private char _cur;
         /* Source code we're lexing. */
         private readonly SourceText _src;
 
@@ -25,171 +27,136 @@ namespace NotPseudo.CodeAnalysis
 
             _src = src;
             _pos = 0;
+
+            /* 
+                Check if src is empty, if it is set current char 
+                to InvalidChar to indicate EoF.
+             */
+            if (_pos > src.Length - 1)
+                _cur = InvalidChar;
+            else
+                _cur = src[_pos];
         }
 
         public Token Lex()
         {
+            /* If end of file, emit EoF token. */
+            if (_cur == InvalidChar)
+                return new Token(TokenType.EoF, null);
+
+            /* Skip whitespaces if we encounter any. */
+            if (char.IsWhiteSpace(_cur))
+                SkipWhiteSpace();
+
+            /* Scan number literals. */
+            if (char.IsDigit(_cur))
+                return new Token(TokenType.NumberLiteral, ScanNumberLiteral());
+
+            /* Scan identifiers or keywords. */
+            if (char.IsLetter(_cur))
+                return ScanIdentifierOrKeyword();
+
+            /* Scan the plus character. */
+            if (_cur == '+')
+            {
+                Adavance();
+                return new Token(TokenType.Plus, "+");
+            }
+
+            /* Scan the minus character. */
+            if (_cur == '-')
+            {
+                Adavance();
+                return new Token(TokenType.Minus, "-");
+            }
+
+            /* Scan the divide character. */
+            if (_cur == '/')
+            {
+                Adavance();
+                return new Token(TokenType.Divide, "/");
+            }
+
+            /* Scan the multiply character. */
+            if (_cur == '*')
+            {
+                Adavance();
+                return new Token(TokenType.Multiply, "*");
+            }
+
+            /* Scan the left parenthesis character. */
+            if (_cur == '(')
+            {
+                Adavance();
+                return new Token(TokenType.LeftParenthesis, "(");
+            }
+
+            /* Scan the right parenthesis character. */
+            if (_cur == ')')
+            {
+                Adavance();
+                return new Token(TokenType.RightParenthesis, ")");
+            }
+
+            if (_cur == ':')
+            {
+                Adavance();
+                return new Token(TokenType.Colon, ":");
+            }
+
+            Error();
+
+            /* Will never be reached, since Error throws an exception. */
             return null;
         }
 
-        // private Token ScanToken()
-        // {
-        //     var c = CurrentChar();
-        //     if (c == InvalidChar)
-        //         return Create(null, TokenType.EoF);
+        private Token ScanIdentifierOrKeyword()
+        {
+            var value = (string)null;
+            while (_cur != InvalidChar && char.IsLetter(_cur))
+            {
+                value += _cur;
+                Adavance();
+            }
 
-        //     /*TODO: Do proper scanning of end of lines. */
-        //     if (c == '\n')
-        //         return ScanEndOfLine();
-        //     else if (c == ':')
-        //         return ScanColon();
-        //     else if (c == '=')
-        //         return ScanEqual();
-        //     else if (c == '"')
-        //         return ScanStringLiteral();
-        //     else if (char.IsNumber(c))
-        //         return ScanNumberLiteral();
-        //     else if (char.IsLetter(c))
-        //         return ScanIdentifierOrKeyword();
+            /* Check if value is a keyword. */
+            if (value == "DECLARE")
+                return new Token(TokenType.DeclareKeyword, value);                
 
-        //     throw new Exception("Unknown token.");
-        // }
+            return new Token(TokenType.Identifier, value);
+        }
 
-        // private Token ScanEqual()
-        // {
-        //     Debug.Assert(CurrentChar() == '=', "Current character was not an equal character.");
+        private string ScanNumberLiteral()
+        {
+            var value = (string)null;
+            while (_cur != InvalidChar && char.IsDigit(_cur))
+            {
+                value += _cur;
+                Adavance();
+            }
+            return value;
+        }
 
-        //     AdvanceChar();
-        //     return Create(null, TokenType.Equal);
-        // }
+        private void SkipWhiteSpace()
+        {
+            while (_cur != InvalidChar && char.IsWhiteSpace(_cur))
+                Adavance();
+        }
 
-        // private Token ScanColon()
-        // {
-        //     Debug.Assert(CurrentChar() == ':', "Current character was not a colon character.");
+        private void Adavance()
+        {
+            /* 
+                Sets the next character to process or 
+                sets to InvalidChar if end of file.
+            */
+            _pos++;
 
-        //     AdvanceChar();
-        //     return Create(null, TokenType.Colon);
-        // }
+            if (_pos > _src.Length - 1)
+                _cur = InvalidChar;
+            else
+                _cur = _src[_pos];
+        }
 
-        // private Token ScanEndOfLine()
-        // {
-        //     Debug.Assert(CurrentChar() == '\n', "Current character was not a line feed character.");
-
-        //     AdvanceChar();
-
-        //     return Create(null, TokenType.EoL);
-        // }
-
-        // private Token ScanNumberLiteral()
-        // {
-        //     /*TODO: Decimals and stuffs. */
-        //     var c = CurrentChar();
-        //     var value = string.Empty;
-
-        //     while (char.IsNumber(c))
-        //     {
-        //         value += c;
-        //         c = NextChar();
-
-        //         /*TODO: Check if end of file. */
-        //     }
-
-        //     return Create(value, TokenType.NumberLiteral);
-        // }
-
-        // private Token ScanIdentifierOrKeyword()
-        // {
-        //     var c = CurrentChar();
-        //     var value = string.Empty;
-
-        //     while (char.IsLetter(c) || c == '_')
-        //     {
-        //         value += c;
-        //         c = NextChar();
-
-        //         /*TODO: Check if end of file. */
-        //     }
-
-        //     Debug.Assert(!char.IsLetter(CurrentChar()) && c != '_', "Current character should not be a letter or '_'.");
-
-        //     return Create(value, TokenType.IdentifierOrKeyword);
-        // }
-
-        // private Token ScanStringLiteral()
-        // {
-        //     /* TODO: Escaped characters and stuff. */
-        //     char c = NextChar();
-        //     string value = string.Empty;
-
-        //     while (c != '"')
-        //     {
-        //         value += c;
-        //         c = NextChar();
-
-        //         if (c == InvalidChar)
-        //         {
-        //             /*TODO: Add error, the string literal is unterminated. */
-        //             break;
-        //         }
-        //     }
-
-        //     /* Skip the closing '"' character since we already processed it. */
-        //     AdvanceChar();
-
-        //     return Create(value, TokenType.StringLiteral);
-        // }
-
-        // private void SkipWhiteSpaces()
-        // {
-        //     char c = CurrentChar();
-        //     if (c == '\n')
-        //         return;
-
-        //     if (c == InvalidChar)
-        //         return;
-
-        //     while (char.IsWhiteSpace(c))
-        //         c = NextChar();
-
-        //     Debug.Assert(!char.IsWhiteSpace(CurrentChar()), "Current character should not be a whitespace.");
-        // }
-
-        // private void AdvanceChar()
-        // {
-        //     _index++;
-        // }
-
-        // private char CurrentChar()
-        // {
-        //     if (_index > _src.Length - 1)
-        //         return InvalidChar;
-
-        //     return _src[_index];
-        // }
-
-        // private char NextChar()
-        // {
-        //     if (++_index > _src.Length - 1)
-        //         return InvalidChar;
-
-        //     return _src[_index];
-        // }
-
-        // private char PeekChar()
-        // {
-        //     if (_index + 1 > _src.Length - 1)
-        //         return InvalidChar;
-
-        //     return _src[_index + 1];
-        // }
-
-        // private Token Create(string value, TokenType type)
-        // {
-        //     return new Token
-        //     {
-        //         Text = value,
-        //         Type = type,
-        //     };
-        // }
+        private void Error() => throw new Exception("Invalid character.");
     }
 }
