@@ -13,6 +13,11 @@ namespace NotPseudo.CodeAnalysis
         NumberLiteral,
         Identifier,
         DeclareKeyword,
+        ForKeyword,
+        ToKeyword,
+        NextKeyword,
+        OutputKeyword,
+        LineFeed,
         EoF
     }
 }

@@ -45,7 +45,7 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.EoF, null);
 
             /* Skip whitespaces if we encounter any. */
-            if (char.IsWhiteSpace(_cur))
+            if (_cur != '\n' && char.IsWhiteSpace(_cur))
                 SkipWhiteSpace();
 
             /* Scan number literals. */
@@ -56,52 +56,71 @@ namespace NotPseudo.CodeAnalysis
             if (char.IsLetter(_cur))
                 return ScanIdentifierOrKeyword();
 
+            if (_cur == '\n')
+            {
+                Advance();
+                return new Token(TokenType.LineFeed, "\n");
+            }
+
             /* Scan the plus character. */
             if (_cur == '+')
             {
-                Adavance();
+                Advance();
                 return new Token(TokenType.Plus, "+");
             }
 
             /* Scan the minus character. */
             if (_cur == '-')
             {
-                Adavance();
+                Advance();
                 return new Token(TokenType.Minus, "-");
             }
 
             /* Scan the divide character. */
             if (_cur == '/')
             {
-                Adavance();
+                Advance();
                 return new Token(TokenType.Divide, "/");
             }
 
             /* Scan the multiply character. */
             if (_cur == '*')
             {
-                Adavance();
+                Advance();
                 return new Token(TokenType.Multiply, "*");
             }
 
             /* Scan the left parenthesis character. */
             if (_cur == '(')
             {
-                Adavance();
+                Advance();
                 return new Token(TokenType.LeftParenthesis, "(");
             }
 
             /* Scan the right parenthesis character. */
             if (_cur == ')')
             {
-                Adavance();
+                Advance();
                 return new Token(TokenType.RightParenthesis, ")");
             }
 
+            /* Scan the colon character. */
             if (_cur == ':')
             {
-                Adavance();
+                Advance();
                 return new Token(TokenType.Colon, ":");
+            }
+
+            /* Scan the less than or assign token. */
+            if (_cur == '<')
+            {
+                Advance();
+                if (_cur == '-')
+                {
+                    Advance();
+                    return new Token(TokenType.Assign, "<-");
+                }
+                /*TODO: Less character/token. */
             }
 
             Error();
@@ -116,12 +135,20 @@ namespace NotPseudo.CodeAnalysis
             while (_cur != InvalidChar && char.IsLetter(_cur))
             {
                 value += _cur;
-                Adavance();
+                Advance();
             }
 
             /* Check if value is a keyword. */
             if (value == "DECLARE")
-                return new Token(TokenType.DeclareKeyword, value);                
+                return new Token(TokenType.DeclareKeyword, value);
+            else if (value == "FOR")
+                return new Token(TokenType.ForKeyword, value);
+            else if (value == "TO")
+                return new Token(TokenType.ToKeyword, value);
+            else if (value == "NEXT")
+                return new Token(TokenType.NextKeyword, value);
+            else if (value == "OUTPUT")
+                return new Token(TokenType.OutputKeyword, value);
 
             return new Token(TokenType.Identifier, value);
         }
@@ -132,7 +159,7 @@ namespace NotPseudo.CodeAnalysis
             while (_cur != InvalidChar && char.IsDigit(_cur))
             {
                 value += _cur;
-                Adavance();
+                Advance();
             }
             return value;
         }
@@ -140,10 +167,10 @@ namespace NotPseudo.CodeAnalysis
         private void SkipWhiteSpace()
         {
             while (_cur != InvalidChar && char.IsWhiteSpace(_cur))
-                Adavance();
+                Advance();
         }
 
-        private void Adavance()
+        private void Advance()
         {
             /* 
                 Sets the next character to process or 
@@ -155,6 +182,19 @@ namespace NotPseudo.CodeAnalysis
                 _cur = InvalidChar;
             else
                 _cur = _src[_pos];
+        }
+
+        private char Peek()
+        {
+            /*
+                Gets the next character to process
+                without moving the pointer.
+             */
+            var newPos = _pos + 1;
+            if (newPos > _src.Length - 1)
+                return InvalidChar;
+            else
+                return _src[newPos];
         }
 
         private void Error() => throw new Exception("Invalid character.");

@@ -39,13 +39,25 @@ namespace NotPseudo.CodeAnalysis
             LF: '\n'
 
             DECLARE: "DECLARE"
+            FOR: "FOR"
+            TO: "TO"
+            NEXT: "NEXT"
+            OUTPUT: "OUTPUT"
 
-            program: statement
+            program: statement-list
 
-            empty:
-            statement: assign-statement | declare-statement | empty
+            statement-list: statement | statement LF statement-list
+            statement: assign-statement | 
+                       declare-statement | 
+                       for-statement | 
+                       output-statement | 
+                       empty-statement
+
+            empty-statement:
             assign-statement: identifier ASSIGN expression
             declare-statement: DECLARE identifier COLON identifier
+            for-statement: FOR assign-statement TO expression statement-list NEXT
+            output-statement: OUTPUT expression
 
             expression: term ((DIV | MUL) term)*
             term: factor ((PLUS | MINUS) factor)*
@@ -60,7 +72,26 @@ namespace NotPseudo.CodeAnalysis
 
         private Node ParseProgram()
         {
-            return ParseStatement();
+            var nodes = ParseStatementList();
+            return new ProgramBlock
+            {
+                Statements = nodes
+            };
+        }
+
+        private List<Node> ParseStatementList()
+        {
+            var nodes = new List<Node>();
+            var statement = ParseStatement();
+
+            nodes.Add(statement);
+            while (_token.Type == TokenType.LineFeed)
+            {
+                Eat(TokenType.LineFeed);
+                nodes.Add(ParseStatement());
+            }
+
+            return nodes;
         }
 
         private Node ParseStatement()
@@ -69,8 +100,17 @@ namespace NotPseudo.CodeAnalysis
                 return ParseDeclareStatement();
             else if (_token.Type == TokenType.Identifier)
                 return ParseAssignStatement();
+            else if (_token.Type == TokenType.ForKeyword)
+                return ParseForStatement();
+            else if (_token.Type == TokenType.OutputKeyword)
+                return ParseOutputStatement();
+            else
+                return ParseEmptyStatement();
+        }
 
-            return null;
+        private Node ParseEmptyStatement()
+        {
+            return new NoOperation();
         }
 
         private Node ParseDeclareStatement()
@@ -93,12 +133,43 @@ namespace NotPseudo.CodeAnalysis
 
         private Node ParseAssignStatement()
         {
-            var varIdentToken = _token;
+            var left = _token;
             Eat(TokenType.Identifier);
             Eat(TokenType.Assign);
 
-            var expr = ParseExpression();
-            return null;
+            var right = ParseExpression();
+            return new Assign
+            {
+                Left = new IdentifierName { Identifier = left.Value },
+                Right = right
+            };
+        }
+
+        private Node ParseForStatement()
+        {
+            Eat(TokenType.ForKeyword);
+            var assignment = ParseAssignStatement();
+            Eat(TokenType.ToKeyword);
+            var expression = ParseExpression();
+            var statements = ParseStatementList();
+            Eat(TokenType.NextKeyword);
+
+            return new ForBlock
+            {
+                VariableInitializer = assignment,
+                ToExpression = expression,
+                Statements = statements
+            };
+        }
+
+        private Node ParseOutputStatement()
+        {
+            Eat(TokenType.OutputKeyword);
+            var expression = ParseExpression();
+            return new Output
+            {
+                Expression = expression
+            };
         }
 
         private Node ParseExpression()

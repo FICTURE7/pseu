@@ -11,6 +11,12 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
+            var srcString = File.ReadAllText("sample/for-loop.pseudo");
+            var src = SourceText.From(srcString);
+            var lexer = new Lexer(src);
+            var parser = new Parser(lexer);
+            var program = parser.Parse();
+
             Transpile<VisualBasicTranspiler>("sample/for-loop.pseudo");
             /*
             Transpile<VisualBasicTranspiler>("sample/helloworld.pseudo");

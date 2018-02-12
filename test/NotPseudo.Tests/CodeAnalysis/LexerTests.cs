@@ -141,6 +141,28 @@ namespace NotPseudo.Tests.CodeAnalysis
                         (TokenType.Identifier, "INTEGER"),
                         (TokenType.EoF, null)
                     }
+                },
+                new object[] {
+                    "x <- 1",
+                    new (TokenType, string)[] {
+                        (TokenType.Identifier, "x"),
+                        (TokenType.Assign, "<-"),
+                        (TokenType.NumberLiteral, "1"),
+                        (TokenType.EoF, null)
+                    }
+                },
+                new object[] {
+                    "x <- 1\ny <- 2",
+                    new (TokenType, string)[] {
+                        (TokenType.Identifier, "x"),
+                        (TokenType.Assign, "<-"),
+                        (TokenType.NumberLiteral, "1"),
+                        (TokenType.LineFeed, "\n"),
+                        (TokenType.Identifier, "y"),
+                        (TokenType.Assign, "<-"),
+                        (TokenType.NumberLiteral, "2"),
+                        (TokenType.EoF, null)
+                    }
                 }
             };
 

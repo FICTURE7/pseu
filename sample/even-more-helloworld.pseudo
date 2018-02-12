@@ -1,8 +1,8 @@
 DECLARE helloWorld : STRING
 DECLARE fam : STRING
 
-helloWorld = "Hello World"
-fam = "Woaw Dood"
+helloWorld <- "Hello World"
+fam <- "Woaw Dood"
 
 OUTPUT helloWorld
 OUTPUT fam

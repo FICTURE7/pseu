@@ -28,12 +28,17 @@ namespace NotPseudo.Transpilers
             _generator = generator;
         }
 
-        public string Generate(Node node)
+        public string Generate(ProgramBlock programNode)
         {
-            if (node == null)
-                throw new ArgumentNullException(nameof(node));
+            if (programNode == null)
+                throw new ArgumentNullException(nameof(programNode));
 
             var statements = new List<SyntaxNode>();
+            foreach (var statement in programNode.Statements)
+            {
+                var roslynStatement = TranspileStatement(statement);
+            }
+
             /*
             foreach (var child in node.Childrens)
             {
@@ -62,6 +67,14 @@ namespace NotPseudo.Transpilers
             return newNode.ToString();
         }
 
+        private SyntaxNode TranspileStatement(Node statement)
+        {
+            if (statement is VariableDeclaration varDecl)
+                return TranspileVariableDeclaration(varDecl);
+            else if (statement is ForBlock forBlock)
+                return TranspileForBlock(forBlock);
+            return null;
+        }
 
         /*
         private SyntaxNode TranspileForStatement(ForStatement stmt)
@@ -79,19 +92,16 @@ namespace NotPseudo.Transpilers
             return assignStmt;
         }
 
-        private SyntaxNode TranspileVariableDeclaration(VariableDeclaration stmt)
+        private SyntaxNode TranspileVariableDeclaration(VariableDeclaration varDecl)
         {
-            /*
             var varDeclStmt = _generator.LocalDeclarationStatement(
-                type: TranspileType(stmt.Type),
-                identifier: stmt.Identifier
+                type: TranspileType(varDecl.Type.Identifier),
+                identifier: varDecl.Identifier.Identifier // Pretty wacky names.
             );
             return varDeclStmt;
-            */
-            return null;
         }
 
-        private SyntaxNode TranspileOutputStatement(OutputStatement stmt)
+        private SyntaxNode TranspileOutputStatement(Output stmt)
         {
             var outputStmt = _generator.InvocationExpression(
                 _generator.IdentifierName("Console.WriteLine"),
@@ -99,6 +109,11 @@ namespace NotPseudo.Transpilers
             );
 
             return outputStmt;
+        }
+
+        private SyntaxNode TranspileForBlock(ForBlock forBlock)
+        {
+            return null;
         }
 
         private SyntaxNode TranspileExpression(Node node)
@@ -118,7 +133,7 @@ namespace NotPseudo.Transpilers
 
         private SyntaxNode TranspileType(string type)
         {
-            switch(type)
+            switch (type)
             {
                 case "STRING":
                     return _generator.TypeExpression(SpecialType.System_String);

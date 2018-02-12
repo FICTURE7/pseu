@@ -1,9 +1,9 @@
-using NotPseudo.CodeAnalysis;
+using NotPseudo.CodeAnalysis.Syntax;
 
 namespace NotPseudo.Transpilers
 {
     public interface ITranspiler
     {
-        string Generate(Node node);
+        string Generate(ProgramBlock programNode);
     }
 }

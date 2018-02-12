@@ -16,7 +16,7 @@ namespace NotPseudo.Tests.CodeAnalysis
         [Fact]
         public void Parse__xD()
         {
-            var lexer = new Lexer(SourceText.From("DECLARE xD : INTEGER"));
+            var lexer = new Lexer(SourceText.From("litfam <- 1234\nFOR i <- 1 TO 10\nxD <- i\nNEXT\nOUTPUT xD"));
             var parser = new Parser(lexer);
 
             var expr = parser.Parse();
