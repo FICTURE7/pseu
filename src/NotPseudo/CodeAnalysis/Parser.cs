@@ -43,12 +43,18 @@ namespace NotPseudo.CodeAnalysis
             TO: "TO"
             NEXT: "NEXT"
             OUTPUT: "OUTPUT"
+            IF: "IF"
+            THEN: "THEN"
+            ELSE: "ELSE"
+            ELSEIF: "ELSEIF"
+            ENDIF: "ENDIF"
 
             program: statement-list
 
             statement-list: statement | statement LF statement-list
             statement: assign-statement | 
                        declare-statement | 
+                       if-statement |
                        for-statement | 
                        output-statement | 
                        empty-statement
@@ -58,9 +64,10 @@ namespace NotPseudo.CodeAnalysis
             declare-statement: DECLARE identifier COLON identifier
             for-statement: FOR assign-statement TO expression statement-list NEXT
             output-statement: OUTPUT expression
+            if-statement: IF expression THEN statement-list (ELSEIF statement-list THEN)* (ELSE statement-list) ENDIF
 
-            expression: term ((DIV | MUL) term)*
-            term: factor ((PLUS | MINUS) factor)*
+            expression: term ((PLUS | MINUS) term)*
+            term: factor ((DIV | MUL) factor)*
             factor: (PLUS | MINUS) INTEGER | identifier | LPAREN expression RPAREN
             identifier: STRING
          */
@@ -104,6 +111,8 @@ namespace NotPseudo.CodeAnalysis
                 return ParseForStatement();
             else if (_token.Type == TokenType.OutputKeyword)
                 return ParseOutputStatement();
+            else if (_token.Type == TokenType.IfKeyword)
+                return ParseIfStatement();
             else
                 return ParseEmptyStatement();
         }
@@ -156,7 +165,7 @@ namespace NotPseudo.CodeAnalysis
 
             return new ForBlock
             {
-                VariableInitializer = assignment,
+                VariableInitializer = (Assign)assignment,
                 ToExpression = expression,
                 Statements = statements
             };
@@ -172,20 +181,44 @@ namespace NotPseudo.CodeAnalysis
             };
         }
 
+        private Node ParseIfStatement()
+        {
+            Eat(TokenType.IfKeyword);
+            var expression = ParseExpression();
+            Eat(TokenType.ThenKeyword);
+            var statements = ParseStatementList();
+
+            while (_token.Type == TokenType.ElseIfKeyword)
+            {
+                Eat(TokenType.ElseIfKeyword);
+                var moreStatements = ParseStatementList();
+                Eat(TokenType.ThenKeyword);
+            }
+
+            if (_token.Type == TokenType.ElseKeyword)
+            {
+                Eat(TokenType.ElseKeyword);
+                var moreStatements = ParseStatementList();
+            }
+
+            Eat(TokenType.EndIfKeyword);
+            return null;
+        }
+
         private Node ParseExpression()
         {
             /*
-                expression: term ((DIV | MUL) term)*
+                expression: term ((PLUS | MINUS) term)*
              */
             var node = ParseTerm();
 
-            while (_token.Type == TokenType.Multiply || _token.Type == TokenType.Divide)
+            while (_token.Type == TokenType.Plus || _token.Type == TokenType.Minus)
             {
                 var token = _token;
-                if (token.Type == TokenType.Divide)
-                    Eat(TokenType.Divide);
-                else if (token.Type == TokenType.Multiply)
-                    Eat(TokenType.Multiply);
+                if (token.Type == TokenType.Plus)
+                    Eat(TokenType.Plus);
+                else if (token.Type == TokenType.Minus)
+                    Eat(TokenType.Minus);
 
                 node = new BinaryOperation
                 {
@@ -201,16 +234,16 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseTerm()
         {
             /*
-                term: factor ((PLUS | MINUS) factor)*
+                term: factor ((DIV | MUL) factor)*
              */
             var node = ParseFactor();
 
-            while (_token.Type == TokenType.Plus || _token.Type == TokenType.Minus)
+            while (_token.Type == TokenType.Divide || _token.Type == TokenType.Multiply)
             {
                 var token = _token;
-                if (token.Type == TokenType.Plus)
-                    Eat(TokenType.Plus);
-                else if (token.Type == TokenType.Minus)
+                if (token.Type == TokenType.Divide)
+                    Eat(TokenType.Divide);
+                else if (token.Type == TokenType.Multiply)
                     Eat(TokenType.Multiply);
 
                 node = new BinaryOperation

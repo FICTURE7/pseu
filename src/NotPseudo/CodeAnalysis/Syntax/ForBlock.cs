@@ -4,7 +4,7 @@ namespace NotPseudo.CodeAnalysis.Syntax
 {
     public class ForBlock : Node
     {
-        public Node VariableInitializer { get; set; }
+        public Assign VariableInitializer { get; set; }
         public Node ToExpression { get; set; }
         public List<Node> Statements { get; set; }
 

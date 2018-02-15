@@ -1,0 +1,9 @@
+DECLARE i : INTEGER
+
+IF i > 0 THEN
+    OUTPUT "i is greater than 0."
+ELSEIF i = 0 THEN
+    OUTPUT "i is equal to 0."
+ELSE
+    OUTPUT "i is less than 0."
+ENDIF

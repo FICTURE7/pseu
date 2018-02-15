@@ -17,6 +17,11 @@ namespace NotPseudo.CodeAnalysis
         ToKeyword,
         NextKeyword,
         OutputKeyword,
+        IfKeyword,
+        ThenKeyword,
+        ElseKeyword,
+        ElseIfKeyword,
+        EndIfKeyword,
         LineFeed,
         EoF
     }

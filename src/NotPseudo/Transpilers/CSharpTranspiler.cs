@@ -11,9 +11,9 @@ namespace NotPseudo.Transpilers
             Initialize(SyntaxGenerator.GetGenerator(Workspace, LanguageNames.CSharp));
         }
 
-        protected override SyntaxNode TranspileForStatement(ForStatement stmt)
+        protected override SyntaxNode TranspileForBlock(ForBlock forBlock)
         {
-            throw new System.NotImplementedException();
+            return null;
         }
     }
 }

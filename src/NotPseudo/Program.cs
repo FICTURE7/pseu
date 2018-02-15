@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.CodeAnalysis.Text;
 using NotPseudo.CodeAnalysis;
+using NotPseudo.CodeAnalysis.Syntax;
 using NotPseudo.Transpilers;
 
 namespace NotPseudo
@@ -11,14 +12,9 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            var srcString = File.ReadAllText("sample/for-loop.pseudo");
-            var src = SourceText.From(srcString);
-            var lexer = new Lexer(src);
-            var parser = new Parser(lexer);
-            var program = parser.Parse();
-
-            Transpile<VisualBasicTranspiler>("sample/for-loop.pseudo");
+            Transpile<VisualBasicTranspiler>("sample/expression.pseudo");
             /*
+            Transpile<VisualBasicTranspiler>("sample/for-loop.pseudo");
             Transpile<VisualBasicTranspiler>("sample/helloworld.pseudo");
             Transpile<VisualBasicTranspiler>("sample/more-helloworld.pseudo");
             Transpile<VisualBasicTranspiler>("sample/even-more-helloworld.pseudo");
@@ -33,7 +29,7 @@ namespace NotPseudo
             var lexer = new Lexer(SourceText.From(src));
             var parser = new Parser(lexer);
 
-            var ast = parser.Parse();
+            var ast = (ProgramBlock)parser.Parse();
 
             var gen = new TTranspiler();
             var code = gen.Generate(ast);

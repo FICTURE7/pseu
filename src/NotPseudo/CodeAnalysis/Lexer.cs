@@ -56,6 +56,7 @@ namespace NotPseudo.CodeAnalysis
             if (char.IsLetter(_cur))
                 return ScanIdentifierOrKeyword();
 
+            /* Scan line feeds. */
             if (_cur == '\n')
             {
                 Advance();
@@ -149,6 +150,16 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.NextKeyword, value);
             else if (value == "OUTPUT")
                 return new Token(TokenType.OutputKeyword, value);
+            else if (value == "IF")
+                return new Token(TokenType.IfKeyword, value);
+            else if (value == "THEN")
+                return new Token(TokenType.ThenKeyword, value);
+            else if (value == "ELSE")
+                return new Token(TokenType.ElseKeyword, value);
+            else if (value == "ELSEIF")
+                return new Token(TokenType.ElseIfKeyword, value);
+            else if (value == "ENDIF")
+                return new Token(TokenType.EndIfKeyword, value);
 
             return new Token(TokenType.Identifier, value);
         }

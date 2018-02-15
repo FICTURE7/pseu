@@ -36,20 +36,12 @@ namespace NotPseudo.Transpilers
             var statements = new List<SyntaxNode>();
             foreach (var statement in programNode.Statements)
             {
-                var roslynStatement = TranspileStatement(statement);
-            }
+                if (statement is NoOperation)
+                    continue;
 
-            /*
-            foreach (var child in node.Childrens)
-            {
-                if (child is OutputStatement)
-                    statements.Add(TranspileOutputStatement((OutputStatement)child));
-                else if (child is VariableDeclaration)
-                    statements.Add(TranspileVariableDeclaration((VariableDeclaration)child));
-                else if (child is AssignStatement)
-                    statements.Add(TranspileAssignStatement((AssignStatement)child));
+                var roslynStatement = TranspileStatement(statement);
+                statements.Add(roslynStatement);
             }
-            */
 
             var methodDecl = _generator.MethodDeclaration(
                 name: "Main",
@@ -67,81 +59,103 @@ namespace NotPseudo.Transpilers
             return newNode.ToString();
         }
 
-        private SyntaxNode TranspileStatement(Node statement)
+        protected abstract SyntaxNode TranspileForBlock(ForBlock forBlock);
+
+        protected SyntaxNode TranspileStatement(Node statement)
         {
             if (statement is VariableDeclaration varDecl)
                 return TranspileVariableDeclaration(varDecl);
             else if (statement is ForBlock forBlock)
                 return TranspileForBlock(forBlock);
+            else if (statement is Output output)
+                return TranspileOutputStatement(output);
+
             return null;
         }
 
-        /*
-        private SyntaxNode TranspileForStatement(ForStatement stmt)
+        protected SyntaxNode TranspileAssignStatement(Assign assign)
         {
-            return null;
-        }
-        */
-
-        private SyntaxNode TranspileAssignStatement(AssignStatement stmt)
-        {
-            var assignStmt = _generator.AssignmentStatement(
-                left: _generator.IdentifierName(stmt.Identifier),
-                right: TranspileExpression(stmt.Expression)
+            var roslynAssign = _generator.AssignmentStatement(
+                left: _generator.IdentifierName(((IdentifierName)assign.Left).Identifier),
+                right: TranspileExpression(assign.Right)
             );
-            return assignStmt;
+            return roslynAssign;
         }
 
-        private SyntaxNode TranspileVariableDeclaration(VariableDeclaration varDecl)
+        protected SyntaxNode TranspileVariableDeclaration(VariableDeclaration varDecl)
         {
-            var varDeclStmt = _generator.LocalDeclarationStatement(
+            var roslynVarDecl = _generator.LocalDeclarationStatement(
                 type: TranspileType(varDecl.Type.Identifier),
                 identifier: varDecl.Identifier.Identifier // Pretty wacky names.
             );
-            return varDeclStmt;
+            return roslynVarDecl;
         }
 
-        private SyntaxNode TranspileOutputStatement(Output stmt)
+        protected SyntaxNode TranspileOutputStatement(Output output)
         {
-            var outputStmt = _generator.InvocationExpression(
+            var roslynOutput = _generator.InvocationExpression(
                 _generator.IdentifierName("Console.WriteLine"),
-                arguments: new SyntaxNode[] { TranspileExpression(stmt.Expression) }
+                arguments: new SyntaxNode[] { TranspileExpression(output.Expression) }
             );
 
-            return outputStmt;
+            return _generator.ExpressionStatement(roslynOutput);
         }
 
-        private SyntaxNode TranspileForBlock(ForBlock forBlock)
+        protected SyntaxNode TranspileExpression(Node node)
         {
+            if (node is NumberLiteral numNode)
+                return _generator.LiteralExpression(numNode.Value);
+            else if (node is IdentifierName identNode)
+                return _generator.IdentifierName(identNode.Identifier);
+            else if (node is BinaryOperation binOp)
+                return TranspileBinaryOperation(binOp);
+            else if (node is UnaryOperation unOp)
+                return TranspileUnaryOperation(unOp);
+
             return null;
         }
 
-        private SyntaxNode TranspileExpression(Node node)
+        protected SyntaxNode TranspileBinaryOperation(BinaryOperation binOp)
         {
-            if (node is StringLiteralExpression)
-            {
-                var strNode = (StringLiteralExpression)node;
-                return _generator.LiteralExpression(strNode.Value);
-            }
-            else if (node is IdentifierExpression)
-            {
-                var varNode = (IdentifierExpression)node;
-                return _generator.IdentifierName(varNode.Identifier);
-            }
+            var roslynLeft = TranspileExpression(binOp.Left);
+            var roslynRight = TranspileExpression(binOp.Right);
+
+            var opType = binOp.Operation.Type;
+            if (opType == TokenType.Plus)
+                return _generator.AddExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.Minus)
+                return _generator.SubtractExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.Divide)
+                return _generator.DivideExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.Multiply)
+                return _generator.MultiplyExpression(roslynLeft, roslynRight);
+
             return null;
         }
 
-        private SyntaxNode TranspileType(string type)
+        protected SyntaxNode TranspileUnaryOperation(UnaryOperation unOp)
+        {
+            var roslynRight = TranspileExpression(unOp.Right);
+
+            if (unOp.Operation.Type == TokenType.Minus)
+                return _generator.NegateExpression(roslynRight);
+            else if (unOp.Operation.Type == TokenType.Plus)
+                return _generator.AddExpression(null, roslynRight);
+
+            return null;
+        }
+
+        protected SyntaxNode TranspileType(string type)
         {
             switch (type)
             {
+                case "INTEGER":
+                    return _generator.TypeExpression(SpecialType.System_Int32);
                 case "STRING":
                     return _generator.TypeExpression(SpecialType.System_String);
             }
 
             return _generator.IdentifierName(type);
         }
-
-        protected abstract SyntaxNode TranspileForStatement(ForStatement stmt);
     }
 }
