@@ -68,12 +68,14 @@ namespace NotPseudo.Transpilers
             else if (statement is ForBlock forBlock)
                 return TranspileForBlock(forBlock);
             else if (statement is Output output)
-                return TranspileOutputStatement(output);
+                return TranspileOutput(output);
+            else if (statement is Assign assign)
+                return TranspileAssign(assign);
 
             return null;
         }
 
-        protected SyntaxNode TranspileAssignStatement(Assign assign)
+        protected SyntaxNode TranspileAssign(Assign assign)
         {
             var roslynAssign = _generator.AssignmentStatement(
                 left: _generator.IdentifierName(((IdentifierName)assign.Left).Identifier),
@@ -91,7 +93,7 @@ namespace NotPseudo.Transpilers
             return roslynVarDecl;
         }
 
-        protected SyntaxNode TranspileOutputStatement(Output output)
+        protected SyntaxNode TranspileOutput(Output output)
         {
             var roslynOutput = _generator.InvocationExpression(
                 _generator.IdentifierName("Console.WriteLine"),
@@ -105,6 +107,8 @@ namespace NotPseudo.Transpilers
         {
             if (node is NumberLiteral numNode)
                 return _generator.LiteralExpression(numNode.Value);
+            else if (node is StringLiteral strNode)
+                return _generator.LiteralExpression(strNode.Value);
             else if (node is IdentifierName identNode)
                 return _generator.IdentifierName(identNode.Identifier);
             else if (node is BinaryOperation binOp)

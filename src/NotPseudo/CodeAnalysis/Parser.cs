@@ -60,12 +60,13 @@ namespace NotPseudo.CodeAnalysis
                        empty-statement
 
             empty-statement:
-            assign-statement: identifier ASSIGN expression
+            assign-statement: identifier ASSIGN (expression | string-expression)
             declare-statement: DECLARE identifier COLON identifier
             for-statement: FOR assign-statement TO expression statement-list NEXT
-            output-statement: OUTPUT expression
+            output-statement: OUTPUT (expression | string-expression)
             if-statement: IF expression THEN statement-list (ELSEIF statement-list THEN)* (ELSE statement-list) ENDIF
 
+            string-expression: \" STRING \"
             expression: term ((PLUS | MINUS) term)*
             term: factor ((DIV | MUL) factor)*
             factor: (PLUS | MINUS) INTEGER | identifier | LPAREN expression RPAREN
@@ -146,7 +147,12 @@ namespace NotPseudo.CodeAnalysis
             Eat(TokenType.Identifier);
             Eat(TokenType.Assign);
 
-            var right = ParseExpression();
+            var right = (Node)null;
+            if (_token.Type == TokenType.StringLiteral)
+                right = ParseStringExpression();
+            else
+                right = ParseExpression();
+
             return new Assign
             {
                 Left = new IdentifierName { Identifier = left.Value },
@@ -174,11 +180,13 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseOutputStatement()
         {
             Eat(TokenType.OutputKeyword);
-            var expression = ParseExpression();
-            return new Output
-            {
-                Expression = expression
-            };
+            var expression = (Node)null;
+            if (_token.Type == TokenType.StringLiteral)
+                expression = ParseStringExpression();
+            else
+                expression = ParseExpression();
+
+            return new Output { Expression = expression };
         }
 
         private Node ParseIfStatement()
@@ -231,6 +239,14 @@ namespace NotPseudo.CodeAnalysis
             return node;
         }
 
+        private Node ParseStringExpression()
+        {
+            var value = _token;
+            Eat(TokenType.StringLiteral);
+
+            return new StringLiteral { Value = value.Value };
+        }
+
         private Node ParseTerm()
         {
             /*
@@ -264,15 +280,15 @@ namespace NotPseudo.CodeAnalysis
              */
             if (_token.Type == TokenType.Plus)
             {
-                var token = _token;
+                var op = _token;
                 Eat(TokenType.Plus);
-                return new UnaryOperation { Operation = token, Right = ParseFactor() };
+                return new UnaryOperation { Operation = op, Right = ParseFactor() };
             }
             else if (_token.Type == TokenType.Minus)
             {
-                var token = _token;
+                var op = _token;
                 Eat(TokenType.Minus);
-                return new UnaryOperation { Operation = token, Right = ParseFactor() };
+                return new UnaryOperation { Operation = op, Right = ParseFactor() };
             }
             else if (_token.Type == TokenType.NumberLiteral)
             {

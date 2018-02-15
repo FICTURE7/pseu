@@ -163,6 +163,14 @@ namespace NotPseudo.Tests.CodeAnalysis
                         (TokenType.NumberLiteral, "2"),
                         (TokenType.EoF, null)
                     }
+                },
+                new object[] {
+                    "OUTPUT \"asdf\"",
+                    new (TokenType, string)[] {
+                        (TokenType.OutputKeyword, "OUTPUT"),
+                        (TokenType.StringLiteral, "asdf"),
+                        (TokenType.EoF, null)
+                    }
                 }
             };
 

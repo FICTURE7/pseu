@@ -55,6 +55,13 @@ namespace NotPseudo.CodeAnalysis
             /* Scan identifiers or keywords. */
             if (char.IsLetter(_cur))
                 return ScanIdentifierOrKeyword();
+                
+            /* Scan string literals. */
+            if (_cur == '"')
+            {
+                Advance();
+                return new Token(TokenType.StringLiteral, ScanStringLiteral());
+            }
 
             /* Scan line feeds. */
             if (_cur == '\n')
@@ -172,6 +179,21 @@ namespace NotPseudo.CodeAnalysis
                 value += _cur;
                 Advance();
             }
+            return value;
+        }
+
+        private string ScanStringLiteral()
+        {
+            var value = (string)null;
+            while(_cur != InvalidChar && _cur != '"')
+            {
+                value += _cur;
+                Advance();
+            }
+
+            /* Ignore '"' character. */
+            Advance();
+
             return value;
         }
 

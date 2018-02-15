@@ -11,6 +11,7 @@ namespace NotPseudo.CodeAnalysis
         LeftParenthesis,
         RightParenthesis,
         NumberLiteral,
+        StringLiteral,
         Identifier,
         DeclareKeyword,
         ForKeyword,

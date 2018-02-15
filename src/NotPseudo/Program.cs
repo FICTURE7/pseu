@@ -13,12 +13,10 @@ namespace NotPseudo
         public static void Main(string[] args)
         {
             Transpile<VisualBasicTranspiler>("sample/expression.pseudo");
-            /*
             Transpile<VisualBasicTranspiler>("sample/for-loop.pseudo");
             Transpile<VisualBasicTranspiler>("sample/helloworld.pseudo");
             Transpile<VisualBasicTranspiler>("sample/more-helloworld.pseudo");
             Transpile<VisualBasicTranspiler>("sample/even-more-helloworld.pseudo");
-            */
         }
 
         private static void Transpile<TTranspiler>(string srcPath) where TTranspiler : ITranspiler, new()
