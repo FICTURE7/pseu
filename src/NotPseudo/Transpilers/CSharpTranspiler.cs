@@ -15,5 +15,10 @@ namespace NotPseudo.Transpilers
         {
             return null;
         }
+
+        protected override SyntaxNode TranspileUnaryPlusOperation(SyntaxNode roslynRight)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

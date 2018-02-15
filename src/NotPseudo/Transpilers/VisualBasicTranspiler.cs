@@ -45,5 +45,14 @@ namespace NotPseudo.Transpilers
 
             return roslynForBlock;
         }
+
+
+        protected override SyntaxNode TranspileUnaryPlusOperation(SyntaxNode roslynRight)
+        {
+            return SyntaxFactory.UnaryPlusExpression(
+                /* Parenthesize the expression to keep the parenthesis hell consistent. */
+                SyntaxFactory.ParenthesizedExpression((ExpressionSyntax)roslynRight)
+            );
+        }
     }
 }

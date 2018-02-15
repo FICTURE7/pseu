@@ -140,10 +140,12 @@ namespace NotPseudo.Transpilers
             if (unOp.Operation.Type == TokenType.Minus)
                 return _generator.NegateExpression(roslynRight);
             else if (unOp.Operation.Type == TokenType.Plus)
-                return _generator.AddExpression(null, roslynRight);
+                return TranspileUnaryPlusOperation(roslynRight);
 
             return null;
         }
+
+        protected abstract SyntaxNode TranspileUnaryPlusOperation(SyntaxNode roslynRight);
 
         protected SyntaxNode TranspileType(string type)
         {
