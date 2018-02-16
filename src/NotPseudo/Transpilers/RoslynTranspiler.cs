@@ -54,12 +54,15 @@ namespace NotPseudo.Transpilers
                 members: new SyntaxNode[] { methodDecl }
             );
 
-            var newNode = _generator.CompilationUnit(classDecl).NormalizeWhitespace();
+            var imports = _generator.NamespaceImportDeclaration("System");
+
+            var newNode = _generator.CompilationUnit(new[] { imports, classDecl }).NormalizeWhitespace();
 
             return newNode.ToString();
         }
 
         protected abstract SyntaxNode TranspileForBlock(ForBlock forBlock);
+        protected abstract SyntaxNode TranspileRepeatBlock(RepeatBlock repeatBlock);
 
         protected SyntaxNode TranspileStatement(Node statement)
         {
@@ -67,10 +70,14 @@ namespace NotPseudo.Transpilers
                 return TranspileVariableDeclaration(varDecl);
             else if (statement is ForBlock forBlock)
                 return TranspileForBlock(forBlock);
+            else if (statement is RepeatBlock repeatBlock)
+                return TranspileRepeatBlock(repeatBlock);
             else if (statement is IfBlock ifBlock)
                 return TranspileIfBlock(ifBlock);
             else if (statement is Output output)
                 return TranspileOutput(output);
+            else if (statement is Input input)
+                return TranspileInput(input);
             else if (statement is Assign assign)
                 return TranspileAssign(assign);
 
@@ -79,6 +86,7 @@ namespace NotPseudo.Transpilers
 
         protected SyntaxNode TranspileAssign(Assign assign)
         {
+            /*TODO: Convert the types? */
             var roslynAssign = _generator.AssignmentStatement(
                 left: _generator.IdentifierName(((IdentifierName)assign.Left).Identifier),
                 right: TranspileExpression(assign.Right)
@@ -102,7 +110,20 @@ namespace NotPseudo.Transpilers
                 arguments: new SyntaxNode[] { TranspileExpression(output.Expression) }
             );
 
+            /* Wrap in ExpressionStatement to be able to cast to StatementSyntax. */
             return _generator.ExpressionStatement(roslynOutput);
+        }
+
+        protected SyntaxNode TranspileInput(Input input)
+        {
+            var roslynInput = _generator.AssignmentStatement(
+                left: _generator.IdentifierName(((IdentifierName)input.Identifier).Identifier),
+                right: _generator.InvocationExpression(
+                    _generator.IdentifierName("Console.ReadLine")
+                )
+            );
+
+            return roslynInput;
         }
 
         protected SyntaxNode TranspileExpression(Node node)

@@ -47,11 +47,19 @@ namespace NotPseudo.CodeAnalysis
 
             TRUE: "TRUE"
             FALSE: "FALSE"
+
+            OUTPUT: "OUTPUT"
+            INPUT: "INPUT"
+
             DECLARE: "DECLARE"
+
             FOR: "FOR"
             TO: "TO"
-            NEXT: "NEXT"
-            OUTPUT: "OUTPUT"
+            ENDFOR: "ENDFOR"
+            
+            REPEAT: "REPEAT"
+            UNTIL: "UNTIL"
+
             IF: "IF"
             THEN: "THEN"
             ELSE: "ELSE"
@@ -65,14 +73,17 @@ namespace NotPseudo.CodeAnalysis
                        declare-statement | 
                        if-statement |
                        for-statement | 
-                       output-statement | 
+                       output-statement |
+                       input-statement |
                        empty-statement
 
             empty-statement:
             assign-statement: identifier ASSIGN (expression | string-expression)
             declare-statement: DECLARE identifier COLON identifier
-            for-statement: FOR assign-statement TO expression statement-list NEXT
+            for-statement: FOR assign-statement TO expression statement-list ENDFOR
+            repeat-until-statement: REPEAT statement-list UNTIL boolean-expression
             output-statement: OUTPUT (expression | string-expression)
+            input-statement: INPUT identifier
             if-statement: IF boolean-expression THEN statement-list (ELSE statement-list) ENDIF
 
             boolean-expression: boolean-term (OR boolean-term)*
@@ -128,8 +139,12 @@ namespace NotPseudo.CodeAnalysis
                 return ParseAssignStatement();
             else if (_token.Type == TokenType.ForKeyword)
                 return ParseForStatement();
+            else if (_token.Type == TokenType.RepeatKeyword)
+                return ParseRepeatStatement();
             else if (_token.Type == TokenType.OutputKeyword)
                 return ParseOutputStatement();
+            else if (_token.Type == TokenType.InputKeyword)
+                return ParseInputStatement();
             else if (_token.Type == TokenType.IfKeyword)
                 return ParseIfStatement();
             else
@@ -195,6 +210,21 @@ namespace NotPseudo.CodeAnalysis
             };
         }
 
+        private Node ParseRepeatStatement()
+        {
+            Eat(TokenType.RepeatKeyword);
+            var statements = ParseStatementList();
+            Eat(TokenType.UntilKeyword);
+
+            var condition = ParseBooleanExpression();
+
+            return new RepeatBlock
+            {
+                Statements = statements,
+                Condition = condition
+            };
+        }
+
         private Node ParseOutputStatement()
         {
             Eat(TokenType.OutputKeyword);
@@ -205,6 +235,19 @@ namespace NotPseudo.CodeAnalysis
                 expression = ParseExpression();
 
             return new Output { Expression = expression };
+        }
+
+        private Node ParseInputStatement()
+        {
+            Eat(TokenType.InputKeyword);
+
+            var identToken = _token;
+            Eat(TokenType.Identifier);
+
+            return new Input
+            {
+                Identifier = new IdentifierName { Identifier = identToken.Value }
+            };
         }
 
         private Node ParseIfStatement()

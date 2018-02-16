@@ -16,6 +16,11 @@ namespace NotPseudo.Transpilers
             return null;
         }
 
+        protected override SyntaxNode TranspileRepeatBlock(RepeatBlock repeatBlock)
+        {
+            throw new System.NotImplementedException();
+        }
+
         protected override SyntaxNode TranspileUnaryPlusOperation(SyntaxNode roslynRight)
         {
             throw new System.NotImplementedException();

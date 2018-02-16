@@ -1,0 +1,16 @@
+DECLARE value : INTEGER
+DECLARE max : INTEGER
+DECLARE i : INTEGER
+
+max <- -9999
+
+FOR i <- 1 TO 10
+    OUTPUT "Input value: "
+    INPUT value
+    IF value > max THEN
+        max <- value
+    ENDIF
+ENDFOR
+
+OUTPUT "Max value: "
+OUTPUT max

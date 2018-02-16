@@ -1,0 +1,7 @@
+DECLARE i : INTEGER
+
+i <- 0
+
+REPEAT
+    i <- i + 1
+UNTIL i = 10

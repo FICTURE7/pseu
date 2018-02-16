@@ -191,8 +191,14 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.ToKeyword, value);
             else if (value == "ENDFOR")
                 return new Token(TokenType.EndForKeyword, value);
+            else if (value == "REPEAT")
+                return new Token(TokenType.RepeatKeyword, value);
+            else if (value == "UNTIL")
+                return new Token(TokenType.UntilKeyword, value);
             else if (value == "OUTPUT")
                 return new Token(TokenType.OutputKeyword, value);
+            else if (value == "INPUT")
+                return new Token(TokenType.InputKeyword, value);
             else if (value == "IF")
                 return new Token(TokenType.IfKeyword, value);
             else if (value == "THEN")
@@ -243,7 +249,7 @@ namespace NotPseudo.CodeAnalysis
 
         private void SkipWhiteSpace()
         {
-            while (_cur != InvalidChar &&  _cur != '\n' && char.IsWhiteSpace(_cur))
+            while (_cur != InvalidChar && _cur != '\n' && char.IsWhiteSpace(_cur))
                 Advance();
         }
 

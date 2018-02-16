@@ -16,7 +16,6 @@ namespace NotPseudo.Transpilers
 
         protected override SyntaxNode TranspileForBlock(ForBlock forBlock)
         {
-
             var roslynForStatement = SyntaxFactory.ForStatement(
                 SyntaxFactory.IdentifierName(
                     ((IdentifierName)forBlock.VariableInitializer.Left).Identifier
@@ -46,6 +45,31 @@ namespace NotPseudo.Transpilers
             return roslynForBlock;
         }
 
+        protected override SyntaxNode TranspileRepeatBlock(RepeatBlock repeatBlock)
+        {
+            var roslynCondition = TranspileExpression(repeatBlock.Condition);
+            var roslynUntilStatement = SyntaxFactory.LoopUntilStatement(
+                SyntaxFactory.UntilClause((ExpressionSyntax)roslynCondition)
+            );
+
+            var roslynStatements = new SyntaxList<StatementSyntax>();
+            foreach (var statement in repeatBlock.Statements)
+            {
+                if (statement is NoOperation)
+                    continue;
+
+                var roslynStatement = TranspileStatement(statement);
+                roslynStatements = roslynStatements.Add((StatementSyntax)roslynStatement);
+            }
+
+            var roslynUntilBlock = SyntaxFactory.DoLoopUntilBlock(
+                SyntaxFactory.SimpleDoStatement(),
+                roslynStatements,
+                roslynUntilStatement
+            );
+
+            return roslynUntilBlock;
+        }
 
         protected override SyntaxNode TranspileUnaryPlusOperation(SyntaxNode roslynRight)
         {
