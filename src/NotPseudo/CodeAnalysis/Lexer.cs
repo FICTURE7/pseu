@@ -153,8 +153,8 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.ForKeyword, value);
             else if (value == "TO")
                 return new Token(TokenType.ToKeyword, value);
-            else if (value == "NEXT")
-                return new Token(TokenType.NextKeyword, value);
+            else if (value == "ENDFOR")
+                return new Token(TokenType.EndForKeyword, value);
             else if (value == "OUTPUT")
                 return new Token(TokenType.OutputKeyword, value);
             else if (value == "IF")

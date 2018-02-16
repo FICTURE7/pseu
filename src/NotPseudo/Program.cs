@@ -21,7 +21,7 @@ namespace NotPseudo
 
         private static void Transpile<TTranspiler>(string srcPath) where TTranspiler : ITranspiler, new()
         {
-            Console.WriteLine($"Running syntatic analysis on {Path.GetFileName(srcPath)}...");
+            Console.WriteLine($"Transpiling {Path.GetFileName(srcPath)} using the {typeof(TTranspiler).Name}...");
             Console.WriteLine("-------------------");
             var src = File.ReadAllText(srcPath);
             var lexer = new Lexer(SourceText.From(src));

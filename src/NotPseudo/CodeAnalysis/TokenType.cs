@@ -16,7 +16,7 @@ namespace NotPseudo.CodeAnalysis
         DeclareKeyword,
         ForKeyword,
         ToKeyword,
-        NextKeyword,
+        EndForKeyword,
         OutputKeyword,
         IfKeyword,
         ThenKeyword,

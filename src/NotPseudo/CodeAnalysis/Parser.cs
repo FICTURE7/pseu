@@ -167,7 +167,7 @@ namespace NotPseudo.CodeAnalysis
             Eat(TokenType.ToKeyword);
             var expression = ParseExpression();
             var statements = ParseStatementList();
-            Eat(TokenType.NextKeyword);
+            Eat(TokenType.EndForKeyword);
 
             return new ForBlock
             {
