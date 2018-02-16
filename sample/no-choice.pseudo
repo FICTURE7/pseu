@@ -1,0 +1,5 @@
+DECLARE Answer : STRING
+
+WHILE Answer <> "Y"
+    INPUT Answer
+ENDWHILE

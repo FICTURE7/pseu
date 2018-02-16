@@ -97,7 +97,7 @@ namespace NotPseudo.CodeAnalysis
             boolean-expression: boolean-term (OR boolean-term)*
             boolean-term: boolean-factor (AND boolean-factor)*
             boolean-factor: NOT boolean-factor | TRUE | FALSE | boolean-relation | LPAREN boolean-expression RPAREN
-            boolean-relation: expression ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) expression)
+            boolean-relation: (string-expression | expression) ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) (string-expression | expression)
 
             string-expression: \" STRING \"
 
@@ -378,72 +378,118 @@ namespace NotPseudo.CodeAnalysis
 
         private Node ParseBooleanRelation()
         {
-            var left = ParseExpression();
+            var left = (Node)null;
+            if (_token.Type == TokenType.StringLiteral)
+                left = ParseStringExpression();
+            else
+                left = ParseExpression();
 
             if (_token.Type == TokenType.Equal)
             {
                 var eqOp = _token;
                 Eat(TokenType.Equal);
+
+                var right = (Node)null;
+                if (_token.Type == TokenType.StringLiteral)
+                    right = ParseStringExpression();
+                else
+                    right = ParseExpression();
+
                 return new BinaryOperation
                 {
                     Left = left,
                     Operation = eqOp,
-                    Right = ParseExpression()
+                    Right = right
                 };
             }
             else if (_token.Type == TokenType.NotEqual)
             {
                 var notEqOp = _token;
                 Eat(TokenType.NotEqual);
+
+                var right = (Node)null;
+                if (_token.Type == TokenType.StringLiteral)
+                    right = ParseStringExpression();
+                else
+                    right = ParseExpression();
+
                 return new BinaryOperation
                 {
                     Left = left,
                     Operation = notEqOp,
-                    Right = ParseExpression()
+                    Right = right
                 };
             }
             else if (_token.Type == TokenType.Greater)
             {
                 var greaterOp = _token;
                 Eat(TokenType.Greater);
+
+                var right = (Node)null;
+                if (_token.Type == TokenType.StringLiteral)
+                    right = ParseStringExpression();
+                else
+                    right = ParseExpression();
+
                 return new BinaryOperation
                 {
                     Left = left,
                     Operation = greaterOp,
-                    Right = ParseExpression()
+                    Right = right
                 };
             }
             else if (_token.Type == TokenType.GreaterEqual)
             {
                 var greaterEqOp = _token;
                 Eat(TokenType.GreaterEqual);
+
+                var right = (Node)null;
+                if (_token.Type == TokenType.StringLiteral)
+                    right = ParseStringExpression();
+                else
+                    right = ParseExpression();
+
                 return new BinaryOperation
                 {
                     Left = left,
                     Operation = greaterEqOp,
-                    Right = ParseExpression()
+                    Right = right
                 };
             }
             else if (_token.Type == TokenType.Less)
             {
                 var lessOp = _token;
                 Eat(TokenType.Less);
+
+                var right = (Node)null;
+                if (_token.Type == TokenType.StringLiteral)
+                    right = ParseStringExpression();
+                else
+                    right = ParseExpression();
+
                 return new BinaryOperation
                 {
                     Left = left,
                     Operation = lessOp,
-                    Right = ParseExpression()
+                    Right = right
                 };
             }
             else if (_token.Type == TokenType.LessEqual)
             {
                 var lessEqOp = _token;
                 Eat(TokenType.LessEqual);
+
+                var right = (Node)null;
+                if (_token.Type == TokenType.StringLiteral)
+                    right = ParseStringExpression();
+                else
+                    right = ParseExpression();
+
                 return new BinaryOperation
                 {
                     Left = left,
                     Operation = lessEqOp,
-                    Right = ParseExpression()
+                    Right = right
                 };
             }
 
