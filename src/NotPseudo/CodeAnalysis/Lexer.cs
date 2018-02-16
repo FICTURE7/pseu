@@ -55,7 +55,7 @@ namespace NotPseudo.CodeAnalysis
             /* Scan identifiers or keywords. */
             if (char.IsLetter(_cur))
                 return ScanIdentifierOrKeyword();
-                
+
             /* Scan string literals. */
             if (_cur == '"')
             {
@@ -119,16 +119,52 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.Colon, ":");
             }
 
-            /* Scan the less than or assign token. */
+            /* Scan the equal character. */
+            if (_cur == '=')
+            {
+                Advance();
+                return new Token(TokenType.Equal, "=");
+            }
+
+            if (_cur == '>')
+            {
+                Advance();
+                /* '>=' Greater or equal operator. */
+                if (_cur == '=')
+                {
+                    Advance();
+                    return new Token(TokenType.GreaterEqual, ">=");
+                }
+
+                /* '>' Greater operator. */
+                return new Token(TokenType.Greater, ">");
+            }
+
+            /* Scan the less than or assign or not equal token. */
             if (_cur == '<')
             {
                 Advance();
+                /* '<-' Assign operator. */
                 if (_cur == '-')
                 {
                     Advance();
                     return new Token(TokenType.Assign, "<-");
                 }
-                /*TODO: Less character/token. */
+                /* '<>' Not Equal operator. */
+                else if (_cur == '>')
+                {
+                    Advance();
+                    return new Token(TokenType.NotEqual, "<>");
+                }
+                /* '<=' Less or equal operator. */
+                else if (_cur == '=')
+                {
+                    Advance();
+                    return new Token(TokenType.LessEqual, "<=");
+                }
+
+                /* '<' Less than operator. */
+                return new Token(TokenType.Less, "<");
             }
 
             Error();
@@ -163,10 +199,18 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.ThenKeyword, value);
             else if (value == "ELSE")
                 return new Token(TokenType.ElseKeyword, value);
-            else if (value == "ELSEIF")
-                return new Token(TokenType.ElseIfKeyword, value);
             else if (value == "ENDIF")
                 return new Token(TokenType.EndIfKeyword, value);
+            else if (value == "AND")
+                return new Token(TokenType.AndKeyword, value);
+            else if (value == "OR")
+                return new Token(TokenType.OrKeyword, value);
+            else if (value == "NOT")
+                return new Token(TokenType.NotKeyword, value);
+            else if (value == "TRUE")
+                return new Token(TokenType.TrueLiteral, value);
+            else if (value == "FALSE")
+                return new Token(TokenType.FalseLiteral, value);
 
             return new Token(TokenType.Identifier, value);
         }
@@ -185,7 +229,7 @@ namespace NotPseudo.CodeAnalysis
         private string ScanStringLiteral()
         {
             var value = (string)null;
-            while(_cur != InvalidChar && _cur != '"')
+            while (_cur != InvalidChar && _cur != '"')
             {
                 value += _cur;
                 Advance();
@@ -199,7 +243,7 @@ namespace NotPseudo.CodeAnalysis
 
         private void SkipWhiteSpace()
         {
-            while (_cur != InvalidChar && char.IsWhiteSpace(_cur))
+            while (_cur != InvalidChar &&  _cur != '\n' && char.IsWhiteSpace(_cur))
                 Advance();
         }
 

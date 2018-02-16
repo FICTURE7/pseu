@@ -6,13 +6,31 @@ namespace NotPseudo.CodeAnalysis
         Minus,
         Divide,
         Multiply,
+
+
         Colon,
         Assign,
+
+        Equal,
+        NotEqual,
+        Greater,
+        GreaterEqual,
+        Less,
+        LessEqual,
+        AndKeyword,
+        OrKeyword,
+        NotKeyword,
+
         LeftParenthesis,
         RightParenthesis,
+
         NumberLiteral,
         StringLiteral,
+        TrueLiteral,
+        FalseLiteral,
+
         Identifier,
+
         DeclareKeyword,
         ForKeyword,
         ToKeyword,
@@ -21,8 +39,8 @@ namespace NotPseudo.CodeAnalysis
         IfKeyword,
         ThenKeyword,
         ElseKeyword,
-        ElseIfKeyword,
         EndIfKeyword,
+
         LineFeed,
         EoF
     }

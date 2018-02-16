@@ -1,12 +1,12 @@
 namespace NotPseudo.CodeAnalysis.Syntax
 {
-    public class StringLiteral : Node
+    public class BooleanLiteral : Node
     {
-        public string Value { get; set; }
+        public bool Value { get; set; }
 
         public override string ToString() 
         {
-            return $"str(\"{Value}\")";
+            return $"bool({Value})";
         }
     }
 }

@@ -67,6 +67,8 @@ namespace NotPseudo.Transpilers
                 return TranspileVariableDeclaration(varDecl);
             else if (statement is ForBlock forBlock)
                 return TranspileForBlock(forBlock);
+            else if (statement is IfBlock ifBlock)
+                return TranspileIfBlock(ifBlock);
             else if (statement is Output output)
                 return TranspileOutput(output);
             else if (statement is Assign assign)
@@ -109,6 +111,8 @@ namespace NotPseudo.Transpilers
                 return _generator.LiteralExpression(numNode.Value);
             else if (node is StringLiteral strNode)
                 return _generator.LiteralExpression(strNode.Value);
+            else if (node is BooleanLiteral boolNode)
+                return _generator.LiteralExpression(boolNode);
             else if (node is IdentifierName identNode)
                 return _generator.IdentifierName(identNode.Identifier);
             else if (node is BinaryOperation binOp)
@@ -133,6 +137,22 @@ namespace NotPseudo.Transpilers
                 return _generator.DivideExpression(roslynLeft, roslynRight);
             else if (opType == TokenType.Multiply)
                 return _generator.MultiplyExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.Equal)
+                return _generator.ValueEqualsExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.NotEqual)
+                return _generator.ValueNotEqualsExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.Greater)
+                return _generator.GreaterThanExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.GreaterEqual)
+                return _generator.GreaterThanOrEqualExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.Less)
+                return _generator.LessThanExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.LessEqual)
+                return _generator.LessThanOrEqualExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.AndKeyword)
+                return _generator.LogicalAndExpression(roslynLeft, roslynRight);
+            else if (opType == TokenType.OrKeyword)
+                return _generator.LogicalOrExpression(roslynLeft, roslynRight);
 
             return null;
         }
@@ -145,8 +165,41 @@ namespace NotPseudo.Transpilers
                 return _generator.NegateExpression(roslynRight);
             else if (unOp.Operation.Type == TokenType.Plus)
                 return TranspileUnaryPlusOperation(roslynRight);
+            else if (unOp.Operation.Type == TokenType.NotKeyword)
+                return _generator.LogicalNotExpression(roslynRight);
 
             return null;
+        }
+
+        protected SyntaxNode TranspileIfBlock(IfBlock ifBlock)
+        {
+            var roslynCondition = TranspileExpression(ifBlock.Condition);
+            var roslynTrueStatements = new List<SyntaxNode>();
+            var roslynFalseStatements = (List<SyntaxNode>)null;
+
+            foreach (var statement in ifBlock.TrueStatements)
+            {
+                if (statement is NoOperation)
+                    continue;
+
+                var roslynStatement = TranspileStatement(statement);
+                roslynTrueStatements.Add(roslynStatement);
+            }
+
+            if (ifBlock.FalseStatements?.Count > 0)
+            {
+                roslynFalseStatements = new List<SyntaxNode>(ifBlock.FalseStatements.Count);
+                foreach (var statement in ifBlock.FalseStatements)
+                {
+                    if (statement is NoOperation)
+                        continue;
+
+                    var roslynStatement = TranspileStatement(statement);
+                    roslynFalseStatements.Add(roslynStatement);
+                }
+            }
+
+            return _generator.IfStatement(roslynCondition, roslynTrueStatements, roslynFalseStatements);
         }
 
         protected abstract SyntaxNode TranspileUnaryPlusOperation(SyntaxNode roslynRight);

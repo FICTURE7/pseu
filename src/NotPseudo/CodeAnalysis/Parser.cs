@@ -24,7 +24,7 @@ namespace NotPseudo.CodeAnalysis
         }
 
         /*
-            EBNF-like Definition
+            BNF-like Definition
             ----------------
             DIV: '/'
             MUL: '*'
@@ -38,6 +38,15 @@ namespace NotPseudo.CodeAnalysis
             COLON: ':'
             LF: '\n'
 
+            EQUAL: '='
+            NOT-EQUAL: '<>'
+            GREATER: '>'
+            GREATER-EQUAL: ">="
+            LESS: '<'
+            LESS-EQUAL: "<="
+
+            TRUE: "TRUE"
+            FALSE: "FALSE"
             DECLARE: "DECLARE"
             FOR: "FOR"
             TO: "TO"
@@ -64,12 +73,18 @@ namespace NotPseudo.CodeAnalysis
             declare-statement: DECLARE identifier COLON identifier
             for-statement: FOR assign-statement TO expression statement-list NEXT
             output-statement: OUTPUT (expression | string-expression)
-            if-statement: IF expression THEN statement-list (ELSEIF statement-list THEN)* (ELSE statement-list) ENDIF
+            if-statement: IF boolean-expression THEN statement-list (ELSE statement-list) ENDIF
+
+            boolean-expression: boolean-term (OR boolean-term)*
+            boolean-term: boolean-factor (AND boolean-factor)*
+            boolean-factor: NOT boolean-factor | TRUE | FALSE | boolean-relation | LPAREN boolean-expression RPAREN
+            boolean-relation: expression ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) expression)
 
             string-expression: \" STRING \"
+
             expression: term ((PLUS | MINUS) term)*
             term: factor ((DIV | MUL) factor)*
-            factor: (PLUS | MINUS) INTEGER | identifier | LPAREN expression RPAREN
+            factor: (PLUS | MINUS) factor | INTEGER | identifier | LPAREN expression RPAREN
             identifier: STRING
          */
 
@@ -81,10 +96,13 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseProgram()
         {
             var nodes = ParseStatementList();
-            return new ProgramBlock
+            var block = new ProgramBlock
             {
                 Statements = nodes
             };
+
+            Eat(TokenType.EoF);
+            return block;
         }
 
         private List<Node> ParseStatementList()
@@ -192,25 +210,177 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseIfStatement()
         {
             Eat(TokenType.IfKeyword);
-            var expression = ParseExpression();
+            var condition = ParseBooleanExpression();
             Eat(TokenType.ThenKeyword);
-            var statements = ParseStatementList();
-
-            while (_token.Type == TokenType.ElseIfKeyword)
-            {
-                Eat(TokenType.ElseIfKeyword);
-                var moreStatements = ParseStatementList();
-                Eat(TokenType.ThenKeyword);
-            }
+            var trueStatements = ParseStatementList();
+            var falseStatements = (List<Node>)null;
 
             if (_token.Type == TokenType.ElseKeyword)
             {
                 Eat(TokenType.ElseKeyword);
-                var moreStatements = ParseStatementList();
+                falseStatements = ParseStatementList();
             }
 
             Eat(TokenType.EndIfKeyword);
-            return null;
+
+            return new IfBlock
+            {
+                Condition = condition,
+                TrueStatements = trueStatements,
+                FalseStatements = falseStatements
+            };
+        }
+
+        private Node ParseStringExpression()
+        {
+            var value = _token;
+            Eat(TokenType.StringLiteral);
+
+            return new StringLiteral { Value = value.Value };
+        }
+
+        private Node ParseBooleanExpression()
+        {
+            var node = ParseBooleanTerm();
+
+            while (_token.Type == TokenType.OrKeyword)
+            {
+                var orOp = _token;
+                Eat(TokenType.OrKeyword);
+                node = new BinaryOperation
+                {
+                    Left = node,
+                    Operation = orOp,
+                    Right = ParseBooleanTerm()
+                };
+            }
+
+            return node;
+        }
+
+        private Node ParseBooleanTerm()
+        {
+            var node = ParseBooleanFactor();
+
+            while (_token.Type == TokenType.AndKeyword)
+            {
+                var andOp = _token;
+                Eat(TokenType.AndKeyword);
+                node = new BinaryOperation
+                {
+                    Left = node,
+                    Operation = andOp,
+                    Right = ParseBooleanFactor()
+                };
+            }
+
+            return node;
+        }
+
+        private Node ParseBooleanFactor()
+        {
+            if (_token.Type == TokenType.NotKeyword)
+            {
+                var notOp = _token;
+                Eat(TokenType.NotKeyword);
+                return new UnaryOperation { Operation = notOp, Right = ParseBooleanFactor() };
+            }
+            else if (_token.Type == TokenType.TrueLiteral)
+            {
+                Eat(TokenType.TrueLiteral);
+                return new BooleanLiteral { Value = true };
+            }
+            else if (_token.Type == TokenType.FalseLiteral)
+            {
+                Eat(TokenType.FalseLiteral);
+                return new BooleanLiteral { Value = false };
+            }
+            else if (_token.Type == TokenType.LeftParenthesis)
+            {
+                Eat(TokenType.LeftParenthesis);
+                var expression = ParseBooleanExpression();
+                Eat(TokenType.RightParenthesis);
+
+                return expression;
+            }
+            else
+            {
+                return ParseBooleanRelation();
+            }
+        }
+
+        private Node ParseBooleanRelation()
+        {
+            var left = ParseExpression();
+
+            if (_token.Type == TokenType.Equal)
+            {
+                var eqOp = _token;
+                Eat(TokenType.Equal);
+                return new BinaryOperation
+                {
+                    Left = left,
+                    Operation = eqOp,
+                    Right = ParseExpression()
+                };
+            }
+            else if (_token.Type == TokenType.NotEqual)
+            {
+                var notEqOp = _token;
+                Eat(TokenType.NotEqual);
+                return new BinaryOperation
+                {
+                    Left = left,
+                    Operation = notEqOp,
+                    Right = ParseExpression()
+                };
+            }
+            else if (_token.Type == TokenType.Greater)
+            {
+                var greaterOp = _token;
+                Eat(TokenType.Greater);
+                return new BinaryOperation
+                {
+                    Left = left,
+                    Operation = greaterOp,
+                    Right = ParseExpression()
+                };
+            }
+            else if (_token.Type == TokenType.GreaterEqual)
+            {
+                var greaterEqOp = _token;
+                Eat(TokenType.GreaterEqual);
+                return new BinaryOperation
+                {
+                    Left = left,
+                    Operation = greaterEqOp,
+                    Right = ParseExpression()
+                };
+            }
+            else if (_token.Type == TokenType.Less)
+            {
+                var lessOp = _token;
+                Eat(TokenType.Less);
+                return new BinaryOperation
+                {
+                    Left = left,
+                    Operation = lessOp,
+                    Right = ParseExpression()
+                };
+            }
+            else if (_token.Type == TokenType.LessEqual)
+            {
+                var lessEqOp = _token;
+                Eat(TokenType.LessEqual);
+                return new BinaryOperation
+                {
+                    Left = left,
+                    Operation = lessEqOp,
+                    Right = ParseExpression()
+                };
+            }
+
+            return left;
         }
 
         private Node ParseExpression()
@@ -237,14 +407,6 @@ namespace NotPseudo.CodeAnalysis
             }
 
             return node;
-        }
-
-        private Node ParseStringExpression()
-        {
-            var value = _token;
-            Eat(TokenType.StringLiteral);
-
-            return new StringLiteral { Value = value.Value };
         }
 
         private Node ParseTerm()

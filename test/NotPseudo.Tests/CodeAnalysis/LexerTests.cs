@@ -171,6 +171,36 @@ namespace NotPseudo.Tests.CodeAnalysis
                         (TokenType.StringLiteral, "asdf"),
                         (TokenType.EoF, null)
                     }
+                },
+                new object[] {
+                    "x > 0 AND y >= 1 OR a < 0 AND b <= 1 OR NOT c = 1 OR d <> 5",
+                    new (TokenType, string)[] {
+                        (TokenType.Identifier, "x"),
+                        (TokenType.Greater, ">"),
+                        (TokenType.NumberLiteral, "0"),
+                        (TokenType.AndKeyword, "AND"),
+                        (TokenType.Identifier, "y"),
+                        (TokenType.GreaterEqual, ">="),
+                        (TokenType.NumberLiteral, "1"),
+                        (TokenType.OrKeyword, "OR"),
+                        (TokenType.Identifier, "a"),
+                        (TokenType.Less, "<"),
+                        (TokenType.NumberLiteral, "0"),
+                        (TokenType.AndKeyword, "AND"),
+                        (TokenType.Identifier, "b"),
+                        (TokenType.LessEqual, "<="),
+                        (TokenType.NumberLiteral, "1"),
+                        (TokenType.OrKeyword, "OR"),
+                        (TokenType.NotKeyword, "NOT"),
+                        (TokenType.Identifier, "c"),
+                        (TokenType.Equal, "="),
+                        (TokenType.NumberLiteral, "1"),
+                        (TokenType.OrKeyword, "OR"),
+                        (TokenType.Identifier, "d"),
+                        (TokenType.NotEqual, "<>"),
+                        (TokenType.NumberLiteral, "5"),
+                        (TokenType.EoF, null)
+                    }
                 }
             };
 

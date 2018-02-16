@@ -1,0 +1,3 @@
+IF (a > 1 AND b > 2) OR NOT c THEN
+    OUTPUT "TRUE"
+ENDIF

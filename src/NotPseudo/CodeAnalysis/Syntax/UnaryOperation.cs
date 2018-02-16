@@ -7,7 +7,8 @@ namespace NotPseudo.CodeAnalysis.Syntax
 
         public override string ToString()
         {
-            return $"uryop({Operation.Value}{Right})";
+            var addSpace = Operation.Type == TokenType.NotKeyword;
+            return $"uryop({(addSpace ? Operation.Value + " " : Operation.Value)}{Right})";
         }
     }
 }
