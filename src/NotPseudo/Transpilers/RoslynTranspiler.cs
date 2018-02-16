@@ -72,6 +72,8 @@ namespace NotPseudo.Transpilers
                 return TranspileForBlock(forBlock);
             else if (statement is RepeatBlock repeatBlock)
                 return TranspileRepeatBlock(repeatBlock);
+            else if (statement is WhileBlock whileBlock)
+                return TranspileWhileBlock(whileBlock);
             else if (statement is IfBlock ifBlock)
                 return TranspileIfBlock(ifBlock);
             else if (statement is Output output)
@@ -221,6 +223,22 @@ namespace NotPseudo.Transpilers
             }
 
             return _generator.IfStatement(roslynCondition, roslynTrueStatements, roslynFalseStatements);
+        }
+
+        protected SyntaxNode TranspileWhileBlock(WhileBlock whileBlock)
+        {
+            var roslynCondition = TranspileExpression(whileBlock.Condition);
+            var roslynStatements = new List<SyntaxNode>();
+            foreach (var statement in whileBlock.Statements)
+            {
+                if (statement is NoOperation)
+                    continue;
+
+                var roslynStatement = TranspileStatement(statement);
+                roslynStatements.Add(roslynStatement);
+            }
+
+            return _generator.WhileStatement(roslynCondition, roslynStatements);
         }
 
         protected abstract SyntaxNode TranspileUnaryPlusOperation(SyntaxNode roslynRight);

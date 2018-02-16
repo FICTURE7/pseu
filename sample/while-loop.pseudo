@@ -1,0 +1,7 @@
+DECLARE i : INTEGER
+
+i <- 0
+
+WHILE i < 10
+    i <- i + 1
+ENDWHILE

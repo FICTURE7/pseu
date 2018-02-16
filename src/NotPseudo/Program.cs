@@ -16,8 +16,10 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            CompileAndRun(Transpile<VisualBasicTranspiler>("sample/repeat-until.pseudo"));
+            Transpile<VisualBasicTranspiler>("sample/while-loop.pseudo");
+
             /*
+            Transpile<VisualBasicTranspiler>("sample/repeat-until-loop.pseudo");
             Transpile<VisualBasicTranspiler>("sample/output-greatest-value.pseudo");
             Transpile<VisualBasicTranspiler>("sample/greet.pseudo");
             Transpile<VisualBasicTranspiler>("sample/expression.pseudo");

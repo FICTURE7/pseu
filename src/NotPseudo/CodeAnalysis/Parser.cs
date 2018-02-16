@@ -60,6 +60,9 @@ namespace NotPseudo.CodeAnalysis
             REPEAT: "REPEAT"
             UNTIL: "UNTIL"
 
+            WHILE: "WHILE"
+            ENDWHILE: "ENDWHILE"
+
             IF: "IF"
             THEN: "THEN"
             ELSE: "ELSE"
@@ -72,7 +75,9 @@ namespace NotPseudo.CodeAnalysis
             statement: assign-statement | 
                        declare-statement | 
                        if-statement |
-                       for-statement | 
+                       for-statement |
+                       repeat-statement |
+                       while-statement | 
                        output-statement |
                        input-statement |
                        empty-statement
@@ -80,8 +85,11 @@ namespace NotPseudo.CodeAnalysis
             empty-statement:
             assign-statement: identifier ASSIGN (expression | string-expression)
             declare-statement: DECLARE identifier COLON identifier
+
             for-statement: FOR assign-statement TO expression statement-list ENDFOR
-            repeat-until-statement: REPEAT statement-list UNTIL boolean-expression
+            repeat-statement: REPEAT statement-list UNTIL boolean-expression
+            while-statement: WHILE boolean-expression statement-list ENDWHILE
+
             output-statement: OUTPUT (expression | string-expression)
             input-statement: INPUT identifier
             if-statement: IF boolean-expression THEN statement-list (ELSE statement-list) ENDIF
@@ -141,6 +149,8 @@ namespace NotPseudo.CodeAnalysis
                 return ParseForStatement();
             else if (_token.Type == TokenType.RepeatKeyword)
                 return ParseRepeatStatement();
+            else if (_token.Type == TokenType.WhileKeyword)
+                return ParseWhileStatement();
             else if (_token.Type == TokenType.OutputKeyword)
                 return ParseOutputStatement();
             else if (_token.Type == TokenType.InputKeyword)
@@ -222,6 +232,20 @@ namespace NotPseudo.CodeAnalysis
             {
                 Statements = statements,
                 Condition = condition
+            };
+        }
+
+        private Node ParseWhileStatement()
+        {
+            Eat(TokenType.WhileKeyword);
+            var condition = ParseBooleanExpression();
+            var statements = ParseStatementList();
+            Eat(TokenType.EndWhileKeyword);
+
+            return new WhileBlock
+            {
+                Condition = condition,
+                Statements = statements
             };
         }
 

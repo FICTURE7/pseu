@@ -195,6 +195,10 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.RepeatKeyword, value);
             else if (value == "UNTIL")
                 return new Token(TokenType.UntilKeyword, value);
+            else if (value == "WHILE")
+                return new Token(TokenType.WhileKeyword, value);
+            else if (value == "ENDWHILE")
+                return new Token(TokenType.EndWhileKeyword, value);
             else if (value == "OUTPUT")
                 return new Token(TokenType.OutputKeyword, value);
             else if (value == "INPUT")

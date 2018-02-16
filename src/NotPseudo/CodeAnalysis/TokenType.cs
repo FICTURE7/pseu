@@ -32,13 +32,20 @@ namespace NotPseudo.CodeAnalysis
         Identifier,
 
         DeclareKeyword,
+
         ForKeyword,
         ToKeyword,
         EndForKeyword,
+        
         RepeatKeyword,
         UntilKeyword,
+
+        WhileKeyword,
+        EndWhileKeyword,
+
         OutputKeyword,
         InputKeyword,
+
         IfKeyword,
         ThenKeyword,
         ElseKeyword,
