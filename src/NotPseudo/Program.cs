@@ -16,10 +16,10 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            /*TODO: FIX BOOLEAN EXPRESIONS */
+            /*TODO: FIX BOOLEAN EXPRESSIONS */
             CompileAndRun(Transpile<VisualBasicTranspiler>("sample/bubble-sort.pseudo"));
 
-            /*
+            Transpile<VisualBasicTranspiler>("sample/bubble-sort.pseudo");
             Transpile<VisualBasicTranspiler>("sample/array.pseudo");
             Transpile<VisualBasicTranspiler>("sample/assign-boolean.pseudo");
             Transpile<VisualBasicTranspiler>("sample/greet-fancy.pseudo");
@@ -35,7 +35,6 @@ namespace NotPseudo
             Transpile<VisualBasicTranspiler>("sample/even-more-helloworld.pseudo");
             Transpile<VisualBasicTranspiler>("sample/boolean-expression.pseudo");
             Transpile<VisualBasicTranspiler>("sample/if-condition.pseudo");
-            */
         }
 
         private static string Transpile<TTranspiler>(string srcPath) where TTranspiler : ITranspiler, new()

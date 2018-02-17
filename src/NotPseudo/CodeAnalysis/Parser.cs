@@ -106,8 +106,9 @@ namespace NotPseudo.CodeAnalysis
             expression: boolean-term (OR boolean-term)*
 
             boolean-term: boolean-factor (AND boolean-factor)*
-            boolean-factor: NOT boolean-factor | TRUE | FALSE | boolean-relation | LPAREN boolean-expression RPAREN
-            boolean-relation: (string-expression | numeric-expression) ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) (string-expression | numeric-expression)
+            boolean-factor: NOT boolean-factor | boolean-relation | LPAREN boolean-expression RPAREN
+            boolean-relation: boolean-relation ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) boolean-relation-term)
+            boolean-relation-term: string-expression | numeric-expression | TRUE | FALSE
 
             string-expression: \" STRING \"
 
@@ -394,6 +395,7 @@ namespace NotPseudo.CodeAnalysis
                 Eat(TokenType.NotKeyword);
                 return new UnaryOperation { Operation = notOp, Right = ParseBooleanFactor() };
             }
+            /*
             else if (_token.Type == TokenType.TrueLiteral)
             {
                 Eat(TokenType.TrueLiteral);
@@ -404,6 +406,7 @@ namespace NotPseudo.CodeAnalysis
                 Eat(TokenType.FalseLiteral);
                 return new BooleanLiteral { Value = false };
             }
+            */
             else if (_token.Type == TokenType.LeftParenthesis)
             {
                 Eat(TokenType.LeftParenthesis);
@@ -420,7 +423,29 @@ namespace NotPseudo.CodeAnalysis
 
         private Node ParseBooleanRelation()
         {
-            var left = (Node)null;
+            var left = ParseBooleanRelationTerm();
+            var opToken = _token;
+
+            if (_token.Type == TokenType.Equal || _token.Type == TokenType.NotEqual ||
+                _token.Type == TokenType.Less || _token.Type == TokenType.LessEqual ||
+                _token.Type == TokenType.Greater || _token.Type == TokenType.GreaterEqual)
+            {
+                Eat(_token.Type);
+
+                var right = ParseBooleanRelationTerm();
+                return new BinaryOperation
+                {
+                    Left = left,
+                    Operation = opToken,
+                    Right = right
+                };
+            }
+            else
+            {
+                return left;
+            }
+
+            /*
             if (_token.Type == TokenType.StringLiteral)
                 left = ParseStringExpression();
             else
@@ -546,6 +571,29 @@ namespace NotPseudo.CodeAnalysis
             }
 
             return left;
+            */
+        }
+
+        private Node ParseBooleanRelationTerm()
+        {
+            if (_token.Type == TokenType.TrueLiteral)
+            {
+                Eat(TokenType.TrueLiteral);
+                return new BooleanLiteral { Value = true };
+            }
+            else if (_token.Type == TokenType.FalseLiteral)
+            {
+                Eat(TokenType.FalseLiteral);
+                return new BooleanLiteral { Value = false };
+            }
+            else if (_token.Type == TokenType.StringLiteral)
+            {
+                return ParseStringExpression();
+            }
+            else
+            {
+                return ParseNumericExpression();
+            }
         }
 
         private Node ParseNumericExpression()
