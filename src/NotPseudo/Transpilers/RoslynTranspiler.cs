@@ -91,7 +91,7 @@ namespace NotPseudo.Transpilers
 
         protected SyntaxNode TranspileAssign(Assign assign)
         {
-            /*TODO: Convert the types? */
+            /*TODO: Convert the types of right expression to left expression? */
             var roslynAssign = _generator.AssignmentStatement(
                 //left: _generator.IdentifierName(((IdentifierName)assign.Left).Identifier),
                 left: TranspileExpression(assign.Left),

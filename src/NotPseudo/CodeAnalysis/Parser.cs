@@ -53,6 +53,14 @@ namespace NotPseudo.CodeAnalysis
             OUTPUT: "OUTPUT"
             INPUT: "INPUT"
 
+            CALL: "CALL"
+            RETURN: "RETURN"
+
+            PROCEDURE: "PROCEDURE"
+            ENDPROCEDURE: "ENDPROCEDURE"
+            FUNCTION: "FUNCTION"
+            ENDFUNCTION: "ENDFUNCTION"
+
             DECLARE: "DECLARE"
             ARRAY: "ARRAY"
             OF: "OF"
@@ -78,6 +86,8 @@ namespace NotPseudo.CodeAnalysis
             statement-list: statement | statement LF statement-list
             statement: assign-statement | 
                        declare-statement | 
+                       procedure-statement |
+                       function-statement |
                        if-statement |
                        for-statement |
                        repeat-statement |
@@ -88,6 +98,13 @@ namespace NotPseudo.CodeAnalysis
 
             empty-statement:
             assign-statement: identifier ASSIGN expression
+
+            procedure-statement: PROCEDURE simple-identifier LPAREN parameter-list RPAREN statement-list ENDPROCEDURE
+            function-statement: FUNCTION simple-identifier LPAREN parameter-list RPAREN RETURN simple-identifier ENDFUNCTION
+            return-statement: RETURN expression
+
+            parameter-list: parameter (, parameter)*
+            parameter: simple-identifier COLON simple-identifier
 
             declare-statement: DECLARE simple-identifier COLON simple-identifier | declare-array-statement
             declare-array-statement: DECLARE identifier COLON ARRAY LSPAREN expression RSPAREN OF identifier
@@ -107,14 +124,19 @@ namespace NotPseudo.CodeAnalysis
 
             boolean-term: boolean-factor (AND boolean-factor)*
             boolean-factor: NOT boolean-factor | boolean-relation | LPAREN boolean-expression RPAREN
-            boolean-relation: boolean-relation ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) boolean-relation-term)
+            boolean-relation: boolean-relation-term ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) boolean-relation-term)
             boolean-relation-term: string-expression | numeric-expression | TRUE | FALSE
 
             string-expression: \" STRING \"
 
-            numeric-expression: term ((PLUS | MINUS) term)*
-            numeric-term: factor ((DIV | MUL) factor)*
-            numeric-factor: (PLUS | MINUS) factor | INTEGER | identifier | LPAREN expression RPAREN
+            numeric-expression: numeric-term ((PLUS | MINUS) numeric-term)*
+            numeric-term: numeric-factor ((DIV | MUL) numeric-factor)*
+            numeric-factor: (PLUS | MINUS) numeric-factor | INTEGER | identifier | LPAREN numeric-expression RPAREN | call-expression
+
+            call-expression: CALL simple-identifier LPAREN [argument_list] RPAREN
+
+            argument-list: argument (, argument)*
+            argument: expression
          */
 
         public Node Parse()
