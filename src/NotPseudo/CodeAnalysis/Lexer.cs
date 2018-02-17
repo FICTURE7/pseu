@@ -112,6 +112,20 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.RightParenthesis, ")");
             }
 
+            /* Scan the left square parenthesis character. */
+            if (_cur == '[')
+            {
+                Advance();
+                return new Token(TokenType.LeftSquareParenthesis, "[");
+            }
+
+            /* Scan the right square parenthesis character. */
+            if (_cur == ']')
+            {
+                Advance();
+                return new Token(TokenType.RightSquareParenthesis, "]");
+            }
+
             /* Scan the colon character. */
             if (_cur == ':')
             {
@@ -126,6 +140,7 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.Equal, "=");
             }
 
+            /* Scan the 'greater' than or 'greater or equal' to token. */
             if (_cur == '>')
             {
                 Advance();
@@ -185,6 +200,10 @@ namespace NotPseudo.CodeAnalysis
             /* Check if value is a keyword. */
             if (value == "DECLARE")
                 return new Token(TokenType.DeclareKeyword, value);
+            if (value == "ARRAY")
+                return new Token(TokenType.ArrayKeyword, value);
+            if (value == "OF")
+                return new Token(TokenType.OfKeyword, value);
             else if (value == "FOR")
                 return new Token(TokenType.ForKeyword, value);
             else if (value == "TO")

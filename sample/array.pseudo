@@ -1,0 +1,4 @@
+DECLARE list : ARRAY[10] OF INTEGER
+
+list[0] <- 100
+OUTPUT list[0]

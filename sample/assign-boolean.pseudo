@@ -1,0 +1,4 @@
+DECLARE flag : INTEGER
+
+flag <- 1000
+OUTPUT flag

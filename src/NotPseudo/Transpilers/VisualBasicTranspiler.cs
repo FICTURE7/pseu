@@ -31,7 +31,14 @@ namespace NotPseudo.Transpilers
                     continue;
 
                 var roslynStatement = TranspileStatement(statement);
-                roslynStatements = roslynStatements.Add((StatementSyntax)roslynStatement);
+
+                if (roslynStatement.Length == 1)
+                    roslynStatements = roslynStatements.Add((StatementSyntax)roslynStatement[0]);
+                else
+                {
+                    foreach (var a in roslynStatement)
+                        roslynStatements = roslynStatements.Add((StatementSyntax)a);
+                }
             }
 
             var roslynNextStatement = SyntaxFactory.NextStatement();
@@ -59,7 +66,14 @@ namespace NotPseudo.Transpilers
                     continue;
 
                 var roslynStatement = TranspileStatement(statement);
-                roslynStatements = roslynStatements.Add((StatementSyntax)roslynStatement);
+
+                if (roslynStatement.Length == 1)
+                    roslynStatements = roslynStatements.Add((StatementSyntax)roslynStatement[0]);
+                else
+                {
+                    foreach (var a in roslynStatement)
+                        roslynStatements = roslynStatements.Add((StatementSyntax)a);
+                }
             }
 
             var roslynUntilBlock = SyntaxFactory.DoLoopUntilBlock(

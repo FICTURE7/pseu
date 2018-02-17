@@ -24,6 +24,9 @@ namespace NotPseudo.CodeAnalysis
         LeftParenthesis,
         RightParenthesis,
 
+        LeftSquareParenthesis,
+        RightSquareParenthesis,
+
         NumberLiteral,
         StringLiteral,
         TrueLiteral,
@@ -32,6 +35,8 @@ namespace NotPseudo.CodeAnalysis
         Identifier,
 
         DeclareKeyword,
+        ArrayKeyword,
+        OfKeyword,
 
         ForKeyword,
         ToKeyword,

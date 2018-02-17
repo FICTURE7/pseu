@@ -40,7 +40,7 @@ namespace NotPseudo.Transpilers
                     continue;
 
                 var roslynStatement = TranspileStatement(statement);
-                statements.Add(roslynStatement);
+                statements.AddRange(roslynStatement);
             }
 
             var methodDecl = _generator.MethodDeclaration(
@@ -64,24 +64,26 @@ namespace NotPseudo.Transpilers
         protected abstract SyntaxNode TranspileForBlock(ForBlock forBlock);
         protected abstract SyntaxNode TranspileRepeatBlock(RepeatBlock repeatBlock);
 
-        protected SyntaxNode TranspileStatement(Node statement)
+        protected SyntaxNode[] TranspileStatement(Node statement)
         {
             if (statement is VariableDeclaration varDecl)
-                return TranspileVariableDeclaration(varDecl);
+                return new[] { TranspileVariableDeclaration(varDecl) };
+            else if (statement is ArrayVariableDeclaration arrayDecl)
+                return new[] { TranspileArrayVariableDeclaration(arrayDecl) };
             else if (statement is ForBlock forBlock)
-                return TranspileForBlock(forBlock);
+                return new[] { TranspileForBlock(forBlock) };
             else if (statement is RepeatBlock repeatBlock)
-                return TranspileRepeatBlock(repeatBlock);
+                return new[] { TranspileRepeatBlock(repeatBlock) };
             else if (statement is WhileBlock whileBlock)
-                return TranspileWhileBlock(whileBlock);
+                return new[] { TranspileWhileBlock(whileBlock) };
             else if (statement is IfBlock ifBlock)
-                return TranspileIfBlock(ifBlock);
+                return new[] { TranspileIfBlock(ifBlock) };
             else if (statement is Output output)
-                return TranspileOutput(output);
+                return new[] { TranspileOutput(output) };
             else if (statement is Input input)
                 return TranspileInput(input);
             else if (statement is Assign assign)
-                return TranspileAssign(assign);
+                return new[] { TranspileAssign(assign) };
 
             return null;
         }
@@ -105,6 +107,22 @@ namespace NotPseudo.Transpilers
             return roslynVarDecl;
         }
 
+        protected SyntaxNode TranspileArrayVariableDeclaration(ArrayVariableDeclaration arrayDecl)
+        {
+            var roslynArrayType = _generator.ArrayTypeExpression(TranspileType(arrayDecl.Type.Identifier));
+
+            var roslynArrayCreation = _generator.ArrayCreationExpression(
+                elementType: TranspileType(arrayDecl.Type.Identifier),
+                size: TranspileExpression(arrayDecl.Length)
+            );
+            var roslynVarDecl = _generator.LocalDeclarationStatement(
+                type: roslynArrayType,
+                identifier: arrayDecl.Identifier.Identifier,
+                initializer: roslynArrayCreation
+            );
+            return roslynVarDecl;
+        }
+
         protected SyntaxNode TranspileOutput(Output output)
         {
             var roslynOutput = _generator.InvocationExpression(
@@ -116,8 +134,21 @@ namespace NotPseudo.Transpilers
             return _generator.ExpressionStatement(roslynOutput);
         }
 
-        protected SyntaxNode TranspileInput(Input input)
+        protected SyntaxNode[] TranspileInput(Input input)
         {
+            var roslynPrefix = (SyntaxNode)null;
+            if (input.Prefix != null)
+            {
+                var strExpression = input.Prefix;
+                var roslynOutput = _generator.InvocationExpression(
+                    _generator.IdentifierName("Console.Write"),
+                    arguments: new SyntaxNode[] { TranspileExpression(strExpression) }
+                );
+
+                /* Wrap in ExpressionStatement to be able to cast to StatementSyntax. */
+                roslynPrefix = _generator.ExpressionStatement(roslynOutput);
+            }
+
             var roslynInput = _generator.AssignmentStatement(
                 left: _generator.IdentifierName(((IdentifierName)input.Identifier).Identifier),
                 right: _generator.InvocationExpression(
@@ -125,7 +156,9 @@ namespace NotPseudo.Transpilers
                 )
             );
 
-            return roslynInput;
+            return roslynPrefix == null ?
+                new[] { roslynInput } :
+                new[] { roslynPrefix, roslynInput };
         }
 
         protected SyntaxNode TranspileExpression(Node node)
@@ -135,7 +168,7 @@ namespace NotPseudo.Transpilers
             else if (node is StringLiteral strNode)
                 return _generator.LiteralExpression(strNode.Value);
             else if (node is BooleanLiteral boolNode)
-                return _generator.LiteralExpression(boolNode);
+                return _generator.LiteralExpression(boolNode.Value);
             else if (node is IdentifierName identNode)
                 return _generator.IdentifierName(identNode.Identifier);
             else if (node is BinaryOperation binOp)
@@ -206,7 +239,7 @@ namespace NotPseudo.Transpilers
                     continue;
 
                 var roslynStatement = TranspileStatement(statement);
-                roslynTrueStatements.Add(roslynStatement);
+                roslynTrueStatements.AddRange(roslynStatement);
             }
 
             if (ifBlock.FalseStatements?.Count > 0)
@@ -218,7 +251,7 @@ namespace NotPseudo.Transpilers
                         continue;
 
                     var roslynStatement = TranspileStatement(statement);
-                    roslynFalseStatements.Add(roslynStatement);
+                    roslynFalseStatements.AddRange(roslynStatement);
                 }
             }
 
@@ -235,7 +268,7 @@ namespace NotPseudo.Transpilers
                     continue;
 
                 var roslynStatement = TranspileStatement(statement);
-                roslynStatements.Add(roslynStatement);
+                roslynStatements.AddRange(roslynStatement);
             }
 
             return _generator.WhileStatement(roslynCondition, roslynStatements);
@@ -247,13 +280,15 @@ namespace NotPseudo.Transpilers
         {
             switch (type)
             {
+                case "BOOLEAN":
+                    return _generator.TypeExpression(SpecialType.System_Boolean);
                 case "INTEGER":
                     return _generator.TypeExpression(SpecialType.System_Int32);
                 case "STRING":
                     return _generator.TypeExpression(SpecialType.System_String);
+                default:
+                    return _generator.IdentifierName(type);
             }
-
-            return _generator.IdentifierName(type);
         }
     }
 }

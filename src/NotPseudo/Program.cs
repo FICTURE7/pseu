@@ -16,9 +16,11 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            CompileAndRun(Transpile<VisualBasicTranspiler>("sample/no-choice.pseudo"));
+            CompileAndRun(Transpile<VisualBasicTranspiler>("sample/assign-boolean.pseudo"));
 
             /*
+            Transpile<VisualBasicTranspiler>("sample/greet-fancy.pseudo");
+            Transpile<VisualBasicTranspiler>("sample/no-choice.pseudo");
             Transpile<VisualBasicTranspiler>("sample/while-loop.pseudo");
             Transpile<VisualBasicTranspiler>("sample/repeat-until-loop.pseudo");
             Transpile<VisualBasicTranspiler>("sample/output-greatest-value.pseudo");
@@ -82,13 +84,21 @@ namespace NotPseudo
             using (var stream = new MemoryStream())
             {
                 var result = compilation.Emit(stream);
+                if (!result.Success)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    foreach(var diag in result.Diagnostics)
+                        Console.WriteLine(diag);
+                }
+                else
+                {
+                    stream.Position = 0;
 
-                stream.Position = 0;
-
-                var assembly = Assembly.Load(stream.ToArray());
-                var programType = assembly.GetType("Program");
-                var instance = Activator.CreateInstance(programType);
-                var ret = programType.InvokeMember("Main", BindingFlags.Default | BindingFlags.InvokeMethod, null, instance, null);
+                    var assembly = Assembly.Load(stream.ToArray());
+                    var programType = assembly.GetType("Program");
+                    var instance = Activator.CreateInstance(programType);
+                    var ret = programType.InvokeMember("Main", BindingFlags.Default | BindingFlags.InvokeMethod, null, instance, null);
+                }
             }
         }
     }

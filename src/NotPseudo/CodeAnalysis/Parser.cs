@@ -33,6 +33,8 @@ namespace NotPseudo.CodeAnalysis
 
             LPAREN: '('
             RPAREN: ')'
+            LSPAREN: '['
+            RSPAREN: ']'
 
             ASSIGN: '<-'
             COLON: ':'
@@ -52,6 +54,8 @@ namespace NotPseudo.CodeAnalysis
             INPUT: "INPUT"
 
             DECLARE: "DECLARE"
+            ARRAY: "ARRAY"
+            OF: "OF"
 
             FOR: "FOR"
             TO: "TO"
@@ -83,28 +87,33 @@ namespace NotPseudo.CodeAnalysis
                        empty-statement
 
             empty-statement:
-            assign-statement: identifier ASSIGN (expression | string-expression)
-            declare-statement: DECLARE identifier COLON identifier
+            assign-statement: identifier ASSIGN expression | assign-array-statement
+            assign-array-statement: identifier LSPAREN numeric-expression RSPAREN ASSIGN expression
 
-            for-statement: FOR assign-statement TO expression statement-list ENDFOR
-            repeat-statement: REPEAT statement-list UNTIL boolean-expression
-            while-statement: WHILE boolean-expression statement-list ENDWHILE
+            declare-statement: DECLARE identifier COLON identifier | declare-array-statement
+            declare-array-statement: DECLARE identifier COLON ARRAY LSPAREN expression RSPAREN OF identifier
 
-            output-statement: OUTPUT (expression | string-expression)
-            input-statement: INPUT identifier
-            if-statement: IF boolean-expression THEN statement-list (ELSE statement-list) ENDIF
+            for-statement: FOR assign-statement TO numeric-expression statement-list ENDFOR
+            repeat-statement: REPEAT statement-list UNTIL expression
+            while-statement: WHILE expression statement-list ENDWHILE
 
-            boolean-expression: boolean-term (OR boolean-term)*
+            output-statement: OUTPUT expression
+            input-statement: INPUT [string-expression] identifier
+            if-statement: IF expression THEN statement-list (ELSE statement-list) ENDIF
+
+            identifier: STRING
+
+            expression: boolean-term (OR boolean-term)*
+
             boolean-term: boolean-factor (AND boolean-factor)*
             boolean-factor: NOT boolean-factor | TRUE | FALSE | boolean-relation | LPAREN boolean-expression RPAREN
             boolean-relation: (string-expression | expression) ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) (string-expression | expression)
 
             string-expression: \" STRING \"
 
-            expression: term ((PLUS | MINUS) term)*
-            term: factor ((DIV | MUL) factor)*
-            factor: (PLUS | MINUS) factor | INTEGER | identifier | LPAREN expression RPAREN
-            identifier: STRING
+            numeric-expression: term ((PLUS | MINUS) term)*
+            numeric-term: factor ((DIV | MUL) factor)*
+            numeric-factor: (PLUS | MINUS) factor | INTEGER | identifier | LPAREN expression RPAREN
          */
 
         public Node Parse()
@@ -174,14 +183,35 @@ namespace NotPseudo.CodeAnalysis
             Eat(TokenType.Identifier);
             Eat(TokenType.Colon);
 
-            var typeIdentToken = _token;
-            Eat(TokenType.Identifier);
-
-            return new VariableDeclaration
+            if (_token.Type == TokenType.ArrayKeyword)
             {
-                Identifier = new IdentifierName { Identifier = varIdentToken.Value },
-                Type = new IdentifierName { Identifier = typeIdentToken.Value }
-            };
+                Eat(TokenType.ArrayKeyword);
+                Eat(TokenType.LeftSquareParenthesis);
+                var length = ParseNumericExpression();
+                Eat(TokenType.RightSquareParenthesis);
+                Eat(TokenType.OfKeyword);
+
+                var typeIdentToken = _token;
+                Eat(TokenType.Identifier);
+
+                return new ArrayVariableDeclaration
+                {
+                    Identifier = new IdentifierName { Identifier = varIdentToken.Value },
+                    Type = new IdentifierName { Identifier = typeIdentToken.Value },
+                    Length = length
+                };
+            }
+            else
+            {
+                var typeIdentToken = _token;
+                Eat(TokenType.Identifier);
+
+                return new VariableDeclaration
+                {
+                    Identifier = new IdentifierName { Identifier = varIdentToken.Value },
+                    Type = new IdentifierName { Identifier = typeIdentToken.Value }
+                };
+            }
         }
 
         private Node ParseAssignStatement()
@@ -190,11 +220,13 @@ namespace NotPseudo.CodeAnalysis
             Eat(TokenType.Identifier);
             Eat(TokenType.Assign);
 
-            var right = (Node)null;
+            var right = ParseExpression();
+            /*
             if (_token.Type == TokenType.StringLiteral)
                 right = ParseStringExpression();
             else
                 right = ParseExpression();
+            */
 
             return new Assign
             {
@@ -208,7 +240,7 @@ namespace NotPseudo.CodeAnalysis
             Eat(TokenType.ForKeyword);
             var assignment = ParseAssignStatement();
             Eat(TokenType.ToKeyword);
-            var expression = ParseExpression();
+            var expression = ParseNumericExpression();
             var statements = ParseStatementList();
             Eat(TokenType.EndForKeyword);
 
@@ -225,8 +257,7 @@ namespace NotPseudo.CodeAnalysis
             Eat(TokenType.RepeatKeyword);
             var statements = ParseStatementList();
             Eat(TokenType.UntilKeyword);
-
-            var condition = ParseBooleanExpression();
+            var condition = ParseExpression();
 
             return new RepeatBlock
             {
@@ -238,7 +269,7 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseWhileStatement()
         {
             Eat(TokenType.WhileKeyword);
-            var condition = ParseBooleanExpression();
+            var condition = ParseExpression();
             var statements = ParseStatementList();
             Eat(TokenType.EndWhileKeyword);
 
@@ -252,11 +283,13 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseOutputStatement()
         {
             Eat(TokenType.OutputKeyword);
-            var expression = (Node)null;
+            var expression = ParseExpression();
+            /*
             if (_token.Type == TokenType.StringLiteral)
                 expression = ParseStringExpression();
             else
-                expression = ParseExpression();
+                expression = ParseNumericExpression();
+            */
 
             return new Output { Expression = expression };
         }
@@ -265,11 +298,16 @@ namespace NotPseudo.CodeAnalysis
         {
             Eat(TokenType.InputKeyword);
 
+            var prefix = (Node)null;
+            if (_token.Type == TokenType.StringLiteral)
+                prefix = ParseStringExpression();
+
             var identToken = _token;
             Eat(TokenType.Identifier);
 
             return new Input
             {
+                Prefix = prefix,
                 Identifier = new IdentifierName { Identifier = identToken.Value }
             };
         }
@@ -277,7 +315,7 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseIfStatement()
         {
             Eat(TokenType.IfKeyword);
-            var condition = ParseBooleanExpression();
+            var condition = ParseExpression();
             Eat(TokenType.ThenKeyword);
             var trueStatements = ParseStatementList();
             var falseStatements = (List<Node>)null;
@@ -306,7 +344,7 @@ namespace NotPseudo.CodeAnalysis
             return new StringLiteral { Value = value.Value };
         }
 
-        private Node ParseBooleanExpression()
+        private Node ParseExpression()
         {
             var node = ParseBooleanTerm();
 
@@ -365,7 +403,7 @@ namespace NotPseudo.CodeAnalysis
             else if (_token.Type == TokenType.LeftParenthesis)
             {
                 Eat(TokenType.LeftParenthesis);
-                var expression = ParseBooleanExpression();
+                var expression = ParseExpression();
                 Eat(TokenType.RightParenthesis);
 
                 return expression;
@@ -382,7 +420,7 @@ namespace NotPseudo.CodeAnalysis
             if (_token.Type == TokenType.StringLiteral)
                 left = ParseStringExpression();
             else
-                left = ParseExpression();
+                left = ParseNumericExpression();
 
             if (_token.Type == TokenType.Equal)
             {
@@ -393,7 +431,7 @@ namespace NotPseudo.CodeAnalysis
                 if (_token.Type == TokenType.StringLiteral)
                     right = ParseStringExpression();
                 else
-                    right = ParseExpression();
+                    right = ParseNumericExpression();
 
                 return new BinaryOperation
                 {
@@ -411,7 +449,7 @@ namespace NotPseudo.CodeAnalysis
                 if (_token.Type == TokenType.StringLiteral)
                     right = ParseStringExpression();
                 else
-                    right = ParseExpression();
+                    right = ParseNumericExpression();
 
                 return new BinaryOperation
                 {
@@ -429,7 +467,7 @@ namespace NotPseudo.CodeAnalysis
                 if (_token.Type == TokenType.StringLiteral)
                     right = ParseStringExpression();
                 else
-                    right = ParseExpression();
+                    right = ParseNumericExpression();
 
                 return new BinaryOperation
                 {
@@ -447,7 +485,7 @@ namespace NotPseudo.CodeAnalysis
                 if (_token.Type == TokenType.StringLiteral)
                     right = ParseStringExpression();
                 else
-                    right = ParseExpression();
+                    right = ParseNumericExpression();
 
                 return new BinaryOperation
                 {
@@ -465,7 +503,7 @@ namespace NotPseudo.CodeAnalysis
                 if (_token.Type == TokenType.StringLiteral)
                     right = ParseStringExpression();
                 else
-                    right = ParseExpression();
+                    right = ParseNumericExpression();
 
                 return new BinaryOperation
                 {
@@ -483,7 +521,7 @@ namespace NotPseudo.CodeAnalysis
                 if (_token.Type == TokenType.StringLiteral)
                     right = ParseStringExpression();
                 else
-                    right = ParseExpression();
+                    right = ParseNumericExpression();
 
                 return new BinaryOperation
                 {
@@ -496,12 +534,9 @@ namespace NotPseudo.CodeAnalysis
             return left;
         }
 
-        private Node ParseExpression()
+        private Node ParseNumericExpression()
         {
-            /*
-                expression: term ((PLUS | MINUS) term)*
-             */
-            var node = ParseTerm();
+            var node = ParseNumericTerm();
 
             while (_token.Type == TokenType.Plus || _token.Type == TokenType.Minus)
             {
@@ -515,19 +550,19 @@ namespace NotPseudo.CodeAnalysis
                 {
                     Left = node,
                     Operation = token,
-                    Right = ParseTerm()
+                    Right = ParseNumericTerm()
                 };
             }
 
             return node;
         }
 
-        private Node ParseTerm()
+        private Node ParseNumericTerm()
         {
             /*
                 term: factor ((DIV | MUL) factor)*
              */
-            var node = ParseFactor();
+            var node = ParseNumericFactor();
 
             while (_token.Type == TokenType.Divide || _token.Type == TokenType.Multiply)
             {
@@ -541,14 +576,14 @@ namespace NotPseudo.CodeAnalysis
                 {
                     Left = node,
                     Operation = token,
-                    Right = ParseFactor()
+                    Right = ParseNumericFactor()
                 };
             }
 
             return node;
         }
 
-        private Node ParseFactor()
+        private Node ParseNumericFactor()
         {
             /*
                 factor: (PLUS | MINUS) INTEGER | identifier | LPAREN expression RPAREN
@@ -557,13 +592,13 @@ namespace NotPseudo.CodeAnalysis
             {
                 var op = _token;
                 Eat(TokenType.Plus);
-                return new UnaryOperation { Operation = op, Right = ParseFactor() };
+                return new UnaryOperation { Operation = op, Right = ParseNumericFactor() };
             }
             else if (_token.Type == TokenType.Minus)
             {
                 var op = _token;
                 Eat(TokenType.Minus);
-                return new UnaryOperation { Operation = op, Right = ParseFactor() };
+                return new UnaryOperation { Operation = op, Right = ParseNumericFactor() };
             }
             else if (_token.Type == TokenType.NumberLiteral)
             {
@@ -580,7 +615,7 @@ namespace NotPseudo.CodeAnalysis
             else if (_token.Type == TokenType.LeftParenthesis)
             {
                 Eat(TokenType.LeftParenthesis);
-                var expr = ParseExpression();
+                var expr = ParseNumericExpression();
                 Eat(TokenType.RightParenthesis);
 
                 return expr;
