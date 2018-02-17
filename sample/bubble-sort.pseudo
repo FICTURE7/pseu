@@ -1,0 +1,32 @@
+DECLARE MaxIndex : INTEGER
+DECLARE n : INTEGER
+DECLARE NoMoreSwaps : BOOLEAN
+DECLARE MyList : ARRAY[10] OF INTEGER
+
+MaxIndex <- 10
+n <- MaxIndex - 1 
+
+FOR i <- 1 TO MaxIndex
+    INPUT "VALUE: " MyList[i]
+ENDFOR
+
+REPEAT
+    DECLARE j : INTEGER
+
+    NoMoreSwaps <- TRUE
+    FOR j <- 1 TO n
+        IF MyList[j] > MyList[j + 1] THEN
+            DECLARE Temp : INTEGER
+
+            Temp <- MyList[j]
+            MyList[j] <- MyList[j + 1]
+            MyList[j + 1] <- Temp
+            NoMoreSwaps <- FALSE
+        ENDIF
+    ENDFOR
+    n <- n - 1
+UNTIL NoMoreSwaps = TRUE
+
+FOR i <- 1 TO MaxIndex
+    OUTPUT MyList[i]
+ENDFOR

@@ -1,4 +1,4 @@
-DECLARE flag : INTEGER
+DECLARE flag : BOOLEAN
 
-flag <- 1000
+flag <- TRUE AND TRUE
 OUTPUT flag

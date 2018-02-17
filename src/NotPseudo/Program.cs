@@ -16,9 +16,12 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            CompileAndRun(Transpile<VisualBasicTranspiler>("sample/assign-boolean.pseudo"));
+            /*TODO: FIX BOOLEAN EXPRESIONS */
+            CompileAndRun(Transpile<VisualBasicTranspiler>("sample/bubble-sort.pseudo"));
 
             /*
+            Transpile<VisualBasicTranspiler>("sample/array.pseudo");
+            Transpile<VisualBasicTranspiler>("sample/assign-boolean.pseudo");
             Transpile<VisualBasicTranspiler>("sample/greet-fancy.pseudo");
             Transpile<VisualBasicTranspiler>("sample/no-choice.pseudo");
             Transpile<VisualBasicTranspiler>("sample/while-loop.pseudo");

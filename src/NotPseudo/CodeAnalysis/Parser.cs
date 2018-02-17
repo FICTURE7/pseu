@@ -87,10 +87,9 @@ namespace NotPseudo.CodeAnalysis
                        empty-statement
 
             empty-statement:
-            assign-statement: identifier ASSIGN expression | assign-array-statement
-            assign-array-statement: identifier LSPAREN numeric-expression RSPAREN ASSIGN expression
+            assign-statement: identifier ASSIGN expression
 
-            declare-statement: DECLARE identifier COLON identifier | declare-array-statement
+            declare-statement: DECLARE simple-identifier COLON simple-identifier | declare-array-statement
             declare-array-statement: DECLARE identifier COLON ARRAY LSPAREN expression RSPAREN OF identifier
 
             for-statement: FOR assign-statement TO numeric-expression statement-list ENDFOR
@@ -101,13 +100,14 @@ namespace NotPseudo.CodeAnalysis
             input-statement: INPUT [string-expression] identifier
             if-statement: IF expression THEN statement-list (ELSE statement-list) ENDIF
 
-            identifier: STRING
+            identifier: simple-identifier | simple-identifier LSPAREN numeric-expression RSPAREN
+            simple-identifier: STRING
 
             expression: boolean-term (OR boolean-term)*
 
             boolean-term: boolean-factor (AND boolean-factor)*
             boolean-factor: NOT boolean-factor | TRUE | FALSE | boolean-relation | LPAREN boolean-expression RPAREN
-            boolean-relation: (string-expression | expression) ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) (string-expression | expression)
+            boolean-relation: (string-expression | numeric-expression) ((GREATER-EQUAL | GREATER | LESS-EQUAL | LESS | EQUAL | NOT-EQUAL) (string-expression | numeric-expression)
 
             string-expression: \" STRING \"
 
@@ -214,23 +214,35 @@ namespace NotPseudo.CodeAnalysis
             }
         }
 
+        private Node ParseIdentifier()
+        {
+            var identToken = _token;
+            Eat(TokenType.Identifier);
+
+            if (_token.Type == TokenType.LeftSquareParenthesis)
+            {
+                Eat(TokenType.LeftSquareParenthesis);
+                var indexerExpression = ParseNumericExpression();
+                Eat(TokenType.RightSquareParenthesis);
+
+                return new ArrayIdentifierName
+                {
+                    Identifier = identToken.Value,
+                    IndexExpression = indexerExpression
+                };
+            }
+
+            return new IdentifierName { Identifier = identToken.Value };
+        }
+
         private Node ParseAssignStatement()
         {
-            var left = _token;
-            Eat(TokenType.Identifier);
+            var left = ParseIdentifier();
             Eat(TokenType.Assign);
-
             var right = ParseExpression();
-            /*
-            if (_token.Type == TokenType.StringLiteral)
-                right = ParseStringExpression();
-            else
-                right = ParseExpression();
-            */
-
             return new Assign
             {
-                Left = new IdentifierName { Identifier = left.Value },
+                Left = left,
                 Right = right
             };
         }
@@ -284,13 +296,6 @@ namespace NotPseudo.CodeAnalysis
         {
             Eat(TokenType.OutputKeyword);
             var expression = ParseExpression();
-            /*
-            if (_token.Type == TokenType.StringLiteral)
-                expression = ParseStringExpression();
-            else
-                expression = ParseNumericExpression();
-            */
-
             return new Output { Expression = expression };
         }
 
@@ -302,13 +307,12 @@ namespace NotPseudo.CodeAnalysis
             if (_token.Type == TokenType.StringLiteral)
                 prefix = ParseStringExpression();
 
-            var identToken = _token;
-            Eat(TokenType.Identifier);
+            var ident = ParseIdentifier();
 
             return new Input
             {
                 Prefix = prefix,
-                Identifier = new IdentifierName { Identifier = identToken.Value }
+                Identifier = ident
             };
         }
 
@@ -430,6 +434,16 @@ namespace NotPseudo.CodeAnalysis
                 var right = (Node)null;
                 if (_token.Type == TokenType.StringLiteral)
                     right = ParseStringExpression();
+                else if (_token.Type == TokenType.TrueLiteral)
+                {
+                    Eat(TokenType.TrueLiteral);
+                    right = new BooleanLiteral { Value = true };
+                }
+                else if (_token.Type == TokenType.FalseLiteral)
+                {
+                    Eat(TokenType.FalseLiteral);
+                    right = new BooleanLiteral { Value = false };
+                }
                 else
                     right = ParseNumericExpression();
 
@@ -608,9 +622,7 @@ namespace NotPseudo.CodeAnalysis
             }
             else if (_token.Type == TokenType.Identifier)
             {
-                var ident = _token.Value;
-                Eat(TokenType.Identifier);
-                return new IdentifierName { Identifier = ident };
+                return ParseIdentifier();
             }
             else if (_token.Type == TokenType.LeftParenthesis)
             {

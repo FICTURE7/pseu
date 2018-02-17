@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.VisualBasic;
 using NotPseudo.CodeAnalysis;
 using NotPseudo.CodeAnalysis.Syntax;
 
@@ -92,7 +93,8 @@ namespace NotPseudo.Transpilers
         {
             /*TODO: Convert the types? */
             var roslynAssign = _generator.AssignmentStatement(
-                left: _generator.IdentifierName(((IdentifierName)assign.Left).Identifier),
+                //left: _generator.IdentifierName(((IdentifierName)assign.Left).Identifier),
+                left: TranspileExpression(assign.Left),
                 right: TranspileExpression(assign.Right)
             );
             return roslynAssign;
@@ -150,7 +152,7 @@ namespace NotPseudo.Transpilers
             }
 
             var roslynInput = _generator.AssignmentStatement(
-                left: _generator.IdentifierName(((IdentifierName)input.Identifier).Identifier),
+                left: TranspileExpression(input.Identifier),
                 right: _generator.InvocationExpression(
                     _generator.IdentifierName("Console.ReadLine")
                 )
@@ -171,12 +173,21 @@ namespace NotPseudo.Transpilers
                 return _generator.LiteralExpression(boolNode.Value);
             else if (node is IdentifierName identNode)
                 return _generator.IdentifierName(identNode.Identifier);
+            else if (node is ArrayIdentifierName arrayIdentNode)
+                return TranspileArrayIdentifierName(arrayIdentNode);
             else if (node is BinaryOperation binOp)
                 return TranspileBinaryOperation(binOp);
             else if (node is UnaryOperation unOp)
                 return TranspileUnaryOperation(unOp);
 
             return null;
+        }
+
+        protected SyntaxNode TranspileArrayIdentifierName(ArrayIdentifierName arrayIdentNode)
+        {
+            var roslynIdent = _generator.IdentifierName(arrayIdentNode.Identifier);
+            var roslynElementAccess = _generator.ElementAccessExpression(roslynIdent, TranspileExpression(arrayIdentNode.IndexExpression));
+            return roslynElementAccess;
         }
 
         protected SyntaxNode TranspileBinaryOperation(BinaryOperation binOp)
