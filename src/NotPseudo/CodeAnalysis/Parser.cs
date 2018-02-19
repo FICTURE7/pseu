@@ -88,22 +88,25 @@ namespace NotPseudo.CodeAnalysis
                        declare-statement | 
                        procedure-statement |
                        function-statement |
+                       return-statement |
                        if-statement |
                        for-statement |
                        repeat-statement |
                        while-statement | 
                        output-statement |
                        input-statement |
+                       call-statement |
                        empty-statement
 
             empty-statement:
             assign-statement: identifier ASSIGN expression
+            call-statement: call-expression
 
-            procedure-statement: PROCEDURE simple-identifier LPAREN parameter-list RPAREN statement-list ENDPROCEDURE
-            function-statement: FUNCTION simple-identifier LPAREN parameter-list RPAREN RETURN simple-identifier ENDFUNCTION
+            procedure-statement: PROCEDURE simple-identifier parameter-list statement-list ENDPROCEDURE
+            function-statement: FUNCTION simple-identifier parameter-list RETURN simple-identifier ENDFUNCTION
             return-statement: RETURN expression
 
-            parameter-list: parameter (, parameter)*
+            parameter-list: LPAREN [parameter (, parameter)*] RPAREN
             parameter: simple-identifier COLON simple-identifier
 
             declare-statement: DECLARE simple-identifier COLON simple-identifier | declare-array-statement
@@ -133,9 +136,9 @@ namespace NotPseudo.CodeAnalysis
             numeric-term: numeric-factor ((DIV | MUL) numeric-factor)*
             numeric-factor: (PLUS | MINUS) numeric-factor | INTEGER | identifier | LPAREN numeric-expression RPAREN | call-expression
 
-            call-expression: CALL simple-identifier LPAREN [argument_list] RPAREN
+            call-expression: CALL simple-identifier argument-list
 
-            argument-list: argument (, argument)*
+            argument-list: LPAREN [argument (, argument)*] RPAREN
             argument: expression
          */
 
@@ -177,6 +180,8 @@ namespace NotPseudo.CodeAnalysis
                 return ParseDeclareStatement();
             else if (_token.Type == TokenType.Identifier)
                 return ParseAssignStatement();
+            else if (_token.Type == TokenType.ProcedureKeyword)
+                return ParseProcedureStatement();
             else if (_token.Type == TokenType.ForKeyword)
                 return ParseForStatement();
             else if (_token.Type == TokenType.RepeatKeyword)
@@ -187,6 +192,8 @@ namespace NotPseudo.CodeAnalysis
                 return ParseOutputStatement();
             else if (_token.Type == TokenType.InputKeyword)
                 return ParseInputStatement();
+            else if (_token.Type == TokenType.CallKeyword)
+                return ParseCallStatement();
             else if (_token.Type == TokenType.IfKeyword)
                 return ParseIfStatement();
             else
@@ -196,6 +203,11 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseEmptyStatement()
         {
             return new NoOperation();
+        }
+
+        private Node ParseCallStatement()
+        {
+            return ParseCallExpression();
         }
 
         private Node ParseDeclareStatement()
@@ -267,6 +279,64 @@ namespace NotPseudo.CodeAnalysis
             {
                 Left = left,
                 Right = right
+            };
+        }
+
+        private List<Node> ParseParameterList()
+        {
+            var list = new List<Node>();
+
+            Eat(TokenType.LeftParenthesis);
+
+            if (_token.Type == TokenType.Identifier)
+            {
+                var param = ParseParameter();
+                list.Add(param);
+
+                while (_token.Type == TokenType.Comma)
+                {
+                    Eat(TokenType.Comma);
+                    var otherParam = ParseParameter();
+                    list.Add(otherParam);
+                }
+            }
+
+            Eat(TokenType.RightParenthesis);
+
+            return list;
+        }
+
+        private Node ParseParameter()
+        {
+            var identToken = _token;
+            Eat(TokenType.Identifier);
+            Eat(TokenType.Colon);
+            var typeIdentToken = _token;
+            Eat(TokenType.Identifier);
+
+            return new Parameter
+            {
+                Identifier = new IdentifierName { Identifier = identToken.Value },
+                TypeIdentifier = new IdentifierName { Identifier = typeIdentToken.Value }
+            };
+        }
+
+        private Node ParseProcedureStatement()
+        {
+            Eat(TokenType.ProcedureKeyword);
+
+            var identToken = _token;
+            Eat(TokenType.Identifier);
+
+            var paramList = ParseParameterList();
+            var statements = ParseStatementList();
+
+            Eat(TokenType.EndProcedureKeyword);
+            return new ProcedureBlock
+            {
+                Identifier = new IdentifierName { Identifier = identToken.Value },
+                Parameters = paramList,
+                Statements = statements
             };
         }
 
@@ -417,18 +487,6 @@ namespace NotPseudo.CodeAnalysis
                 Eat(TokenType.NotKeyword);
                 return new UnaryOperation { Operation = notOp, Right = ParseBooleanFactor() };
             }
-            /*
-            else if (_token.Type == TokenType.TrueLiteral)
-            {
-                Eat(TokenType.TrueLiteral);
-                return new BooleanLiteral { Value = true };
-            }
-            else if (_token.Type == TokenType.FalseLiteral)
-            {
-                Eat(TokenType.FalseLiteral);
-                return new BooleanLiteral { Value = false };
-            }
-            */
             else if (_token.Type == TokenType.LeftParenthesis)
             {
                 Eat(TokenType.LeftParenthesis);
@@ -466,134 +524,6 @@ namespace NotPseudo.CodeAnalysis
             {
                 return left;
             }
-
-            /*
-            if (_token.Type == TokenType.StringLiteral)
-                left = ParseStringExpression();
-            else
-                left = ParseNumericExpression();
-
-            if (_token.Type == TokenType.Equal)
-            {
-                var eqOp = _token;
-                Eat(TokenType.Equal);
-
-                var right = (Node)null;
-                if (_token.Type == TokenType.StringLiteral)
-                    right = ParseStringExpression();
-                else if (_token.Type == TokenType.TrueLiteral)
-                {
-                    Eat(TokenType.TrueLiteral);
-                    right = new BooleanLiteral { Value = true };
-                }
-                else if (_token.Type == TokenType.FalseLiteral)
-                {
-                    Eat(TokenType.FalseLiteral);
-                    right = new BooleanLiteral { Value = false };
-                }
-                else
-                    right = ParseNumericExpression();
-
-                return new BinaryOperation
-                {
-                    Left = left,
-                    Operation = eqOp,
-                    Right = right
-                };
-            }
-            else if (_token.Type == TokenType.NotEqual)
-            {
-                var notEqOp = _token;
-                Eat(TokenType.NotEqual);
-
-                var right = (Node)null;
-                if (_token.Type == TokenType.StringLiteral)
-                    right = ParseStringExpression();
-                else
-                    right = ParseNumericExpression();
-
-                return new BinaryOperation
-                {
-                    Left = left,
-                    Operation = notEqOp,
-                    Right = right
-                };
-            }
-            else if (_token.Type == TokenType.Greater)
-            {
-                var greaterOp = _token;
-                Eat(TokenType.Greater);
-
-                var right = (Node)null;
-                if (_token.Type == TokenType.StringLiteral)
-                    right = ParseStringExpression();
-                else
-                    right = ParseNumericExpression();
-
-                return new BinaryOperation
-                {
-                    Left = left,
-                    Operation = greaterOp,
-                    Right = right
-                };
-            }
-            else if (_token.Type == TokenType.GreaterEqual)
-            {
-                var greaterEqOp = _token;
-                Eat(TokenType.GreaterEqual);
-
-                var right = (Node)null;
-                if (_token.Type == TokenType.StringLiteral)
-                    right = ParseStringExpression();
-                else
-                    right = ParseNumericExpression();
-
-                return new BinaryOperation
-                {
-                    Left = left,
-                    Operation = greaterEqOp,
-                    Right = right
-                };
-            }
-            else if (_token.Type == TokenType.Less)
-            {
-                var lessOp = _token;
-                Eat(TokenType.Less);
-
-                var right = (Node)null;
-                if (_token.Type == TokenType.StringLiteral)
-                    right = ParseStringExpression();
-                else
-                    right = ParseNumericExpression();
-
-                return new BinaryOperation
-                {
-                    Left = left,
-                    Operation = lessOp,
-                    Right = right
-                };
-            }
-            else if (_token.Type == TokenType.LessEqual)
-            {
-                var lessEqOp = _token;
-                Eat(TokenType.LessEqual);
-
-                var right = (Node)null;
-                if (_token.Type == TokenType.StringLiteral)
-                    right = ParseStringExpression();
-                else
-                    right = ParseNumericExpression();
-
-                return new BinaryOperation
-                {
-                    Left = left,
-                    Operation = lessEqOp,
-                    Right = right
-                };
-            }
-
-            return left;
-            */
         }
 
         private Node ParseBooleanRelationTerm()
@@ -702,10 +632,83 @@ namespace NotPseudo.CodeAnalysis
 
                 return expr;
             }
+            else if (_token.Type == TokenType.CallKeyword)
+            {
+                return ParseCallExpression();
+            }
 
             Error();
 
             return null;
+        }
+
+        private Node ParseCallExpression()
+        {
+            Eat(TokenType.CallKeyword);
+
+            var identToken = _token;
+            Eat(TokenType.Identifier);
+
+            var argumentList = ParseArgumentList();
+            return new Call
+            {
+                Identifier = new IdentifierName { Identifier = identToken.Value },
+                Arguments = argumentList
+            };
+        }
+
+        private List<Node> ParseArgumentList()
+        {
+            var list = new List<Node>();
+            Eat(TokenType.LeftParenthesis);
+
+            /* Figure if the next token is a possible expression. */
+            var expression = false;
+
+            switch (_token.Type)
+            {
+                case TokenType.Plus:
+                case TokenType.Minus:
+                case TokenType.TrueLiteral:
+                case TokenType.FalseLiteral:
+                case TokenType.StringLiteral:
+                case TokenType.NumberLiteral:
+                case TokenType.Identifier:
+                case TokenType.CallKeyword:
+                case TokenType.LeftParenthesis:
+                    expression = true;
+                    break;
+            }
+
+            if (expression)
+            {
+                var argument = ParseArgument();
+                list.Add(argument);
+                while (_token.Type == TokenType.Comma)
+                {
+                    Eat(TokenType.Comma);
+                    var otherArgument = ParseArgument();
+                    list.Add(otherArgument);
+                }
+            }
+
+            Eat(TokenType.RightParenthesis);
+
+            return list;
+        }
+
+        private Node ParseArgument()
+        {
+            /*
+            switch (_token.Type)
+            {
+                case TokenType.
+                case TokenType.LeftParenthesis:
+                    return ParseExpression();
+            }
+            */
+
+            return ParseExpression();
         }
 
         private void Eat(TokenType type)

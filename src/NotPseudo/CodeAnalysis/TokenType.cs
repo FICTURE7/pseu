@@ -11,6 +11,8 @@ namespace NotPseudo.CodeAnalysis
         Colon,
         Assign,
 
+        Comma,
+
         Equal,
         NotEqual,
         Greater,
@@ -37,6 +39,13 @@ namespace NotPseudo.CodeAnalysis
         DeclareKeyword,
         ArrayKeyword,
         OfKeyword,
+
+        CallKeyword,
+        ProcedureKeyword,
+        EndProcedureKeyword,
+        FunctionKeyword,
+        EndFunctionKeyword,
+        ReturnKeyword,
 
         ForKeyword,
         ToKeyword,

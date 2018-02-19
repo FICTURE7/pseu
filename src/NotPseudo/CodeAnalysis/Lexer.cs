@@ -139,6 +139,13 @@ namespace NotPseudo.CodeAnalysis
                 Advance();
                 return new Token(TokenType.Equal, "=");
             }
+            
+            /* Scan the comma character. */
+            if (_cur == ',')
+            {
+                Advance();
+                return new Token(TokenType.Comma, ",");
+            }
 
             /* Scan the 'greater' than or 'greater or equal' to token. */
             if (_cur == '>')
@@ -200,10 +207,22 @@ namespace NotPseudo.CodeAnalysis
             /* Check if value is a keyword. */
             if (value == "DECLARE")
                 return new Token(TokenType.DeclareKeyword, value);
-            if (value == "ARRAY")
+            else if (value == "ARRAY")
                 return new Token(TokenType.ArrayKeyword, value);
-            if (value == "OF")
+            else if (value == "OF")
                 return new Token(TokenType.OfKeyword, value);
+            else if (value == "CALL")
+                return new Token(TokenType.CallKeyword, value);
+            else if (value == "RETURN")
+                return new Token(TokenType.ReturnKeyword, value);
+            else if (value == "PROCEDURE")
+                return new Token(TokenType.ProcedureKeyword, value);
+            else if (value == "ENDPROCEDURE")
+                return new Token(TokenType.EndProcedureKeyword, value);
+            else if (value == "FUNCTION")
+                return new Token(TokenType.FunctionKeyword, value);
+            else if (value == "ENDFUNCTION")
+                return new Token(TokenType.EndFunctionKeyword, value);
             else if (value == "FOR")
                 return new Token(TokenType.ForKeyword, value);
             else if (value == "TO")

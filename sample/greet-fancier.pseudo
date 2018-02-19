@@ -1,0 +1,7 @@
+PROCEDURE Greet(name : STRING, otherName : STRING)
+    OUTPUT "Hi, "
+    OUTPUT name
+    OUTPUT otherName
+ENDPROCEDURE
+
+CALL Greet("Jeff", "Rose")

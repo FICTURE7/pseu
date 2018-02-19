@@ -12,9 +12,11 @@ namespace NotPseudo.Transpilers
     {
         private SyntaxGenerator _generator;
         private readonly AdhocWorkspace _workspace;
+        private readonly List<SyntaxNode> _methods;
 
         protected RoslynTranspiler()
         {
+            _methods = new List<SyntaxNode>();
             _workspace = new AdhocWorkspace();
         }
 
@@ -39,20 +41,26 @@ namespace NotPseudo.Transpilers
             {
                 if (statement is NoOperation)
                     continue;
-
-                var roslynStatement = TranspileStatement(statement);
-                statements.AddRange(roslynStatement);
+                else if (statement is ProcedureBlock procedureBlock)
+                    _methods.Add(TranspileProcedureBlock(procedureBlock));
+                else
+                {
+                    var roslynStatement = TranspileStatement(statement);
+                    statements.AddRange(roslynStatement);
+                }
             }
 
-            var methodDecl = _generator.MethodDeclaration(
+            var mainDecl = _generator.MethodDeclaration(
                 name: "Main",
                 modifiers: DeclarationModifiers.Static,
                 statements: statements
             );
 
+            _methods.Add(mainDecl);
+
             var classDecl = _generator.ClassDeclaration(
                 name: "Program",
-                members: new SyntaxNode[] { methodDecl }
+                members: _methods
             );
 
             var imports = _generator.NamespaceImportDeclaration("System");
@@ -71,6 +79,10 @@ namespace NotPseudo.Transpilers
                 return new[] { TranspileVariableDeclaration(varDecl) };
             else if (statement is ArrayVariableDeclaration arrayDecl)
                 return new[] { TranspileArrayVariableDeclaration(arrayDecl) };
+            /*
+            else if (statement is ProcedureBlock procedureBlock)
+                return new[] { TranspileProcedureBlock(procedureBlock) };
+            */
             else if (statement is ForBlock forBlock)
                 return new[] { TranspileForBlock(forBlock) };
             else if (statement is RepeatBlock repeatBlock)
@@ -85,6 +97,8 @@ namespace NotPseudo.Transpilers
                 return TranspileInput(input);
             else if (statement is Assign assign)
                 return new[] { TranspileAssign(assign) };
+            else if (statement is Call call)
+                return new[] { TranspileCallExpression(call) }; // Call statements.
 
             return null;
         }
@@ -123,6 +137,36 @@ namespace NotPseudo.Transpilers
                 initializer: roslynArrayCreation
             );
             return roslynVarDecl;
+        }
+
+        protected SyntaxNode TranspileProcedureBlock(ProcedureBlock procedureBlock)
+        {
+            var statements = new List<SyntaxNode>();
+            foreach (var statement in procedureBlock.Statements)
+            {
+                if (statement is NoOperation)
+                    continue;
+
+                var roslynStatement = TranspileStatement(statement);
+                statements.AddRange(roslynStatement);
+            }
+
+            var parameters = new List<SyntaxNode>();
+            foreach (var parameter in procedureBlock.Parameters)
+            {
+                var xD = (Parameter)parameter;
+                parameters.Add(_generator.ParameterDeclaration(
+                    name: xD.Identifier.Identifier,
+                    type: TranspileType(xD.TypeIdentifier.Identifier)
+                ));
+            }
+
+            return _generator.MethodDeclaration(
+                name: procedureBlock.Identifier.Identifier,
+                parameters: parameters,
+                statements: statements,
+                modifiers: DeclarationModifiers.Static
+            );
         }
 
         protected SyntaxNode TranspileOutput(Output output)
@@ -173,6 +217,8 @@ namespace NotPseudo.Transpilers
                 return _generator.LiteralExpression(boolNode.Value);
             else if (node is IdentifierName identNode)
                 return _generator.IdentifierName(identNode.Identifier);
+            else if (node is Call callNode)
+                return TranspileCallExpression(callNode);
             else if (node is ArrayIdentifierName arrayIdentNode)
                 return TranspileArrayIdentifierName(arrayIdentNode);
             else if (node is BinaryOperation binOp)
@@ -188,6 +234,18 @@ namespace NotPseudo.Transpilers
             var roslynIdent = _generator.IdentifierName(arrayIdentNode.Identifier);
             var roslynElementAccess = _generator.ElementAccessExpression(roslynIdent, TranspileExpression(arrayIdentNode.IndexExpression));
             return roslynElementAccess;
+        }
+
+        protected SyntaxNode TranspileCallExpression(Call callNode)
+        {
+            var arguments = new List<SyntaxNode>();
+            foreach (var argument in callNode.Arguments)
+                arguments.Add(TranspileExpression(argument));
+
+            return _generator.InvocationExpression(
+                expression: _generator.IdentifierName(callNode.Identifier.Identifier),
+                arguments: arguments
+            );
         }
 
         protected SyntaxNode TranspileBinaryOperation(BinaryOperation binOp)
