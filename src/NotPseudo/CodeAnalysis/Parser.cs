@@ -81,6 +81,9 @@ namespace NotPseudo.CodeAnalysis
             ELSEIF: "ELSEIF"
             ENDIF: "ENDIF"
 
+            BYREF: "BYREF"
+            BYVAL: "BYVAL"
+
             program: statement-list
 
             statement-list: statement | statement LF statement-list
@@ -103,11 +106,11 @@ namespace NotPseudo.CodeAnalysis
             call-statement: call-expression
 
             procedure-statement: PROCEDURE simple-identifier parameter-list statement-list ENDPROCEDURE
-            function-statement: FUNCTION simple-identifier parameter-list RETURN simple-identifier ENDFUNCTION
+            function-statement: FUNCTION simple-identifier parameter-list (RETURN|COLON) simple-identifier ENDFUNCTION
             return-statement: RETURN expression
 
             parameter-list: LPAREN [parameter (, parameter)*] RPAREN
-            parameter: simple-identifier COLON simple-identifier
+            parameter: [BYREF|BYVAL] simple-identifier COLON simple-identifier
 
             declare-statement: DECLARE simple-identifier COLON simple-identifier | declare-array-statement
             declare-array-statement: DECLARE identifier COLON ARRAY LSPAREN expression RSPAREN OF identifier
@@ -182,6 +185,8 @@ namespace NotPseudo.CodeAnalysis
                 return ParseAssignStatement();
             else if (_token.Type == TokenType.ProcedureKeyword)
                 return ParseProcedureStatement();
+            else if (_token.Type == TokenType.FunctionKeyword)
+                return ParseFunctionStatement();
             else if (_token.Type == TokenType.ForKeyword)
                 return ParseForStatement();
             else if (_token.Type == TokenType.RepeatKeyword)
@@ -194,6 +199,8 @@ namespace NotPseudo.CodeAnalysis
                 return ParseInputStatement();
             else if (_token.Type == TokenType.CallKeyword)
                 return ParseCallStatement();
+            else if (_token.Type == TokenType.ReturnKeyword)
+                return ParseReturnStatement();
             else if (_token.Type == TokenType.IfKeyword)
                 return ParseIfStatement();
             else
@@ -208,6 +215,16 @@ namespace NotPseudo.CodeAnalysis
         private Node ParseCallStatement()
         {
             return ParseCallExpression();
+        }
+
+        private Node ParseReturnStatement()
+        {
+            Eat(TokenType.ReturnKeyword);
+            var expression = ParseExpression();
+            return new Return
+            {
+                Expression = expression
+            };
         }
 
         private Node ParseDeclareStatement()
@@ -288,7 +305,8 @@ namespace NotPseudo.CodeAnalysis
 
             Eat(TokenType.LeftParenthesis);
 
-            if (_token.Type == TokenType.Identifier)
+            if (_token.Type == TokenType.Identifier ||
+                _token.Type == TokenType.ByRefKeyword || _token.Type == TokenType.ByValKeyword)
             {
                 var param = ParseParameter();
                 list.Add(param);
@@ -308,6 +326,15 @@ namespace NotPseudo.CodeAnalysis
 
         private Node ParseParameter()
         {
+            var kind = Parameter.ParameterKind.None;
+            if (_token.Type == TokenType.ByRefKeyword)
+            {
+                Eat(TokenType.ByRefKeyword);
+                kind = Parameter.ParameterKind.ByRef;
+            }
+            else if (_token.Type == TokenType.ByValKeyword)
+                Eat(TokenType.ByValKeyword);
+
             var identToken = _token;
             Eat(TokenType.Identifier);
             Eat(TokenType.Colon);
@@ -317,7 +344,8 @@ namespace NotPseudo.CodeAnalysis
             return new Parameter
             {
                 Identifier = new IdentifierName { Identifier = identToken.Value },
-                TypeIdentifier = new IdentifierName { Identifier = typeIdentToken.Value }
+                TypeIdentifier = new IdentifierName { Identifier = typeIdentToken.Value },
+                Kind = kind
             };
         }
 
@@ -336,6 +364,35 @@ namespace NotPseudo.CodeAnalysis
             {
                 Identifier = new IdentifierName { Identifier = identToken.Value },
                 Parameters = paramList,
+                Statements = statements
+            };
+        }
+
+        private Node ParseFunctionStatement()
+        {
+            Eat(TokenType.FunctionKeyword);
+
+            var identToken = _token;
+            Eat(TokenType.Identifier);
+
+            var paramList = ParseParameterList();
+
+            if (_token.Type == TokenType.ReturnKeyword)
+                Eat(TokenType.ReturnKeyword);
+            else if (_token.Type == TokenType.Colon)
+                Eat(TokenType.Colon);
+
+            var returnTypeIdent = _token;
+            Eat(TokenType.Identifier);
+
+            var statements = ParseStatementList();
+            Eat(TokenType.EndFunctionKeyword);
+
+            return new FunctionBlock
+            {
+                Identifier = new IdentifierName { Identifier = identToken.Value },
+                Parameters = paramList,
+                ReturnTypeIdentifier = new IdentifierName { Identifier = returnTypeIdent.Value },
                 Statements = statements
             };
         }

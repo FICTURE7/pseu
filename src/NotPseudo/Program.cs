@@ -16,9 +16,12 @@ namespace NotPseudo
     {
         public static void Main(string[] args)
         {
-            CompileAndRun(Transpile<VisualBasicTranspiler>("sample/greet-fancier.pseudo"));
-
+            Transpile<VisualBasicTranspiler>("sample/byref-procedure.pseudo", true);
             /*
+            Transpile<VisualBasicTranspiler>("sample/factorial.pseudo");
+            Transpile<VisualBasicTranspiler>("sample/function.pseudo");
+            Transpile<VisualBasicTranspiler>("sample/procedure.pseudo");
+            Transpile<VisualBasicTranspiler>("sample/greet-fancier.pseudo");
             Transpile<VisualBasicTranspiler>("sample/bubble-sort.pseudo");
             Transpile<VisualBasicTranspiler>("sample/array.pseudo");
             Transpile<VisualBasicTranspiler>("sample/assign-boolean.pseudo");
@@ -38,7 +41,7 @@ namespace NotPseudo
             */
         }
 
-        private static string Transpile<TTranspiler>(string srcPath) where TTranspiler : ITranspiler, new()
+        private static string Transpile<TTranspiler>(string srcPath, bool compileAndRun = false) where TTranspiler : ITranspiler, new()
         {
             Console.WriteLine($"Transpiling {Path.GetFileName(srcPath)} using the {typeof(TTranspiler).Name}...");
             Console.WriteLine("-------------------");
@@ -53,11 +56,16 @@ namespace NotPseudo
 
             Console.WriteLine(code);
             Console.WriteLine("-------------------");
+
+            if (compileAndRun)
+                CompileAndRun(code);
+
             return code;
         }
 
         private static void CompileAndRun(string code)
         {
+            Console.WriteLine("Parsing & Compiling VB code...");
             var vbTree = VisualBasicSyntaxTree.ParseText(code);
 
             var trustedAssmblies = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator);
@@ -70,7 +78,7 @@ namespace NotPseudo
                     "System.Console",
                     "Microsoft.VisualBasic"
             };
-            List<MetadataReference> references = trustedAssmblies
+            var references = trustedAssmblies
                 .Where(p => neededAssemblies.Contains(Path.GetFileNameWithoutExtension(p)))
                 .Select(p => MetadataReference.CreateFromFile(p))
                 .ToList<MetadataReference>();
@@ -90,7 +98,7 @@ namespace NotPseudo
                 if (!result.Success)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    foreach(var diag in result.Diagnostics)
+                    foreach (var diag in result.Diagnostics)
                         Console.WriteLine(diag);
                 }
                 else

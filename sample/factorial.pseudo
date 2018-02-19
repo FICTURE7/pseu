@@ -1,0 +1,10 @@
+FUNCTION Factorial (Number : INTEGER) : INTEGER
+    DECLARE Product : INTEGER
+    Product <- 1
+    FOR n <- 2 TO Number
+        Product <- Product * n
+    ENDFOR
+    RETURN Product
+ENDFUNCTION
+
+OUTPUT CALL Factorial(3)

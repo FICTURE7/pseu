@@ -47,6 +47,9 @@ namespace NotPseudo.CodeAnalysis
         EndFunctionKeyword,
         ReturnKeyword,
 
+        ByRefKeyword,
+        ByValKeyword,
+
         ForKeyword,
         ToKeyword,
         EndForKeyword,

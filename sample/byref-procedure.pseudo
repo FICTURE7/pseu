@@ -1,0 +1,8 @@
+PROCEDURE Increment(BYREF value : INTEGER)
+    value <- value + 1
+ENDPROCEDURE
+
+DECLARE i : INTEGER
+CALL Increment(i)
+
+OUTPUT i

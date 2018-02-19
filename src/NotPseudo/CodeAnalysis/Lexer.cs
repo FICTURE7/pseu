@@ -139,7 +139,7 @@ namespace NotPseudo.CodeAnalysis
                 Advance();
                 return new Token(TokenType.Equal, "=");
             }
-            
+
             /* Scan the comma character. */
             if (_cur == ',')
             {
@@ -259,6 +259,10 @@ namespace NotPseudo.CodeAnalysis
                 return new Token(TokenType.TrueLiteral, value);
             else if (value == "FALSE")
                 return new Token(TokenType.FalseLiteral, value);
+            else if (value == "BYREF")
+                return new Token(TokenType.ByRefKeyword, value);
+            else if (value == "BYVAL")
+                return new Token(TokenType.ByValKeyword, value);
 
             return new Token(TokenType.Identifier, value);
         }
