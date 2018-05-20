@@ -37,7 +37,7 @@ void notpseudo_free(notpseudo_t *notpseudo) {
 	free(notpseudo);
 }
 
-void notpseudo_init(notpseudo_t *notpseudo, char *path, char *src) {	
+void notpseudo_init(notpseudo_t *notpseudo, char *path, char *src) {
 	lexer_init(&notpseudo->lexer, path, src);
 	parser_init(&notpseudo->parser, &notpseudo->lexer);
 
