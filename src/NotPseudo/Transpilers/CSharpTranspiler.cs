@@ -6,9 +6,9 @@ namespace NotPseudo.Transpilers
 {
     public class CSharpTranspiler : RoslynTranspiler
     {
-        public CSharpTranspiler()
+        public CSharpTranspiler() : base(LanguageNames.CSharp)
         {
-            Initialize(SyntaxGenerator.GetGenerator(Workspace, LanguageNames.CSharp));
+            // Space
         }
 
         protected override SyntaxNode TranspileForBlock(ForBlock forBlock)

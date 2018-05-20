@@ -145,9 +145,9 @@ namespace NotPseudo.CodeAnalysis
             argument: expression
          */
 
-        public Node Parse()
+        public ProgramBlock Parse()
         {
-            return ParseProgram();
+            return (ProgramBlock)ParseProgram();
         }
 
         private Node ParseProgram()

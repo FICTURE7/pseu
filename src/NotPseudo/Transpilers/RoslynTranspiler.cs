@@ -10,28 +10,21 @@ namespace NotPseudo.Transpilers
 {
     public abstract class RoslynTranspiler : ITranspiler
     {
-        private SyntaxGenerator _generator;
+        private readonly SyntaxGenerator _generator;
         private readonly AdhocWorkspace _workspace;
         private readonly List<SyntaxNode> _methods;
 
-        protected RoslynTranspiler()
+        protected RoslynTranspiler(string languageName)
         {
             _methods = new List<SyntaxNode>();
             _workspace = new AdhocWorkspace();
+            _generator = SyntaxGenerator.GetGenerator(_workspace, languageName);
         }
 
         protected Workspace Workspace => _workspace;
         protected SyntaxGenerator Generator => _generator;
 
-        protected void Initialize(SyntaxGenerator generator)
-        {
-            if (generator == null)
-                throw new ArgumentNullException(nameof(generator));
-
-            _generator = generator;
-        }
-
-        public string Generate(ProgramBlock programNode)
+        public string Transpile(ProgramBlock programNode)
         {
             if (programNode == null)
                 throw new ArgumentNullException(nameof(programNode));

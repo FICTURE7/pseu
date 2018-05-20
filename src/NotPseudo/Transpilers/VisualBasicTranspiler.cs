@@ -9,9 +9,9 @@ namespace NotPseudo.Transpilers
 {
     public class VisualBasicTranspiler : RoslynTranspiler
     {
-        public VisualBasicTranspiler()
+        public VisualBasicTranspiler() : base(LanguageNames.VisualBasic)
         {
-            Initialize(SyntaxGenerator.GetGenerator(Workspace, LanguageNames.VisualBasic));
+            // Space
         }
 
         protected override SyntaxNode TranspileForBlock(ForBlock forBlock)

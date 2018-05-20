@@ -4,6 +4,6 @@ namespace NotPseudo.Transpilers
 {
     public interface ITranspiler
     {
-        string Generate(ProgramBlock programNode);
+        string Transpile(ProgramBlock programNode);
     }
 }
