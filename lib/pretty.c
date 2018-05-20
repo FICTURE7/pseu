@@ -1,0 +1,149 @@
+﻿#include <stdio.h>
+#include "visitor.h"
+#include "token.h"
+#include "pretty.h"
+
+void prettyprint_token(struct token *token) {
+	char buffer[255];
+	token_value(token, buffer);
+	printf("tok[%d,%d:%d](%d, '%s')\n", token->loc.ln, token->loc.col, token->len, token->type, buffer);
+}
+
+/* ¯\_(ツ)_/¯ */
+int depth;
+
+static void ident() {
+	for (int i = 0; i < depth; i++) {
+		printf("    ");
+	}
+
+	if (depth > 0) {
+		printf("\\----");
+	}
+}
+
+static void print_node(struct visitor *visitor, struct node *node) {
+	if (node != NULL) {
+		visitor_visit(visitor, node);
+	} else {
+		ident();
+		printf("NULL\n");
+	}
+}
+
+static void print_op(enum token_type type) {
+	switch (type) {
+		case TOK_OP_ADD: /* + */
+			printf("+");
+			break;
+		case TOK_OP_SUB: /* - */
+			printf("-");
+			break;
+		case TOK_OP_MUL: /* * */
+			printf("*");
+			break;
+		case TOK_OP_DIV: /* / */
+			printf("/");
+			break;
+		case TOK_OP_LOGICAL_NOT: /* NOT */
+			printf("!");
+			break;
+		case TOK_OP_LOGICAL_AND: /* AND */
+			printf("&&");
+			break;
+		case TOK_OP_LOGICAL_OR: /* OR */
+			printf("||");
+			break;
+		default:
+			printf("%d", type);
+			break;
+	}
+}
+
+static struct object *print_string(struct visitor *visitor, struct node_string *string) {
+	ident();
+	printf("string('%s')\n", string->val);
+	return NULL;
+}
+
+static struct object *print_integer(struct visitor *visitor, struct node_integer *integer) {
+	ident();
+	printf("int(%d)\n", integer->val);
+	return NULL;
+}
+
+static struct object *print_boolean(struct visitor *visitor, struct node_boolean *boolean) {
+	ident();
+	printf("boolean(%d)\n", boolean->val);
+	return NULL;
+}
+
+static struct object *print_op_unary(struct visitor *visitor, struct node_op_unary *op_unary) {
+	ident();
+	printf("op_unary:\n");
+	depth++;
+
+	ident();
+	printf("op: ");
+	print_op(op_unary->op);
+	printf("\n");
+
+	print_node(visitor, op_unary->expr);
+	depth--;
+	return NULL;
+}
+
+static struct object *print_op_binary(struct visitor *visitor, struct node_op_binary *op_binary) {
+	ident();
+	printf("op_binary:\n");
+	depth++;
+	print_node(visitor, op_binary->left);
+
+	ident();
+	printf("op: ");
+	print_op(op_binary->op);
+	printf("\n");
+
+	print_node(visitor, op_binary->right);
+	depth--;
+	return NULL;
+}
+
+static struct object *print_block(struct visitor *visitor, struct node_block *block) {
+	ident();
+	printf("block(%d):\n", block->stmts.count);
+	depth++;
+	for (int i = 0; i < block->stmts.count; i++) {
+		print_node(visitor, vector_get(&block->stmts, i));
+	}
+	return NULL;
+}
+
+static struct object *print_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
+	ident();
+	printf("decl(%s, %s)\n", decl->ident, decl->type);
+	return NULL;
+}
+
+static struct object *print_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
+	ident();
+	printf("output:\n");
+	depth++;
+	print_node(visitor, output->expr);
+	depth--;
+	return NULL;
+}
+
+void prettyprint_node(struct node *node) {
+	struct visitor visitor;
+	visitor.block = print_block;
+	visitor.integer = print_integer;
+	visitor.string = print_string;
+	visitor.boolean = print_boolean;
+	visitor.op_unary = print_op_unary;
+	visitor.op_binary = print_op_binary;
+	visitor.stmt_decl = print_stmt_decl;
+	visitor.stmt_output = print_stmt_output;
+
+	visitor_visit(&visitor, node);
+}
