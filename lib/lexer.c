@@ -9,20 +9,27 @@
 #include "pretty.h"
 #endif
 
+/* advances the lexer's position by one character */
 static char *advance(struct lexer *lexer) {
-    lexer->pos++;
+    lexer->loc.pos++;
     lexer->loc.col++;
-    return lexer->pos;
+    return lexer->loc.pos;
 }
 
+/*
+ *	identifier = (ALPHA / "_") *(ALPHA / DIGIT / "_")
+ */
 static void scan_identifier(struct lexer *lexer, struct token *token) {
-    char c = *lexer->pos;
+	/*
+	 *	no need to check if first character is an alphabet or "_",
+	 *	assume caller already did
+	 */
+    char c = *lexer->loc.pos;
     token->loc = lexer->loc;
-    token->pos = lexer->pos;
     token->len = 1;
 
     while (advance(lexer) < lexer->end) {
-        c = *lexer->pos;
+        c = *lexer->loc.pos;
         if (!isalnum(c) && c != '_') {
             break;
         }
@@ -51,13 +58,22 @@ static void scan_identifier(struct lexer *lexer, struct token *token) {
         token->type = TOK_OP_LOGICAL_AND;
     } else if (token_value_cmp(token, "OR")) {
         token->type = TOK_OP_LOGICAL_OR;
-    }
+	} else {
+		/* must be an identifier*/
+		token->type = TOK_IDENT;
+	}
 }
 
-static void scna_number(struct lexer *lexer, struct token *token) {
-    char c = *lexer->pos;
+/*
+ *	integer-hex		= ("0x" / "0X") 1*HEXDIG
+ *	integer			= 1*DIGIT / integer-hex
+ *	real-exponent	= ("e" / "E") 1*DIGIT
+ *	real			= (1*DIGIT "." *DIGIT / "." 1*DIGIT) *1real-exponent / 1*DIGIT real-exponent
+ *	number			= integer / real
+ */
+static void scan_number(struct lexer *lexer, struct token *token) {
+    char c = *lexer->loc.pos;
     token->loc = lexer->loc;
-    token->pos = lexer->pos;
     token->len = 1;
 
     /*
@@ -77,7 +93,7 @@ static void scna_number(struct lexer *lexer, struct token *token) {
             return;
         }
 
-        c = *lexer->pos;
+        c = *lexer->loc.pos;
         switch (c) {
             /* hex number starting with '0x' or '0X' */
             case 'x':
@@ -90,14 +106,14 @@ static void scna_number(struct lexer *lexer, struct token *token) {
                 }
 
                 /* scan rest of hex value */
-                c = *lexer->pos;
+                c = *lexer->loc.pos;
                 while (isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
                     token->len++;
                     /* reached eof */
                     if (advance(lexer) >= lexer->end) {
                         break;
                     }
-                    c = *lexer->pos;
+                    c = *lexer->loc.pos;
                 }
                 /* todo: add support for the error message */
                 token->type = token->len > 2 ? TOK_LIT_INTEGERHEX : TOK_ERR;
@@ -106,7 +122,6 @@ static void scna_number(struct lexer *lexer, struct token *token) {
             /* floating point starting with '0e' or '0E' */
             case 'e':
             case 'E':
-                token->len++;
                 goto exponent;
 
             /* floating point starting with '0.' */
@@ -122,7 +137,7 @@ static void scna_number(struct lexer *lexer, struct token *token) {
                     if (advance(lexer) >= lexer->end) {
                         break;
                     }
-                    c = *lexer->pos;
+                    c = *lexer->loc.pos;
                     if (c == 'e' || c == 'E') {
                         goto exponent;
                     }
@@ -151,7 +166,7 @@ fraction:
                 break;
             }
 
-            c = *lexer->pos;
+            c = *lexer->loc.pos;
             if (c == 'e' || c == 'E') {
                 goto exponent;
             }
@@ -166,10 +181,10 @@ exponent:
         while (isdigit(c)) {
             token->len++;
             /* reached eof */
-            if (++lexer->pos >= lexer->end) {
+            if (++lexer->loc.pos >= lexer->end) {
                 break;
             }
-            c = *lexer->pos;
+            c = *lexer->loc.pos;
         }
         token->type = TOK_LIT_REAL;
         return;
@@ -177,7 +192,7 @@ exponent:
 
     /* scan integers */
     while (advance(lexer) < lexer->end) {
-        c = *lexer->pos;
+        c = *lexer->loc.pos;
 
         switch (c) {
             case 'e':
@@ -202,7 +217,7 @@ exponent:
 static void scan_string(struct lexer *lexer, struct token *token) {
     /* skip the openning '"' character */
     char c = *(advance(lexer));
-    token->pos = lexer->pos;
+    token->loc = lexer->loc;
     token->len = 0;
 
     do {
@@ -213,14 +228,14 @@ start:
             token->type = TOK_ERR;
             return;
         }
-        c = *lexer->pos;
+        c = *lexer->loc.pos;
         if (c == '\\') {
             /* try to peak the next character */
-            if (lexer->pos + 1 >= lexer->end) {
+            if (lexer->loc.pos + 1 >= lexer->end) {
                 continue;
             }
 
-            c = *(lexer->pos + 1);
+            c = *(lexer->loc.pos + 1);
             /* skip current '"' if it was preceeded by a '\' */
             if (c == '"') {
                 advance(lexer);
@@ -237,8 +252,8 @@ start:
 void lexer_init(struct lexer *lexer, char *path, char *src) {
     lexer->path = path;
     lexer->src = src;
-    lexer->pos = src;
     lexer->end = src + strlen(src);
+    lexer->loc.pos = src;
     lexer->loc.ln = 1;
     lexer->loc.col = 1;
 
@@ -252,25 +267,25 @@ void lexer_init(struct lexer *lexer, char *path, char *src) {
     /* reset */
     lexer->loc.ln = 1;
     lexer->loc.col = 1;
-    lexer->pos = src;
+    lexer->loc.pos = src;
 #endif
 }
 
 void lexer_scan(struct lexer *lexer, struct token *token) {
     /* set tok to TOK_EOF if we reached eof */
-    if (lexer->pos >= lexer->end) {
-        token_init(token, TOK_EOF, lexer->end, 0, lexer->loc);
+    if (lexer->loc.pos >= lexer->end) {
+        token_init(token, TOK_EOF, lexer->loc, 0);
         return;
     }
 
     /* todo: scan comments */
-    char c = *lexer->pos;
+    char c = *lexer->loc.pos;
     /* skip spaces except '\n' */
     while (isspace(c) && c != '\n') {
         c = *(advance(lexer));
         /* reached eof */
-        if (lexer->pos >= lexer->end) {
-            token_init(token, TOK_EOF, lexer->end, 0, lexer->loc);
+        if (lexer->loc.pos >= lexer->end) {
+            token_init(token, TOK_EOF, lexer->loc, 0);
             return;
         }
     }
@@ -282,31 +297,38 @@ void lexer_scan(struct lexer *lexer, struct token *token) {
             return;
 
         case '\n':
-            token_init(token, TOK_LF, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_LF, lexer->loc, 1);
+
+			/*
+			 *	we moved to the next line so
+			 *	update loc.ln and loc.col to point 
+			 *  to new begining of line
+			 */
             lexer->loc.ln++;
             lexer->loc.col = 1;
-            lexer->pos++;
+            lexer->loc.pos++;
             return;
+
         case '.':
             /* if no character after then it must be a dot */
-            if (lexer->pos + 1 >= lexer->end) {
-                token_init(token, TOK_DOT, lexer->pos, 1, lexer->loc);
+            if (lexer->loc.pos + 1 >= lexer->end) {
+                token_init(token, TOK_DOT, lexer->loc, 1);
                 advance(lexer);
                 return;
             }
 
             /* if next character is a digit it must be a number (floating point) */
-            char p = *(lexer->pos + 1);
+            char p = *(lexer->loc.pos + 1);
             if (isdigit(p)) {
-                scna_number(lexer, token);
+                scan_number(lexer, token);
                 return;
             }
 
-            token_init(token, TOK_DOT, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_DOT, lexer->loc, 1);
             advance(lexer);
             return;
         case ':':
-            token_init(token, TOK_COLON, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_COLON, lexer->loc, 1);
             advance(lexer);
             return;
         case '_':
@@ -315,27 +337,27 @@ void lexer_scan(struct lexer *lexer, struct token *token) {
             return;
 
         case '(':
-            token_init(token, TOK_LPAREN, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_LPAREN, lexer->loc, 1);
             advance(lexer);
             return;
         case ')':
-            token_init(token, TOK_RPAREN, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_RPAREN, lexer->loc, 1);
             advance(lexer);
             return;
         case '+':
-            token_init(token, TOK_OP_ADD, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_OP_ADD, lexer->loc, 1);
             advance(lexer);
             return;
         case '-':
-            token_init(token, TOK_OP_SUB, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_OP_SUB, lexer->loc, 1);
             advance(lexer);
             return;
         case '/':
-            token_init(token, TOK_OP_DIV, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_OP_DIV, lexer->loc, 1);
             advance(lexer);
             return;
         case '*':
-            token_init(token, TOK_OP_MUL, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_OP_MUL, lexer->loc, 1);
             advance(lexer);
             return;
 
@@ -348,12 +370,12 @@ void lexer_scan(struct lexer *lexer, struct token *token) {
 
             /* scan number literals */
             if (isdigit(c)) {
-                scna_number(lexer, token);
+                scan_number(lexer, token);
                 return;
             }
 
             /* unknown character */
-            token_init(token, TOK_ERR, lexer->pos, 1, lexer->loc);
+            token_init(token, TOK_ERR, lexer->loc, 1);
             advance(lexer);
             return;
     }

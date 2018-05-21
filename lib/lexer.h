@@ -7,7 +7,6 @@
 struct lexer {
 	char *path;
 	char *src;
-	char *pos;
 	char *end;
 	struct location loc;
 };

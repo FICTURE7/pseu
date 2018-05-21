@@ -43,12 +43,11 @@ enum token_type {
 
 struct token {
 	enum token_type type;
-	char *pos;
-	size_t len;
 	struct location loc;
+	size_t len;
 };
 
-void token_init(struct token *token, enum token_type type, char *pos, size_t len, struct location loc);
+void token_init(struct token *token, enum token_type type, struct location loc, size_t len);
 
 void token_value(struct token *token, char *buffer);
 

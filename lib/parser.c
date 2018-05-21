@@ -49,7 +49,7 @@ static char *identifier(struct parser *parser) {
 
 	char *ident = malloc(token.len + 1);
 	ident[token.len] = '\0';
-	memcpy(ident, token.pos, token.len);
+	memcpy(ident, token.loc.pos, token.len);
 	return ident;
 }
 
@@ -62,7 +62,7 @@ static struct node *string(struct parser *parser) {
 	node->base.type = NODE_LIT_STRING;
 	node->val = malloc(token.len + 1);
 	node->val[token.len] = '\0';
-	memcpy(node->val, token.pos, token.len);
+	memcpy(node->val, token.loc.pos, token.len);
 
 	return node;
 }
@@ -82,13 +82,13 @@ static struct node *integer(struct parser *parser) {
 	switch (token.type) {
 		case TOK_LIT_INTEGER:
 			buf = malloc(token.len);
-			memcpy(buf, token.pos, token.len);
+			memcpy(buf, token.loc.pos, token.len);
 			val->val = strtol(buf, NULL, 10);
 			break;
 		case TOK_LIT_INTEGERHEX:
 			/* skip the first '0x' characters */
 			buf = malloc(token.len - 2);
-			memcpy(buf, token.pos + 2, token.len - 2);
+			memcpy(buf, token.loc.pos + 2, token.len - 2);
 			val->val = strtol(buf, NULL, 16);
 			break;
 	}
@@ -288,7 +288,9 @@ void parser_init(struct parser *parser, struct lexer *lexer) {
 	parser_parse(parser, &root);
 	prettyprint_node(root);
 	/* reset */
-	lexer->pos = lexer->src;
+	lexer->loc.pos = lexer->src;
+	lexer->loc.ln = 1;
+	lexer->loc.col = 1;
 #endif
 }
 
