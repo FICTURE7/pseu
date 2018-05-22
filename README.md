@@ -28,7 +28,7 @@ The main goal is to get as close as possible to the pseudo code found in the boo
 as much of it as possible. 
 
 And also to give decent errors and warnings. High performance is not a goal of this project
-because who would do anything computate-intensive with this. So compromising performance for
+because who would do anything compute-intensive with this. So compromising performance for
 slightly fancier code should be OK, I think.
 
 #### ETA

@@ -287,7 +287,6 @@ again:
 		goto eof_exit;
 	}
 
-	/* todo: scan comments */
 	c = *lexer->loc.pos;
 	/* skip spaces except '\n' */
 	while (isspace(c) && c != '\n') {
