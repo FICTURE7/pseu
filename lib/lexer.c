@@ -9,11 +9,16 @@
 #include "pretty.h"
 #endif
 
+/* advances the lexer's position by the specified amount of character */
+static char *advance_by(struct lexer *lexer, int count) {
+	lexer->loc.pos += count;
+	lexer->loc.col += count;
+	return lexer->loc.pos;
+}
+
 /* advances the lexer's position by one character */
 static char *advance(struct lexer *lexer) {
-	lexer->loc.pos++;
-	lexer->loc.col++;
-	return lexer->loc.pos;
+	return advance_by(lexer, 1);
 }
 
 /*
@@ -221,7 +226,7 @@ static void scan_string(struct lexer *lexer, struct token *token) {
 	token->len = 0;
 
 	do {
-start:
+again:
 		token->len++;
 		/* reached eof with the closing '"' character */
 		if (advance(lexer) >= lexer->end) {
@@ -234,12 +239,11 @@ start:
 			if (lexer->loc.pos + 1 >= lexer->end) {
 				continue;
 			}
-
 			c = *(lexer->loc.pos + 1);
 			/* skip current '"' if it was preceeded by a '\' */
 			if (c == '"') {
 				advance(lexer);
-				goto start;
+				goto again;
 			}
 		}
 	} while (c != '"');
@@ -265,28 +269,32 @@ void lexer_init(struct lexer *lexer, char *path, char *src) {
 		lexer_scan(lexer, &token);
 	}
 	/* reset */
+	lexer->loc.pos = src;
 	lexer->loc.ln = 1;
 	lexer->loc.col = 1;
-	lexer->loc.pos = src;
 #endif
 }
 
 void lexer_scan(struct lexer *lexer, struct token *token) {
+	/* peek character */
+	char p;
+	/* current character */
+	char c;
+
+again:
 	/* set tok to TOK_EOF if we reached eof */
 	if (lexer->loc.pos >= lexer->end) {
-		token_init(token, TOK_EOF, lexer->loc, 0);
-		return;
+		goto eof_exit;
 	}
 
 	/* todo: scan comments */
-	char c = *lexer->loc.pos;
+	c = *lexer->loc.pos;
 	/* skip spaces except '\n' */
 	while (isspace(c) && c != '\n') {
 		c = *(advance(lexer));
 		/* reached eof */
 		if (lexer->loc.pos >= lexer->end) {
-			token_init(token, TOK_EOF, lexer->loc, 0);
-			return;
+			goto eof_exit;
 		}
 	}
 
@@ -317,7 +325,7 @@ void lexer_scan(struct lexer *lexer, struct token *token) {
 			}
 
 			/* if next character is a digit it must be a number (floating point) */
-			char p = *(lexer->loc.pos + 1);
+			p = *(lexer->loc.pos + 1);
 			if (isdigit(p)) {
 				scan_number(lexer, token);
 				return;
@@ -346,8 +354,63 @@ void lexer_scan(struct lexer *lexer, struct token *token) {
 			token_init(token, TOK_OP_SUB, lexer->loc, 1);
 			goto advance_exit;
 		case '/':
-			token_init(token, TOK_OP_DIV, lexer->loc, 1);
-			goto advance_exit;
+			/* try to peek the next character */
+			if (lexer->loc.pos + 1 >= lexer->end) {
+				token_init(token, TOK_OP_DIV, lexer->loc, 1);
+				goto advance_exit;
+			}
+			p = *(lexer->loc.pos + 1);
+			/*
+			 *	if the next character is also a '/' then its a single-line comment
+			 *	or the next character is a '*' then its a multi-line comment
+			 *	otherwise its a div token
+			 */
+			switch (p) {
+				case '/':
+					advance(lexer);
+					/* scan the until the next linefeed */
+					do {
+						if (advance(lexer) >= lexer->end) {
+							goto eof_exit;
+						}
+						c = *lexer->loc.pos;
+					} while (c != '\n');
+					/*
+					 *	skip the current '\n' character
+					 *	move the loc of the lexer to next line
+					 *	and start lexing again
+					 */
+					lexer->loc.ln++;
+					lexer->loc.col = 1;
+					lexer->loc.pos++;
+					goto again;
+				case '*':
+					advance(lexer);
+					/* scan the until the next '*' '/' sequence */
+					while (advance(lexer) < lexer->end) {
+						c = *lexer->loc.pos;
+						if (c == '*') {
+							/* try to peek the next character*/
+							if (lexer->loc.pos + 1 >= lexer->end) {
+								goto eof_exit;
+							}
+							p = *(lexer->loc.pos + 1);
+							/*	current char is a '*' next character is a '/'
+							 *	which indicates the end of the multi-line comment
+							 */
+							if (p == '/') {
+								advance_by(lexer, 2);
+								goto again;
+							}
+						}
+					};
+					goto eof_exit;
+
+				default:
+					token_init(token, TOK_OP_DIV, lexer->loc, 1);
+					goto advance_exit;
+			}
+
 		case '*':
 			token_init(token, TOK_OP_MUL, lexer->loc, 1);
 			goto advance_exit;
@@ -372,4 +435,9 @@ void lexer_scan(struct lexer *lexer, struct token *token) {
 
 advance_exit:
 	advance(lexer);
+	return;
+
+eof_exit:
+	token_init(token, TOK_EOF, lexer->loc, 0);
+	return;
 }

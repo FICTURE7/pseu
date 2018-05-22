@@ -38,24 +38,53 @@ int test_lexer() {
 				{ TOK_LIT_REAL, "0.10" },
 				{ TOK_LIT_REAL, "0.e5" },
 				{ TOK_LIT_INTEGERHEX, "0xFF" },
+				{ TOK_EOF, "" }
 			},
-			.tokens_count = 6
+			.tokens_count = 9
 		},
 		{
 			.src = " 1  5454  55.676  ",
 			.tokens = {
 				{ TOK_LIT_INTEGER, "1" },
 				{ TOK_LIT_INTEGER, "5454" },
-				{ TOK_LIT_REAL, "55.676" }
+				{ TOK_LIT_REAL, "55.676" },
+				{ TOK_EOF, "" }
 			},
-			.tokens_count = 2
+			.tokens_count = 4
 		},
 		{
 			.src = "  :   ",
 			.tokens = {
-				{ TOK_COLON, ":" }
+				{ TOK_COLON, ":" },
+				{ TOK_EOF, "" }
 			},
-			.tokens_count = 1
+			.tokens_count = 2
+		},
+		{
+			.src = " // test comment\nxD",
+			.tokens = {
+				{ TOK_IDENT, "xD" },
+				{ TOK_EOF, "" }
+			},
+			.tokens_count = 2
+		},
+		{
+			.src = "1 / 2 // half",
+			.tokens = {
+				{ TOK_LIT_INTEGER, "1" },
+				{ TOK_OP_DIV, "/" },
+				{ TOK_LIT_INTEGER, "2" },
+				{ TOK_EOF, "" }
+			},
+			.tokens_count = 4
+		},
+		{
+			.src = " /* fancy comment \n new line \n test: 1 * 2 / 3 /* */ xD",
+			.tokens = {
+				{ TOK_IDENT, "xD" },
+				{ TOK_EOF, "" }
+			},
+			.tokens_count = 2
 		}
 	};
 
