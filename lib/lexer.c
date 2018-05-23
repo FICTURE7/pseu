@@ -73,7 +73,7 @@ static void scan_identifier(struct lexer *lexer, struct token *token) {
  * integer-hex		= ("0x" / "0X") 1*HEXDIG
  * integer			= 1*DIGIT / integer-hex
  * real-exponent	= ("e" / "E") 1*DIGIT
- * real			= (1*DIGIT "." *DIGIT / "." 1*DIGIT) *1real-exponent / 1*DIGIT real-exponent
+ * real				= (1*DIGIT "." *DIGIT / "." 1*DIGIT) *1real-exponent / 1*DIGIT real-exponent
  * number			= integer / real
  */
 static void scan_number(struct lexer *lexer, struct token *token) {
@@ -182,16 +182,26 @@ fraction:
 exponent:
 		token->len++;
 		c = *(advance(lexer));
-		/* todo: support +/- prefix */
-		while (isdigit(c)) {
+
+		/* exponent sign */
+		if (c == '+' || c == '-') {
 			token->len++;
-			/* reached eof */
-			if (++lexer->loc.pos >= lexer->end) {
-				break;
-			}
-			c = *lexer->loc.pos;
+			c = *(advance(lexer));
 		}
-		token->type = TOK_LIT_REAL;
+
+		if (isdigit(c)) {
+			do {
+				token->len++;
+				/* reached eof */
+				if (advance(lexer) >= lexer->end) {
+					break;
+				}
+				c = *lexer->loc.pos;
+			} while (isdigit(c));
+			token->type = TOK_LIT_REAL;
+		} else {
+			token->type = TOK_ERR;
+		}
 		return;
 	}
 
@@ -199,6 +209,7 @@ exponent:
 	while (advance(lexer) < lexer->end) {
 		c = *lexer->loc.pos;
 
+		/* check for exponents and fractions */
 		switch (c) {
 			case 'e':
 			case 'E':

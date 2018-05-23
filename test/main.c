@@ -43,14 +43,19 @@ int test_lexer() {
 			.tokens_count = 9
 		},
 		{
-			.src = " 1  5454  55.676  ",
+			.src = " 1  5454  55.676  14e5 14.5e5  44e  43e-4   54e+55  ",
 			.tokens = {
 				{ TOK_LIT_INTEGER, "1" },
 				{ TOK_LIT_INTEGER, "5454" },
 				{ TOK_LIT_REAL, "55.676" },
+				{ TOK_LIT_REAL, "14e5" },
+				{ TOK_LIT_REAL, "14.5e5" },
+				{ TOK_ERR, "44e" },
+				{ TOK_LIT_REAL, "43e-4" },
+				{ TOK_LIT_REAL, "54e+55" },
 				{ TOK_EOF, "" }
 			},
-			.tokens_count = 4
+			.tokens_count = 8
 		},
 		{
 			.src = "  :   ",
@@ -96,6 +101,12 @@ int test_lexer() {
 			struct test_data_token tdata = cur_data.tokens[k];
 			lexer_scan(&lexer, &token);
 			TEST_EQ_TOK(token, tdata.type, tdata.value);
+
+			/*
+			if (tdata.type == TOK_EOF) {
+				TEST_EQ(lexer.loc.pos, '\0');
+			}
+			*/
 		}
 	}
 	return 0;
