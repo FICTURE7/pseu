@@ -22,12 +22,12 @@ static char *advance(struct lexer *lexer) {
 }
 
 /*
- *	identifier = (ALPHA / "_") *(ALPHA / DIGIT / "_")
+ * identifier = (ALPHA / "_") *(ALPHA / DIGIT / "_")
  */
 static void scan_identifier(struct lexer *lexer, struct token *token) {
 	/*
-	 *	no need to check if first character is an alphabet or "_",
-	 *	assume caller already did
+	 * no need to check if first character is an alphabet or "_",
+	 * assume caller already did
 	 */
 	char c = *lexer->loc.pos;
 	token->loc = lexer->loc;
@@ -64,17 +64,17 @@ static void scan_identifier(struct lexer *lexer, struct token *token) {
 	} else if (token_value_cmp(token, "OR")) {
 		token->type = TOK_OP_LOGICAL_OR;
 	} else {
-		/* must be an identifier*/
+		/* must be an identifier */
 		token->type = TOK_IDENT;
 	}
 }
 
 /*
- *	integer-hex		= ("0x" / "0X") 1*HEXDIG
- *	integer			= 1*DIGIT / integer-hex
- *	real-exponent	= ("e" / "E") 1*DIGIT
- *	real			= (1*DIGIT "." *DIGIT / "." 1*DIGIT) *1real-exponent / 1*DIGIT real-exponent
- *	number			= integer / real
+ * integer-hex		= ("0x" / "0X") 1*HEXDIG
+ * integer			= 1*DIGIT / integer-hex
+ * real-exponent	= ("e" / "E") 1*DIGIT
+ * real			= (1*DIGIT "." *DIGIT / "." 1*DIGIT) *1real-exponent / 1*DIGIT real-exponent
+ * number			= integer / real
  */
 static void scan_number(struct lexer *lexer, struct token *token) {
 	char c = *lexer->loc.pos;
@@ -82,14 +82,14 @@ static void scan_number(struct lexer *lexer, struct token *token) {
 	token->len = 1;
 
 	/*
-	 *	check for
-	 *	hex number starting with '0x' or '0X'
-	 *	OR
-	 *	floating point starting with '0e' or '0E' (because why not)
-	 *	OR
-	 *  floating point starting with '0.'
-	 *	OR
-	 *	number starting with a '0'
+	 * check for
+	 * hex number starting with '0x' or '0X'
+	 * OR
+	 * floating point starting with '0e' or '0E' (because why not)
+	 * OR
+	 * floating point starting with '0.'
+	 * OR
+	 * number starting with a '0'
 	 */
 	if (c == '0') {
 		/* check if we've reached eof */
@@ -307,9 +307,9 @@ again:
 			token_init(token, TOK_LF, lexer->loc, 1);
 
 			/*
-			 *	we moved to the next line so
-			 *	update loc.ln and loc.col to point
-			 *  to new begining of line
+			 * we moved to the next line so
+			 * update loc.ln and loc.col to point
+			 * to new begining of line
 			 */
 			lexer->loc.ln++;
 			lexer->loc.col = 1;
@@ -360,9 +360,9 @@ again:
 			}
 			p = *(lexer->loc.pos + 1);
 			/*
-			 *	if the next character is also a '/' then its a single-line comment
-			 *	or the next character is a '*' then its a multi-line comment
-			 *	otherwise its a div token
+			 * if the next character is also a '/' then its a single-line comment
+			 * or the next character is a '*' then its a multi-line comment
+			 * otherwise its a div token
 			 */
 			switch (p) {
 				case '/':
@@ -375,9 +375,9 @@ again:
 						c = *lexer->loc.pos;
 					} while (c != '\n');
 					/*
-					 *	skip the current '\n' character
-					 *	move the loc of the lexer to next line
-					 *	and start lexing again
+					 * skip the current '\n' character
+					 * move the loc of the lexer to next line
+					 * and start lexing again
 					 */
 					lexer->loc.ln++;
 					lexer->loc.col = 1;
@@ -393,12 +393,13 @@ again:
 							if (lexer->loc.pos + 1 >= lexer->end) {
 								goto eof_exit;
 							}
-							p = *(lexer->loc.pos + 1);
-							/*	current char is a '*' next character is a '/'
-							 *	which indicates the end of the multi-line comment
+							p = *(advance(lexer));
+							/*
+							 * current char is a '*' next character is a '/'
+							 * which indicates the end of the multi-line comment
 							 */
 							if (p == '/') {
-								advance_by(lexer, 2);
+								advance(lexer);
 								goto again;
 							}
 						}
