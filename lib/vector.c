@@ -1,3 +1,4 @@
+#include <string.h>
 #include "vector.h"
 
 #define VECTOR_INIT_CAPACITY 16
@@ -25,6 +26,19 @@ void vector_add(struct vector *vec, void *item) {
 		resize(vec, vec->capacity * 2);
 	}
 	vec->items[vec->count++] = item;
+}
+
+void vector_remove(struct vector *vec, int index) {
+	if (index < 0 || index >= vec->count) {
+		return;
+	}
+	void *dst = vec->items + index;
+	void *src = vec->items + index + 1;
+	size_t size = sizeof(void *) * --vec->count;
+	memcpy(dst, src, size);
+	if (vec->count == vec->capacity / 2) {
+		resize(vec, vec->capacity / 2);
+	}
 }
 
 void *vector_get(struct vector *vec, int index) {

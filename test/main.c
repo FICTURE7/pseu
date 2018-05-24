@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "test.h"
+#include "vector.h"
 #include "lexer.h"
 #include "token.h"
 
@@ -112,9 +113,31 @@ int test_lexer() {
 	return 0;
 }
 
+int test_vector() {
+	struct vector vec;
+
+	/* test growing of vector */
+	vector_init(&vec);
+	TEST_EQ(vec.count, 0);
+	TEST_EQ(vec.capacity, 16);
+	for (int i = 0; i < 17; i++) {
+		vector_add(&vec, i);
+	}
+	TEST_EQ(vec.count, 17);
+	TEST_EQ(vec.capacity, 32);
+
+	/* test shrinking of vector */
+	vector_remove(&vec, 0);
+	TEST_EQ(vec.count, 16);
+	TEST_EQ(vec.capacity, 16);
+	TEST_EQ(vector_get(&vec, 0), 1);
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
 	TEST(test_lexer);
+	TEST(test_vector);
 	TEST_DEINIT();
 
 	getchar();
