@@ -12,7 +12,6 @@ set(LIBNOTPSEUDO_SRC
     object.h  
 
     notpseudo.c
-    location.c
     vector.c
     pretty.c
     lexer.c
