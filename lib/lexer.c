@@ -106,7 +106,7 @@ static void scan_number(struct lexer *lexer, struct token *token) {
 				token->len++;
 				/* try to peek the next character after the 'x' */
 				if (advance(lexer) >= lexer->end) {
-					token->type = TOK_ERR;
+					token->type = TOK_ERR_INVALID_HEX;
 					return;
 				}
 
@@ -121,7 +121,7 @@ static void scan_number(struct lexer *lexer, struct token *token) {
 					c = *lexer->loc.pos;
 				}
 				/* todo: add support for the error message */
-				token->type = token->len > 2 ? TOK_LIT_INTEGERHEX : TOK_ERR;
+				token->type = token->len > 2 ? TOK_LIT_INTEGERHEX : TOK_ERR_INVALID_HEX;
 				return;
 
 			/* floating point starting with '0e' or '0E' */
@@ -200,7 +200,7 @@ exponent:
 			} while (isdigit(c));
 			token->type = TOK_LIT_REAL;
 		} else {
-			token->type = TOK_ERR;
+			token->type = TOK_ERR_INVALID_EXP;
 		}
 		return;
 	}
@@ -239,9 +239,9 @@ static void scan_string(struct lexer *lexer, struct token *token) {
 	do {
 again:
 		token->len++;
-		/* reached eof with the closing '"' character */
+		/* reached eof without the closing '"' character */
 		if (advance(lexer) >= lexer->end) {
-			token->type = TOK_ERR;
+			token->type = TOK_ERR_INVALID_STRING;
 			return;
 		}
 		c = *lexer->loc.pos;
@@ -440,7 +440,7 @@ again:
 			}
 
 			/* unknown character */
-			token_init(token, TOK_ERR, lexer->loc, 1);
+			token_init(token, TOK_ERR_UNKNOWN_CHAR, lexer->loc, 1);
 			goto advance_exit;
 	}
 

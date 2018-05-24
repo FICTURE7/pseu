@@ -33,7 +33,7 @@ int test_lexer() {
 			.tokens = {
 				{ TOK_LIT_INTEGER, "0" },
 				{ TOK_LIT_REAL, "0." },
-				{ TOK_ERR, "0x" },
+				{ TOK_ERR_INVALID_HEX, "0x" },
 				{ TOK_LIT_INTEGER, "000" },
 				{ TOK_LIT_REAL, "0e24" },
 				{ TOK_LIT_REAL, "0.10" },
@@ -51,7 +51,7 @@ int test_lexer() {
 				{ TOK_LIT_REAL, "55.676" },
 				{ TOK_LIT_REAL, "14e5" },
 				{ TOK_LIT_REAL, "14.5e5" },
-				{ TOK_ERR, "44e" },
+				{ TOK_ERR_INVALID_EXP, "44e" },
 				{ TOK_LIT_REAL, "43e-4" },
 				{ TOK_LIT_REAL, "54e+55" },
 				{ TOK_EOF, "" }

@@ -5,8 +5,13 @@
 #include "location.h"
 
 enum token_type {
+	/* errors */
+	TOK_ERR_INVALID_HEX,
+	TOK_ERR_INVALID_EXP,
+	TOK_ERR_INVALID_STRING,
+	TOK_ERR_UNKNOWN_CHAR,
+
 	TOK_EOF,
-	TOK_ERR,
 
 	/* literals */
 	TOK_LIT_INTEGER,
