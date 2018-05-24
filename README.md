@@ -29,7 +29,7 @@ as much of it as possible.
 
 And also to give decent errors and warnings. High performance is not a goal of this project
 because who would do anything compute-intensive with this. So compromising performance for
-slightly fancier code should be OK, I think.
+slightly fancier/simpler code should be OK, I think.
 
 #### ETA
 I will try to get this 'done' before the start of the third trimester which should be around
