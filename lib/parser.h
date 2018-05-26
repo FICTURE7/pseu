@@ -3,7 +3,7 @@
 
 #include "node.h"
 #include "lexer.h"
-#include "vector.h"
+#include "diagnostic.h"
 #include "parser.h"
 
 struct parser {
@@ -13,6 +13,8 @@ struct parser {
 };
 
 void parser_init(struct parser *parser, struct lexer *lexer);
+
+void parser_deinit(struct parser *parser);
 
 void parser_parse(struct parser *parser, struct node **root);
 

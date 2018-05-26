@@ -3,23 +3,28 @@
 #include <string.h>
 #include "node.h"
 #include "lexer.h"
-#include "vector.h"
+#include "diagnostic.h"
 #include "parser.h"
 
 #ifdef PARSER_DEBUG
-#include "pretty.h"
 #include <stdio.h>
+#include "pretty.h"
 #endif
 
-static void eat(struct parser *parser, enum token_type type) {
-	if (parser->token.type != type) {
-		vector_add(&parser->diagnostics, "expected something");
-	}
+static void eat(struct parser *parser) {
 	lexer_scan(parser->lexer, &parser->token);
 }
 
 static void error(struct parser *parser, struct token *token, char *message) {
+	struct diagnostic *diagnostic = malloc(sizeof(struct diagnostic));
+	diagnostic->type = DIAGNOSTIC_TYPE_ERROR;
+	diagnostic->loc = token->loc;
+	diagnostic->message = message;
+
+	vector_add(&parser->diagnostics, diagnostic);
+#ifdef PARSER_DEBUG
 	printf("error(ln: %d, col: %d): %s\n", token->loc.ln, token->loc.col, message);
+#endif
 }
 
 static int precedence(enum token_type type) {
@@ -45,7 +50,15 @@ static struct node *expression(struct parser *parser);
 
 static char *identifier(struct parser *parser) {
 	struct token token = parser->token;
-	eat(parser, TOK_IDENT);
+
+	if (parser->token.type != TOK_IDENT) {
+		error(parser, &parser->token, "expected an identifier");
+		eat(parser);
+		return NULL;
+	}
+
+	/* eat identifier */
+	eat(parser);
 
 	char *ident = malloc(token.len + 1);
 	ident[token.len] = '\0';
@@ -56,7 +69,7 @@ static char *identifier(struct parser *parser) {
 static struct node *string(struct parser *parser) {
 	/* todo: unescape strings */
 	struct token token = parser->token;
-	eat(parser, TOK_LIT_STRING);
+	eat(parser);
 
 	struct node_string *node = malloc(sizeof(struct node_string));
 	node->base.type = NODE_LIT_STRING;
@@ -107,9 +120,6 @@ static struct node *number(struct parser *parser) {
 			return integer(parser);
 		case TOK_LIT_REAL:
 			return real(parser);
-		default:
-			/* err */
-			return NULL;
 	}
 }
 
@@ -130,13 +140,13 @@ static struct node *boolean(struct parser *parser) {
 	struct node_boolean *node = malloc(sizeof(struct node_boolean));
 	node->base.type = NODE_LIT_BOOLEAN;
 	node->val = val;
-	eat(parser, parser->token.type);
+	eat(parser);
 
 	return node;
 }
 
 /*
- *	primary = number / boolean / ("+"/"-") primary / "NOT" primary / "(" expression ")"
+ *	primary = number / boolean / ("+"/"-"/"NOT") primary / "(" expression ")"
  */
 static struct node *primary(struct parser *parser) {
 	switch (parser->token.type) {
@@ -147,38 +157,60 @@ static struct node *primary(struct parser *parser) {
 			struct node_op_unary *unop = malloc(sizeof(struct node_op_unary));
 			unop->base.type = NODE_OP_UNARY;
 			unop->op = parser->token.type;
-			eat(parser, parser->token.type);
+			eat(parser);
 
 			unop->expr = primary(parser);
 			return unop;
 
 		/* expressions in parenthesis */
 		case TOK_LPAREN:
-			eat(parser, TOK_LPAREN);
+			/* eat '(' */
+			eat(parser);
 			struct node *node = expression(parser);
-			eat(parser, TOK_RPAREN);
+			if (!node) {
+				error(parser, &parser->token, "expected an expression");
+			}
+			if (parser->token.type != TOK_RPAREN) {
+				error(parser, &parser->token, "expected a ')'");
+			}
+			/* eat ')' */
+			eat(parser);
 			return node;
 
-		/* boolean expression */
+		/* boolean literals */
 		case TOK_LIT_BOOLEAN_TRUE:
 		case TOK_LIT_BOOLEAN_FALSE:
 			return boolean(parser);
-	}
 
-	return number(parser);
+		/* integer literals */
+		case TOK_LIT_INTEGERHEX:
+		case TOK_LIT_INTEGER:
+		case TOK_LIT_REAL:
+			return number(parser);
+
+		default:
+			/* err */
+			return NULL;
+	}
 }
 
 static struct node *expression_rhs(struct parser *parser, struct node *lhs, int min_precedence) {
 	while (true) {
-		int cur_precedence = precedence(parser->token.type);
+		/* check current operators precedence */
+		enum token_type op = parser->token.type;
+		int cur_precedence = precedence(op);
 		if (cur_precedence < min_precedence) {
 			return lhs;
 		}
 
-		enum token_type op = parser->token.type;
-		eat(parser, op);
+		/* eat operator and move to next token which should parse to a primary node */
+		eat(parser);
 
 		struct node *rhs = primary(parser);
+		if (!rhs) {
+			error(parser, &parser->token, "expected an expression");
+		}
+
 		int next_precedence = precedence(parser->token.type);
 		if (cur_precedence < next_precedence) {
 			struct node *new_rhs = expression_rhs(parser, lhs, cur_precedence + 1);
@@ -200,6 +232,7 @@ static struct node *expression_rhs(struct parser *parser, struct node *lhs, int 
 static struct node *expression(struct parser *parser) {
 	struct node *lhs = primary(parser);
 	if (!lhs) {
+		error(parser, &parser->token, "expected an expression");
 		return NULL;
 	}
 	return expression_rhs(parser, lhs, 0);
@@ -209,12 +242,20 @@ static struct node *expression(struct parser *parser) {
  *	declare-statement = "DECLARE" identifier ":" identifier
  */
 static struct node *declare_statement(struct parser *parser) {
-	eat(parser, TOK_KW_DECLARE);
+	/* eat declare keyword */
+	eat(parser);
 
 	struct node_stmt_decl *decl = malloc(sizeof(struct node_stmt_decl));
 	decl->base.type = NODE_STMT_DECLARE;
 	decl->ident = identifier(parser);
-	eat(parser, TOK_COLON);
+
+	if (parser->token.type != TOK_COLON) {
+		error(parser, &parser->token, "expected a ':'");
+	}
+
+	/* eat colon */
+	eat(parser);
+
 	decl->type = identifier(parser);
 	return decl;
 }
@@ -223,23 +264,19 @@ static struct node *declare_statement(struct parser *parser) {
  *	output-statement = "OUTPUT" expression
  */
 static struct node *output_statement(struct parser *parser) {
-	eat(parser, TOK_KW_OUTPUT);
-	struct token token = parser->token;
-	struct node *expr = expression(parser);
+	/* eat output keyword */
+	eat(parser);
 
+	struct node *expr = expression(parser);
 	struct node_stmt_output *output = malloc(sizeof(struct node_stmt_output));
 	output->base.type = NODE_STMT_OUTPUT;
 	output->expr = expr;
-
-	if (expr == NULL) {
-		error(parser, &token, "expected expression after 'OUTPUT' keyword.");
-	}
 
 	return output;
 }
 
 /*
- *	statement = output-statement
+ *	statement = declare-statement | output-statement
  */
 static struct node *statement(struct parser *parser) {
 	switch (parser->token.type) {
@@ -266,8 +303,16 @@ static struct node *block(struct parser *parser) {
 		vector_add(&block->stmts, stmt);
 	}
 
+	if (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
+		error(parser, &parser->token, "expected '\\n' (linefeed)");
+		/* skip tokens until a line feed or eof */
+		do {
+			eat(parser);
+		} while (parser->token.type != TOK_LF && parser->token.type != TOK_EOF);
+	}
+
 	while (parser->token.type == TOK_LF) {
-		eat(parser, TOK_LF);
+		eat(parser);
 		stmt = statement(parser);
 		if (stmt) {
 			vector_add(&block->stmts, stmt);
@@ -294,7 +339,19 @@ void parser_init(struct parser *parser, struct lexer *lexer) {
 #endif
 }
 
+void parser_deinit(struct parser *parser) {
+	/* free the diagnostic structs on the heap in the vector/list */
+	for (int i = 0; i < parser->diagnostics.count; i++) {
+		free(vector_get(&parser->diagnostics, i));
+	}
+	vector_deinit(&parser->diagnostics);
+}
+
 void parser_parse(struct parser *parser, struct node **root) {
 	(*root) = block(parser);
-	eat(parser, TOK_EOF);
+	if (parser->token.type != TOK_EOF) {
+		error(parser, &parser->token, "expected eof");
+	}
+
+	eat(parser);
 }
