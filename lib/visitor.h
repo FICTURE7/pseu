@@ -6,6 +6,7 @@
 
 struct visitor {
 	struct object *(*block)(struct visitor *visitor, struct node_block *block);
+	struct object *(*real)(struct visitor *visitor, struct node_real *real);
 	struct object *(*integer)(struct visitor *visitor, struct node_integer *integer);
 	struct object *(*string)(struct visitor *visitor, struct node_string *string);
 	struct object *(*boolean)(struct visitor *visitor, struct node_boolean *boolean);

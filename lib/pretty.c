@@ -66,6 +66,12 @@ static struct object *print_string(struct visitor *visitor, struct node_string *
 	return NULL;
 }
 
+static struct object *print_real(struct visitor *visitor, struct node_real *real) {
+	ident();
+	printf("real(%f)\n", real->val);
+	return NULL;
+}
+
 static struct object *print_integer(struct visitor *visitor, struct node_integer *integer) {
 	ident();
 	printf("int(%d)\n", integer->val);
@@ -137,6 +143,7 @@ static struct object *print_stmt_output(struct visitor *visitor, struct node_stm
 void prettyprint_node(struct node *node) {
 	struct visitor visitor;
 	visitor.block = print_block;
+	visitor.real = print_real;
 	visitor.integer = print_integer;
 	visitor.string = print_string;
 	visitor.boolean = print_boolean;

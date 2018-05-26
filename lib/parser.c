@@ -81,32 +81,40 @@ static struct node *string(struct parser *parser) {
 }
 
 static struct node *real(struct parser *parser) {
-	return NULL;
+	char *buf = malloc(parser->token.len);
+	struct node_real *val = malloc(sizeof(struct node_real));
+
+	memcpy(buf, parser->token.loc.pos, parser->token.len);
+	val->base.type = NODE_LIT_REAL;
+	val->val = strtof(buf, NULL);
+	free(buf);
+	/* eat real */
+	eat(parser);
+	return val;
 }
 
 static struct node *integer(struct parser *parser) {
 	char *buf = NULL;
-	struct token token = parser->token;
-	/* move to next to token */
-	lexer_scan(parser->lexer, &parser->token);
+	struct node_integer *val = malloc(sizeof(struct node_integer));
 
-	struct node_integer *val = malloc(sizeof(struct node_real));
 	val->base.type = NODE_LIT_INTEGER;
-	switch (token.type) {
+	switch (parser->token.type) {
 		case TOK_LIT_INTEGER:
-			buf = malloc(token.len);
-			memcpy(buf, token.loc.pos, token.len);
+			buf = malloc(parser->token.len);
+			memcpy(buf, parser->token.loc.pos, parser->token.len);
 			val->val = strtol(buf, NULL, 10);
 			break;
 		case TOK_LIT_INTEGERHEX:
 			/* skip the first '0x' characters */
-			buf = malloc(token.len - 2);
-			memcpy(buf, token.loc.pos + 2, token.len - 2);
+			buf = malloc(parser->token.len - 2);
+			memcpy(buf, parser->token.loc.pos + 2, parser->token.len - 2);
 			val->val = strtol(buf, NULL, 16);
 			break;
 	}
 
 	free(buf);
+	/* eat integer */
+	eat(parser);
 	return val;
 }
 

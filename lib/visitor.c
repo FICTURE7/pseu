@@ -6,6 +6,8 @@ struct object *visitor_visit(struct visitor *visitor, struct node *node) {
 		case NODE_BLOCK:
 			return visitor->block(visitor, (struct node_block *)node);
 
+		case NODE_LIT_REAL:
+			return visitor->real(visitor, (struct node_real *)node);
 		case NODE_LIT_INTEGER:
 			return visitor->integer(visitor, (struct node_integer *)node);
 		case NODE_LIT_STRING:
