@@ -27,6 +27,14 @@ static void error(struct parser *parser, struct token *token, char *message) {
 #endif
 }
 
+static void panic(struct parser *parser) {
+	/* skip tokens until a line feed or eof */
+	error(parser, &parser->token, "expected '\\n' (linefeed)");
+	do {
+		eat(parser);
+	} while (parser->token.type != TOK_LF && parser->token.type != TOK_EOF);
+}
+
 static int precedence(enum token_type type) {
 	switch (type) {
 		case TOK_OP_ADD: /* + */
@@ -68,15 +76,14 @@ static char *identifier(struct parser *parser) {
 
 static struct node *string(struct parser *parser) {
 	/* todo: unescape strings */
-	struct token token = parser->token;
-	eat(parser);
-
 	struct node_string *node = malloc(sizeof(struct node_string));
 	node->base.type = NODE_LIT_STRING;
-	node->val = malloc(token.len + 1);
-	node->val[token.len] = '\0';
-	memcpy(node->val, token.loc.pos, token.len);
+	node->val = malloc(parser->token.len + 1);
+	node->val[parser->token.len] = '\0';
+	memcpy(node->val, parser->token.loc.pos, parser->token.len);
 
+	/* eat string */
+	eat(parser);
 	return node;
 }
 
@@ -165,6 +172,7 @@ static struct node *primary(struct parser *parser) {
 			struct node_op_unary *unop = malloc(sizeof(struct node_op_unary));
 			unop->base.type = NODE_OP_UNARY;
 			unop->op = parser->token.type;
+			/* eat operator */
 			eat(parser);
 
 			unop->expr = primary(parser);
@@ -175,14 +183,12 @@ static struct node *primary(struct parser *parser) {
 			/* eat '(' */
 			eat(parser);
 			struct node *node = expression(parser);
-			if (!node) {
-				error(parser, &parser->token, "expected an expression");
-			}
 			if (parser->token.type != TOK_RPAREN) {
 				error(parser, &parser->token, "expected a ')'");
+			} else {
+				/* eat ')' */
+				eat(parser);
 			}
-			/* eat ')' */
-			eat(parser);
 			return node;
 
 		/* boolean literals */
@@ -311,17 +317,21 @@ static struct node *block(struct parser *parser) {
 		vector_add(&block->stmts, stmt);
 	}
 
+	/* point parser to next statement if not line feed or eof */
 	if (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
-		error(parser, &parser->token, "expected '\\n' (linefeed)");
-		/* skip tokens until a line feed or eof */
-		do {
-			eat(parser);
-		} while (parser->token.type != TOK_LF && parser->token.type != TOK_EOF);
+		panic(parser);
 	}
 
 	while (parser->token.type == TOK_LF) {
+		/* eat linefeed */
 		eat(parser);
 		stmt = statement(parser);
+
+		/* point parser to next statement if not line feed or eof */
+		if (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
+			panic(parser);
+		}
+
 		if (stmt) {
 			vector_add(&block->stmts, stmt);
 		}
