@@ -299,7 +299,7 @@ static struct node *statement(struct parser *parser) {
 		case TOK_KW_OUTPUT:
 			return output_statement(parser);
 		default:
-			/* err */
+			error(parser, &parser->token, "unexpected symbol");
 			return NULL;
 	}
 }
@@ -354,6 +354,7 @@ void parser_init(struct parser *parser, struct lexer *lexer) {
 	lexer->loc.pos = lexer->src;
 	lexer->loc.ln = 1;
 	lexer->loc.col = 1;
+	lexer_scan(lexer, &parser->token);
 #endif
 }
 

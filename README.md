@@ -6,7 +6,7 @@ book.
 #### NOTE
 This is still a work in progress thing and cannot do much at the moment until
 things are fleshed out. But I've also written a working compiler which is pretty 
-much complete in C# at the [`csharp`](https://github.com/FICTURE7/notpseudo/tree/csharp/) 
+much complete in C# at the [`roslyn`](https://github.com/FICTURE7/notpseudo/tree/roslyn/) 
 branch which makes use of the [Roslyn](https://github.com/dotnet/roslyn/) compiler platform 
 to compile to IL by transpiling the code to Visual Basic.
 
