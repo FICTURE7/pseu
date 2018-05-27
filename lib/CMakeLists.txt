@@ -13,7 +13,6 @@ set(LIBNOTPSEUDO_SRC
     object.h  
 
     notpseudo.c
-    diagnostic.c
     vector.c
     pretty.c
     lexer.c
