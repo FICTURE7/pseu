@@ -1,6 +1,8 @@
 set(LIBNOTPSEUDO_INCLUDE_DIR "../include")
 set(LIBNOTPSEUDO_SRC
     ${LIBNOTPSEUDO_INCLUDE_DIR}/notpseudo.h
+    vm.h
+    vm/ssvm.h
     diagnostic.h
     location.h
     vector.h
@@ -12,6 +14,7 @@ set(LIBNOTPSEUDO_SRC
     visitor.h
     object.h  
 
+    vm/ssvm.c
     notpseudo.c
     vector.c
     pretty.c
