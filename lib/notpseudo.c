@@ -11,7 +11,7 @@ struct notpseudo {
 	struct lexer lexer;
 	struct parser parser;
 	struct node *root;
-	struct vm *vm;
+	struct vm vm;
 };
 
 notpseudo_t *notpseudo_alloc(void) {
@@ -19,13 +19,14 @@ notpseudo_t *notpseudo_alloc(void) {
 }
 
 void notpseudo_free(notpseudo_t *notpseudo) {
+	notpseudo->vm.deinit(&notpseudo->vm);
 	free(notpseudo);
 }
 
 void notpseudo_init(notpseudo_t *notpseudo, char *path, char *src) {
 	lexer_init(&notpseudo->lexer, path, src);
 	parser_init(&notpseudo->parser, &notpseudo->lexer);
-	ssvm_init(&notpseudo->vm);
+	vm_ssvm_init(&notpseudo->vm);
 
 	/* parse the src right away */
 	parser_parse(&notpseudo->parser, &notpseudo->root);

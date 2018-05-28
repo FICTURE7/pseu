@@ -4,6 +4,8 @@
 #include "vector.h"
 #include "lexer.h"
 #include "token.h"
+#include "vm.h"
+#include "vm/ssvm.h"
 
 struct test_data_token {
 	enum token_type type;
@@ -134,10 +136,34 @@ int test_vector() {
 	return 0;
 }
 
+int test_ssvm() {
+	enum ssvm_instr instr[] = {
+		SSVM_INSTR_PUSH, 2,
+		SSVM_INSTR_PUSH, 50,
+		SSVM_INSTR_ADD,
+		SSVM_INSTR_POP,
+		SSVM_INSTR_RET
+	};
+	
+	struct ssvm_ir ir = {
+		.len = sizeof(instr) / sizeof(enum ssvm_instr),
+		.instr = &instr
+	};
+
+	struct vm vm;
+	vm_ssvm_init(&vm);
+
+	vm.init(&vm);
+	vm.eval(&vm, &ir);
+
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
-	TEST(test_lexer);
-	TEST(test_vector);
+	//TEST(test_lexer);
+	//TEST(test_vector);
+	TEST(test_ssvm);
 	TEST_DEINIT();
 
 	getchar();
