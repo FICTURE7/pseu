@@ -227,7 +227,7 @@ static struct node *expression_rhs(struct parser *parser, struct node *lhs, int 
 
 		int next_precedence = precedence(parser->token.type);
 		if (cur_precedence < next_precedence) {
-			struct node *new_rhs = expression_rhs(parser, lhs, cur_precedence + 1);
+			struct node *new_rhs = expression_rhs(parser, rhs, cur_precedence + 1);
 			if (!new_rhs) {
 				return NULL;
 			}
