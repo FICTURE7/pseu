@@ -133,15 +133,15 @@ static void print_stmt_output(struct visitor *visitor, struct node_stmt_output *
 
 void prettyprint_node(struct node *node) {
 	struct visitor visitor;
-	visitor.block = print_block;
-	visitor.real = print_real;
-	visitor.integer = print_integer;
-	visitor.string = print_string;
-	visitor.boolean = print_boolean;
-	visitor.op_unary = print_op_unary;
-	visitor.op_binary = print_op_binary;
-	visitor.stmt_decl = print_stmt_decl;
-	visitor.stmt_output = print_stmt_output;
+	visitor.visit_block = print_block;
+	visitor.visit_real = print_real;
+	visitor.visit_integer = print_integer;
+	visitor.visit_string = print_string;
+	visitor.visit_boolean = print_boolean;
+	visitor.visit_op_unary = print_op_unary;
+	visitor.visit_op_binary = print_op_binary;
+	visitor.visit_stmt_decl = print_stmt_decl;
+	visitor.visit_stmt_output = print_stmt_output;
 
 	visitor_visit(&visitor, node);
 }
