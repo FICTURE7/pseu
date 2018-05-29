@@ -25,38 +25,54 @@ void eval(struct vm *vm, void *p) {
 	bool running = true;
 	struct ssvm_ir *ir = p;
 	struct ssvm_data *data = vm->data;
-	enum ssvm_instr *pos = ir->instr;
 
 	while (running) {
-		enum ssvm_instr instr = *pos;
+		enum ssvm_ir_inst instr = (int)vector_get(&ir->instructions, data->pc);
 		switch (instr) {
-			case SSVM_INSTR_RET: {
+			case SSVM_INST_RET: {
 				running = false;
 				break;
 			}
-			case SSVM_INSTR_PUSH: {
-				int val = *++pos;
+			case SSVM_INST_PUSH: {
+				int val = (int*)vector_get(&ir->instructions, ++data->pc);
 				data->stack[data->sp++] = val;
 				break;
 			}
-			case SSVM_INSTR_POP: {
+			case SSVM_INST_POP: {
 				int val = data->stack[--data->sp];
 				printf("%d\n", val);
 				break;
 			}
-			case SSVM_INSTR_ADD: {
+			case SSVM_INST_ADD:
+			case SSVM_INST_SUB:
+			case SSVM_INST_MUL:
+			case SSVM_INST_DIV: {
 				int val1 = data->stack[--data->sp];
 				int val2 = data->stack[--data->sp];
-				int result = val1 + val2;
+				int result;
+				switch (instr) {
+					case SSVM_INST_ADD:
+						result = val1 + val2;
+						break;
+					case SSVM_INST_SUB:
+						result = val1 - val2;
+						break;
+					case SSVM_INST_MUL:
+						result = val1 * val2;
+						break;
+					case SSVM_INST_DIV:
+						result = val1 / val2;
+						break;
+				}
 				data->stack[data->sp++] = result;
 				break;
 			}
 
-			case SSVM_INSTR_TEST:
+			case SSVM_INST_TEST:
 				printf("\nSSVM TEST\n");
 				break;
 		}
-		pos++;
+		data->pc++;
 	}
 }
 

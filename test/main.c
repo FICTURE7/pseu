@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include "test.h"
 #include "vector.h"
-#include "lexer.h"
 #include "token.h"
+#include "lexer.h"
+#include "parser.h"
 #include "vm.h"
 #include "vm/ssvm.h"
 
@@ -136,19 +137,24 @@ int test_vector() {
 	return 0;
 }
 
+void vector_addrange(struct vector *vec, void **items, int size) {
+	for (int i = 0; i < size; i++) {
+		vector_add(vec, items[i]);
+	}
+}
+
 int test_ssvm() {
-	enum ssvm_instr instr[] = {
-		SSVM_INSTR_PUSH, 2,
-		SSVM_INSTR_PUSH, 50,
-		SSVM_INSTR_ADD,
-		SSVM_INSTR_POP,
-		SSVM_INSTR_RET
+	enum ssvm_ir_inst inst[] = {
+		SSVM_INST_PUSH, 2,
+		SSVM_INST_PUSH, 50,
+		SSVM_INST_ADD,
+		SSVM_INST_POP,
+		SSVM_INST_RET
 	};
 	
-	struct ssvm_ir ir = {
-		.len = sizeof(instr) / sizeof(enum ssvm_instr),
-		.instr = &instr
-	};
+	struct ssvm_ir ir;
+	vector_init(&ir.instructions);
+	vector_addrange(&ir.instructions, &inst, sizeof(inst) / sizeof(enum ssvm_ir_inst));
 
 	struct vm vm;
 	vm_ssvm_init(&vm);
@@ -159,11 +165,29 @@ int test_ssvm() {
 	return 0;
 }
 
+int test_ssvm_gen() {
+	struct lexer lexer;
+	struct parser parser;
+	struct vm vm;
+	struct node *node;
+
+	lexer_init(&lexer, NULL, "OUTPUT (100 + 10 * 2)*2");
+	parser_init(&parser, &lexer);
+	vm_ssvm_init(&vm);
+
+	parser_parse(&parser, &node);
+	struct ssvm_ir *ir = vm_ssvm_ir_gen(&vm, node);
+
+	vm.init(&vm);
+	vm.eval(&vm, ir);
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
 	//TEST(test_lexer);
 	//TEST(test_vector);
-	TEST(test_ssvm);
+	//TEST(test_ssvm);
+	TEST(test_ssvm_gen);
 	TEST_DEINIT();
 
 	getchar();

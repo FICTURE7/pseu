@@ -14,8 +14,9 @@ set(LIBNOTPSEUDO_SRC
     visitor.h
     object.h  
 
-    vm/ssvm.c
     notpseudo.c
+    vm/ssvm.c
+    vm/ssvm-gen.c
     vector.c
     pretty.c
     lexer.c

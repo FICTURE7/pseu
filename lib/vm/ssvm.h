@@ -9,20 +9,27 @@
 #define SSVM_H
 
 #include <stdlib.h>
+#include "../vector.h"
+#include "../node.h"
 #include "../vm.h"
 
-enum ssvm_instr {
-	SSVM_INSTR_RET,
-	SSVM_INSTR_PUSH,
-	SSVM_INSTR_POP,
-	SSVM_INSTR_ADD,
-	SSVM_INSTR_TEST
+enum ssvm_ir_inst {
+	SSVM_INST_RET,
+	SSVM_INST_PUSH,
+	SSVM_INST_POP,
+	SSVM_INST_ADD,
+	SSVM_INST_SUB,
+	SSVM_INST_MUL,
+	SSVM_INST_DIV,
+
+	SSVM_INST_TEST
 };
 
 struct ssvm_ir {
-	size_t len;
-	enum ssvm_instr *instr;
+	struct vector instructions;
 };
+
+struct ssvm_ir *vm_ssvm_ir_gen(struct vm *vm, struct node *node);
 
 void vm_ssvm_init(struct vm *vm);
 
