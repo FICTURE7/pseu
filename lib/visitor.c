@@ -1,29 +1,37 @@
 #include <stdlib.h>
 #include "visitor.h"
 
-struct object *visitor_visit(struct visitor *visitor, struct node *node) {
+void visitor_visit(struct visitor *visitor, struct node *node) {
 	switch (node->type) {
 		case NODE_BLOCK:
-			return visitor->block(visitor, (struct node_block *)node);
+			visitor->block(visitor, (struct node_block *)node);
+			break;
 
 		case NODE_LIT_REAL:
-			return visitor->real(visitor, (struct node_real *)node);
+			visitor->real(visitor, (struct node_real *)node);
+			break;
 		case NODE_LIT_INTEGER:
-			return visitor->integer(visitor, (struct node_integer *)node);
+			visitor->integer(visitor, (struct node_integer *)node);
+			break;
 		case NODE_LIT_STRING:
-			return visitor->string(visitor, (struct node_string *)node);
+			visitor->string(visitor, (struct node_string *)node);
+			break;
 		case NODE_LIT_BOOLEAN:
-			return visitor->boolean(visitor, (struct node_boolean *)node);
+			visitor->boolean(visitor, (struct node_boolean *)node);
+			break;
 
 		case NODE_OP_UNARY:
-			return visitor->op_unary(visitor, (struct node_op_unary *)node);
+			visitor->op_unary(visitor, (struct node_op_unary *)node);
+			break;
 		case NODE_OP_BINARY:
-			return visitor->op_binary(visitor, (struct node_op_binary *)node);
+			visitor->op_binary(visitor, (struct node_op_binary *)node);
+			break;
 
 		case NODE_STMT_DECLARE:
-			return visitor->stmt_decl(visitor, (struct node_stmt_decl *)node);
+			visitor->stmt_decl(visitor, (struct node_stmt_decl *)node);
+			break;
 		case NODE_STMT_OUTPUT:
-			return visitor->stmt_output(visitor, (struct node_stmt_output *)node);
+			visitor->stmt_output(visitor, (struct node_stmt_output *)node);
+			break;
 	}
-	return NULL;
 }

@@ -60,31 +60,27 @@ static void print_op(enum token_type type) {
 	}
 }
 
-static struct object *print_string(struct visitor *visitor, struct node_string *string) {
+static void print_string(struct visitor *visitor, struct node_string *string) {
 	ident();
 	printf("string('%s')\n", string->val);
-	return NULL;
 }
 
-static struct object *print_real(struct visitor *visitor, struct node_real *real) {
+static void print_real(struct visitor *visitor, struct node_real *real) {
 	ident();
 	printf("real(%f)\n", real->val);
-	return NULL;
 }
 
-static struct object *print_integer(struct visitor *visitor, struct node_integer *integer) {
+static void print_integer(struct visitor *visitor, struct node_integer *integer) {
 	ident();
 	printf("int(%d)\n", integer->val);
-	return NULL;
 }
 
-static struct object *print_boolean(struct visitor *visitor, struct node_boolean *boolean) {
+static void print_boolean(struct visitor *visitor, struct node_boolean *boolean) {
 	ident();
 	printf("boolean(%d)\n", boolean->val);
-	return NULL;
 }
 
-static struct object *print_op_unary(struct visitor *visitor, struct node_op_unary *op_unary) {
+static void print_op_unary(struct visitor *visitor, struct node_op_unary *op_unary) {
 	ident();
 	printf("op_unary:\n");
 	depth++;
@@ -96,10 +92,9 @@ static struct object *print_op_unary(struct visitor *visitor, struct node_op_una
 
 	print_node(visitor, op_unary->expr);
 	depth--;
-	return NULL;
 }
 
-static struct object *print_op_binary(struct visitor *visitor, struct node_op_binary *op_binary) {
+static void print_op_binary(struct visitor *visitor, struct node_op_binary *op_binary) {
 	ident();
 	printf("op_binary:\n");
 	depth++;
@@ -112,32 +107,28 @@ static struct object *print_op_binary(struct visitor *visitor, struct node_op_bi
 
 	print_node(visitor, op_binary->right);
 	depth--;
-	return NULL;
 }
 
-static struct object *print_block(struct visitor *visitor, struct node_block *block) {
+static void print_block(struct visitor *visitor, struct node_block *block) {
 	ident();
 	printf("block(%d):\n", block->stmts.count);
 	depth++;
 	for (int i = 0; i < block->stmts.count; i++) {
 		print_node(visitor, vector_get(&block->stmts, i));
 	}
-	return NULL;
 }
 
-static struct object *print_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
+static void print_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
 	ident();
 	printf("decl(%s, %s)\n", decl->ident, decl->type);
-	return NULL;
 }
 
-static struct object *print_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
+static void print_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
 	ident();
 	printf("output:\n");
 	depth++;
 	print_node(visitor, output->expr);
 	depth--;
-	return NULL;
 }
 
 void prettyprint_node(struct node *node) {
