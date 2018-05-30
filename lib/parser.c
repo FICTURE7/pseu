@@ -84,7 +84,7 @@ static struct node *string(struct parser *parser) {
 
 	/* eat string */
 	eat(parser);
-	return node;
+	return (struct node *)node;
 }
 
 static struct node *real(struct parser *parser) {
@@ -97,7 +97,7 @@ static struct node *real(struct parser *parser) {
 	free(buf);
 	/* eat real */
 	eat(parser);
-	return val;
+	return (struct node *)val;
 }
 
 static struct node *integer(struct parser *parser) {
@@ -122,7 +122,7 @@ static struct node *integer(struct parser *parser) {
 	free(buf);
 	/* eat integer */
 	eat(parser);
-	return val;
+	return (struct node *)val;
 }
 
 /*
@@ -157,7 +157,7 @@ static struct node *boolean(struct parser *parser) {
 	node->val = val;
 	eat(parser);
 
-	return node;
+	return (struct node *)node;
 }
 
 /*
@@ -168,7 +168,7 @@ static struct node *primary(struct parser *parser) {
 		/* unary operations */
 		case TOK_OP_ADD:
 		case TOK_OP_SUB:
-		case TOK_OP_LOGICAL_NOT:
+		case TOK_OP_LOGICAL_NOT: {
 			struct node_op_unary *unop = malloc(sizeof(struct node_op_unary));
 			unop->base.type = NODE_OP_UNARY;
 			unop->op = parser->token.type;
@@ -176,10 +176,11 @@ static struct node *primary(struct parser *parser) {
 			eat(parser);
 
 			unop->expr = primary(parser);
-			return unop;
+			return (struct node *)unop;
+        }
 
 		/* expressions in parenthesis */
-		case TOK_LPAREN:
+		case TOK_LPAREN: {
 			/* eat '(' */
 			eat(parser);
 			struct node *node = expression(parser);
@@ -190,6 +191,7 @@ static struct node *primary(struct parser *parser) {
 				eat(parser);
 			}
 			return node;
+        }
 
 		/* boolean literals */
 		case TOK_LIT_BOOLEAN_TRUE:
@@ -239,7 +241,7 @@ static struct node *expression_rhs(struct parser *parser, struct node *lhs, int 
 		new_lhs->op = op;
 		new_lhs->left = lhs;
 		new_lhs->right = rhs;
-		lhs = new_lhs;
+		lhs = (struct node *)new_lhs;
 	}
 }
 
@@ -271,7 +273,7 @@ static struct node *declare_statement(struct parser *parser) {
 	eat(parser);
 
 	decl->type = identifier(parser);
-	return decl;
+	return (struct node *)decl;
 }
 
 /*
@@ -286,7 +288,7 @@ static struct node *output_statement(struct parser *parser) {
 	output->base.type = NODE_STMT_OUTPUT;
 	output->expr = expr;
 
-	return output;
+	return (struct node *)output;
 }
 
 /*
@@ -337,7 +339,7 @@ static struct node *block(struct parser *parser) {
 		}
 	}
 
-	return block;
+	return (struct node *)block;
 }
 
 void parser_init(struct parser *parser, struct lexer *lexer) {

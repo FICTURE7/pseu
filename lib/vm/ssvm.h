@@ -15,14 +15,14 @@
 
 enum ssvm_ir_inst {
 	SSVM_INST_RET,
+
 	SSVM_INST_PUSH,
 	SSVM_INST_POP,
+
 	SSVM_INST_ADD,
 	SSVM_INST_SUB,
 	SSVM_INST_MUL,
-	SSVM_INST_DIV,
-
-	SSVM_INST_TEST
+	SSVM_INST_DIV
 };
 
 struct ssvm_ir {

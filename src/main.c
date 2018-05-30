@@ -1,5 +1,6 @@
 #include <notpseudo.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 int main(int argc, char **argv) {
 	notpseudo_t *notpseudo = notpseudo_alloc();

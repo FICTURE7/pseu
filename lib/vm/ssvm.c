@@ -10,31 +10,36 @@ struct ssvm_data {
 	int stack[256];
 };
 
-void init(struct vm *vm) {
+static int fetch(struct vm *vm, struct ssvm_ir *ir) {
+	struct ssvm_data *data = vm->data;
+	return (int)vector_get(&ir->instructions, data->pc);
+}
+
+static void init(struct vm *vm) {
 	struct ssvm_data *data = malloc(sizeof(struct ssvm_data));
 	data->pc = 0;
 	data->sp = 0;
 	vm->data = data;
 }
 
-void deinit(struct vm *vm) {
+static void deinit(struct vm *vm) {
 	free(vm->data);
 }
 
-void eval(struct vm *vm, void *p) {
+static void eval(struct vm *vm, struct ssvm_ir *ir) {
 	bool running = true;
-	struct ssvm_ir *ir = p;
 	struct ssvm_data *data = vm->data;
 
 	while (running) {
-		enum ssvm_ir_inst instr = (int)vector_get(&ir->instructions, data->pc);
-		switch (instr) {
+		enum ssvm_ir_inst inst = fetch(vm, ir);
+		switch (inst) {
 			case SSVM_INST_RET: {
 				running = false;
 				break;
 			}
 			case SSVM_INST_PUSH: {
-				int val = (int*)vector_get(&ir->instructions, ++data->pc);
+				data->pc++;
+				int val = fetch(vm, ir);
 				data->stack[data->sp++] = val;
 				break;
 			}
@@ -50,7 +55,7 @@ void eval(struct vm *vm, void *p) {
 				int val1 = data->stack[--data->sp];
 				int val2 = data->stack[--data->sp];
 				int result;
-				switch (instr) {
+				switch (inst) {
 					case SSVM_INST_ADD:
 						result = val1 + val2;
 						break;
@@ -67,10 +72,6 @@ void eval(struct vm *vm, void *p) {
 				data->stack[data->sp++] = result;
 				break;
 			}
-
-			case SSVM_INST_TEST:
-				printf("\nSSVM TEST\n");
-				break;
 		}
 		data->pc++;
 	}
@@ -79,5 +80,5 @@ void eval(struct vm *vm, void *p) {
 void vm_ssvm_init(struct vm *vm) {
 	vm->init = init;
 	vm->deinit = deinit;
-	vm->eval = eval;
+	vm->eval = (void (*)(struct vm *, void *))eval;
 }

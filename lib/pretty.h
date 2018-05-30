@@ -2,6 +2,7 @@
 #define PRETTY_H
 
 #include "pretty.h"
+#include "node.h"
 
 void prettyprint_token(struct token *token);
 

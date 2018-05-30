@@ -1,26 +1,25 @@
 #include <stdlib.h>
 #include "ssvm.h"
-#include "../token.h"
 #include "../visitor.h"
 #include "../vector.h"
 #include "../node.h"
 
 static void emit(struct ssvm_ir *ir, int inst) {
-	vector_add(&ir->instructions, inst);
+	vector_add(&ir->instructions, (void *)inst);
 }
 
-static void emit_op(struct ssvm_ir *ir, enum token_type op) {
+static void emit_op(struct ssvm_ir *ir, enum op_type op) {
 	switch (op) {
-		case TOK_OP_ADD:
+		case OP_ADD:
 			emit(ir, SSVM_INST_ADD);
 			break;
-		case TOK_OP_SUB:
+		case OP_SUB:
 			emit(ir, SSVM_INST_SUB);
 			break;
-		case TOK_OP_MUL:
+		case OP_MUL:
 			emit(ir, SSVM_INST_MUL);
 			break;
-		case TOK_OP_DIV:
+		case OP_DIV:
 			emit(ir, SSVM_INST_DIV);
 			break;
 	}

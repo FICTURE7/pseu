@@ -180,6 +180,7 @@ int test_ssvm_gen() {
 
 	vm.init(&vm);
 	vm.eval(&vm, ir);
+	return 0;
 }
 
 int main(int argc, char **argv) {
