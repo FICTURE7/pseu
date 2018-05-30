@@ -3,6 +3,17 @@
 
 #include <stdbool.h>
 #include "vector.h"
+#include "token.h"
+
+enum op_type {
+	OP_ADD = TOK_OP_ADD,
+	OP_SUB,
+	OP_MUL,
+	OP_DIV,
+	OP_LOGICAL_NOT,
+	OP_LOGICAL_AND,
+	OP_LOGICAL_OR
+};
 
 enum node_type {
 	NODE_BLOCK,
@@ -53,13 +64,13 @@ struct node_string {
 
 struct node_op_unary {
 	struct node base;
-	enum token_type op;
+	enum op_type op;
 	struct node *expr;
 };
 
 struct node_op_binary {
 	struct node base;
-	enum token_type op;
+	enum op_type op;
 	struct node *right;
 	struct node *left;
 };

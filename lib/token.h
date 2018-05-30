@@ -31,8 +31,8 @@ enum token_type {
 	/* operators */
 	TOK_OP_ADD,
 	TOK_OP_SUB,
-	TOK_OP_DIV,
 	TOK_OP_MUL,
+	TOK_OP_DIV,
 	TOK_OP_LOGICAL_NOT,
 	TOK_OP_LOGICAL_AND,
 	TOK_OP_LOGICAL_OR,
