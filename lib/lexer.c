@@ -246,18 +246,25 @@ again:
 			return;
 		}
 		c = *lexer->loc.pos;
-		if (c == '\\') {
-			/* try to peak the next character */
-			if (lexer->loc.pos + 1 >= lexer->end) {
-				continue;
-			}
-			c = *(lexer->loc.pos + 1);
-			/* skip current '"' if it was preceeded by a '\' */
-			if (c == '"') {
-				token->len++;
-				advance(lexer);
-				goto again;
-			}
+		switch (c) {
+			case '\n':
+			case '\r':
+				/* prevent newlines inside of strings */
+				token->type = TOK_ERR_INVALID_STRING;
+				return;
+			case '\\':
+				/* try to peak the next character */
+				if (lexer->loc.pos + 1 >= lexer->end) {
+					continue;
+				}
+				c = *(lexer->loc.pos + 1);
+				/* skip current '"' if it was preceeded by a '\' */
+				if (c == '"') {
+					token->len++;
+					advance(lexer);
+					goto again;
+				}
+				break;
 		}
 	} while (c != '"');
 

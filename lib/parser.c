@@ -27,6 +27,18 @@ static void error(struct parser *parser, struct token *token, char *message) {
 #endif
 }
 
+static void warning(struct parser *parser, struct location loc, char *message) {
+	struct diagnostic *diagnostic = malloc(sizeof(struct diagnostic));
+	diagnostic->type = DIAGNOSTIC_TYPE_WARNING;
+	diagnostic->loc = loc;
+	diagnostic->message = message;
+
+	vector_add(&parser->diagnostics, diagnostic);
+#ifdef PARSER_DEBUG
+	printf("warning(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
+#endif
+}
+
 static void panic(struct parser *parser) {
 	/* skip tokens until a line feed or eof */
 	error(parser, &parser->token, "expected '\\n' (linefeed)");
@@ -79,11 +91,86 @@ static struct node *string(struct parser *parser) {
 	struct node_string *node = malloc(sizeof(struct node_string));
 	node->base.type = NODE_LIT_STRING;
 	node->val = malloc(parser->token.len + 1);
-	node->val[parser->token.len] = '\0';
-	memcpy(node->val, parser->token.loc.pos, parser->token.len);
+
+	/* unescape string */
+	int count = parser->token.len;
+	char *valpos = node->val;
+	char *tokpos = parser->token.loc.pos;
+	char *tokend = parser->token.loc.pos + parser->token.len;
+	for (int i = 0; i < count; i++) {
+		char c = *tokpos;
+		if (c == '\\') {
+			/* reached end of string */
+			if (tokpos + 1 > tokend) {
+				goto add;
+			}
+
+			c = *(tokpos + 1);
+			switch (c) {
+				case 'a':
+					c = '\a';
+					goto add_unescape;
+				case 'b':
+					c = '\b';
+					goto add_unescape;
+				case 'f':
+					c = '\f';
+					goto add_unescape;
+				case 'n':
+					c = '\n';
+					goto add_unescape;
+				case 'r':
+					c = '\r';
+					goto add_unescape;
+				case 't':
+					c = '\t';
+					goto add_unescape;
+				case 'v':
+					c = '\v';
+					goto add_unescape;
+				case '\"':
+					c = '\"';
+					goto add_unescape;
+				case '\'':
+					c = '\'';
+					goto add_unescape;
+				case '\\':
+					c = '\\';
+					goto add_unescape;
+				default: {
+					/* skip unknown escape characters */
+					struct location loc = {
+						.ln = parser->token.loc.ln,
+						.col = parser->token.loc.col + (tokpos + 1 - parser->token.loc.pos),
+						.pos = tokpos + 1
+					};
+					warning(parser, loc, "unknown escape character");
+					count--;
+					goto add;
+				}
+			}
+		}
+		goto add;
+
+add_unescape:
+		/* adds an unescaped character */
+		count--;
+		tokpos++;
+add:
+		tokpos++;
+		/* adds a single character */
+		*valpos++ = c;
+	}
+
+	node->val[count] = '\0';
+	/* trim excess which may be caused from unescaping characters */
+	if (count < parser->token.len) {
+		realloc(node->val, count + 1);
+	}
 
 	/* eat string */
 	eat(parser);
+	/* todo: register in a string table for interning */
 	return (struct node *)node;
 }
 
@@ -156,12 +243,11 @@ static struct node *boolean(struct parser *parser) {
 	node->base.type = NODE_LIT_BOOLEAN;
 	node->val = val;
 	eat(parser);
-
 	return (struct node *)node;
 }
 
 /*
- *	primary = number / boolean / ("+"/"-"/"NOT") primary / "(" expression ")"
+ *	primary = string / number / boolean / ("+"/"-"/"NOT") primary / "(" expression ")"
  */
 static struct node *primary(struct parser *parser) {
 	switch (parser->token.type) {
@@ -177,7 +263,7 @@ static struct node *primary(struct parser *parser) {
 
 			unop->expr = primary(parser);
 			return (struct node *)unop;
-        }
+		}
 
 		/* expressions in parenthesis */
 		case TOK_LPAREN: {
@@ -191,7 +277,11 @@ static struct node *primary(struct parser *parser) {
 				eat(parser);
 			}
 			return node;
-        }
+		}
+
+		/* string literals */
+		case TOK_LIT_STRING:
+			return string(parser);
 
 		/* boolean literals */
 		case TOK_LIT_BOOLEAN_TRUE:
@@ -273,6 +363,7 @@ static struct node *declare_statement(struct parser *parser) {
 	eat(parser);
 
 	decl->type = identifier(parser);
+	/* todo: register declaration in a symbol table. */
 	return (struct node *)decl;
 }
 
