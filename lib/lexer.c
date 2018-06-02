@@ -6,6 +6,7 @@
 #include "lexer.h"
 
 #ifdef LEXER_DEBUG
+#include <stdio.h>
 #include "pretty.h"
 #endif
 
@@ -253,6 +254,7 @@ again:
 			c = *(lexer->loc.pos + 1);
 			/* skip current '"' if it was preceeded by a '\' */
 			if (c == '"') {
+				token->len++;
 				advance(lexer);
 				goto again;
 			}
@@ -274,6 +276,8 @@ void lexer_init(struct lexer *lexer, char *path, char *src) {
 
 #ifdef LEXER_DEBUG
 	struct token token;
+	printf("\nlex(%s)\n", src);
+
 	lexer_scan(lexer, &token);
 	while (token.type != TOK_EOF) {
 		prettyprint_token(&token);
