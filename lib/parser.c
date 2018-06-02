@@ -15,15 +15,15 @@ static void eat(struct parser *parser) {
 	lexer_scan(parser->lexer, &parser->token);
 }
 
-static void error(struct parser *parser, struct token *token, char *message) {
+static void error(struct parser *parser, struct location loc, char *message) {
 	struct diagnostic *diagnostic = malloc(sizeof(struct diagnostic));
 	diagnostic->type = DIAGNOSTIC_TYPE_ERROR;
-	diagnostic->loc = token->loc;
+	diagnostic->loc = loc;
 	diagnostic->message = message;
 
 	vector_add(&parser->diagnostics, diagnostic);
 #ifdef PARSER_DEBUG
-	printf("error(ln: %d, col: %d): %s\n", token->loc.ln, token->loc.col, message);
+	printf("error(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
 #endif
 }
 
@@ -41,7 +41,7 @@ static void warning(struct parser *parser, struct location loc, char *message) {
 
 static void panic(struct parser *parser) {
 	/* skip tokens until a line feed or eof */
-	error(parser, &parser->token, "expected '\\n' (linefeed)");
+	error(parser, parser->token.loc, "expected '\\n' (linefeed)");
 	do {
 		eat(parser);
 	} while (parser->token.type != TOK_LF && parser->token.type != TOK_EOF);
@@ -72,7 +72,7 @@ static char *identifier(struct parser *parser) {
 	struct token token = parser->token;
 
 	if (parser->token.type != TOK_IDENT) {
-		error(parser, &parser->token, "expected an identifier");
+		error(parser, parser->token.loc, "expected an identifier");
 		eat(parser);
 		return NULL;
 	}
@@ -271,7 +271,7 @@ static struct node *primary(struct parser *parser) {
 			eat(parser);
 			struct node *node = expression(parser);
 			if (parser->token.type != TOK_RPAREN) {
-				error(parser, &parser->token, "expected a ')'");
+				error(parser, parser->token.loc, "expected a ')'");
 			} else {
 				/* eat ')' */
 				eat(parser);
@@ -314,7 +314,7 @@ static struct node *expression_rhs(struct parser *parser, struct node *lhs, int 
 
 		struct node *rhs = primary(parser);
 		if (!rhs) {
-			error(parser, &parser->token, "expected an expression");
+			error(parser, parser->token.loc, "expected an expression");
 		}
 
 		int next_precedence = precedence(parser->token.type);
@@ -338,7 +338,7 @@ static struct node *expression_rhs(struct parser *parser, struct node *lhs, int 
 static struct node *expression(struct parser *parser) {
 	struct node *lhs = primary(parser);
 	if (!lhs) {
-		error(parser, &parser->token, "expected an expression");
+		error(parser, parser->token.loc, "expected an expression");
 		return NULL;
 	}
 	return expression_rhs(parser, lhs, 0);
@@ -356,7 +356,7 @@ static struct node *declare_statement(struct parser *parser) {
 	decl->ident = identifier(parser);
 
 	if (parser->token.type != TOK_COLON) {
-		error(parser, &parser->token, "expected a ':'");
+		error(parser, parser->token.loc, "expected a ':'");
 	}
 
 	/* eat colon */
@@ -392,7 +392,7 @@ static struct node *statement(struct parser *parser) {
 		case TOK_KW_OUTPUT:
 			return output_statement(parser);
 		default:
-			error(parser, &parser->token, "unexpected symbol");
+			error(parser, parser->token.loc, "unexpected symbol");
 			return NULL;
 	}
 }
@@ -462,7 +462,7 @@ void parser_deinit(struct parser *parser) {
 void parser_parse(struct parser *parser, struct node **root) {
 	(*root) = block(parser);
 	if (parser->token.type != TOK_EOF) {
-		error(parser, &parser->token, "expected eof");
+		error(parser, parser->token.loc, "expected eof");
 	}
 
 	eat(parser);
