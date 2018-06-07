@@ -10,9 +10,20 @@ struct ssvm_data {
 	int stack[256];
 };
 
+/* fetches the next instruction to be executed */
 static int fetch(struct vm *vm, struct ssvm_ir *ir) {
 	struct ssvm_data *data = vm->data;
 	return (int)vector_get(&ir->instructions, data->pc);
+}
+
+/* push a 32-bit integer on the stack */
+static void push(struct ssvm_data *ssvm, int val) {
+	ssvm->stack[ssvm->sp++] = val;
+}
+
+/* pops a 32-bit integer from the stack */
+static int pop(struct ssvm_data *ssvm) {
+	return ssvm->stack[--ssvm->sp];
 }
 
 static void init(struct vm *vm) {
@@ -28,7 +39,7 @@ static void deinit(struct vm *vm) {
 
 static void eval(struct vm *vm, struct ssvm_ir *ir) {
 	bool running = true;
-	struct ssvm_data *data = vm->data;
+	struct ssvm_data *ssvm = vm->data;
 
 	while (running) {
 		enum ssvm_ir_inst inst = fetch(vm, ir);
@@ -38,13 +49,13 @@ static void eval(struct vm *vm, struct ssvm_ir *ir) {
 				break;
 			}
 			case SSVM_INST_PUSH: {
-				data->pc++;
+				ssvm->pc++;
 				int val = fetch(vm, ir);
-				data->stack[data->sp++] = val;
+				push(ssvm, val);
 				break;
 			}
 			case SSVM_INST_POP: {
-				int val = data->stack[--data->sp];
+				int val = pop(ssvm);
 				printf("%d\n", val);
 				break;
 			}
@@ -52,8 +63,8 @@ static void eval(struct vm *vm, struct ssvm_ir *ir) {
 			case SSVM_INST_SUB:
 			case SSVM_INST_MUL:
 			case SSVM_INST_DIV: {
-				int val1 = data->stack[--data->sp];
-				int val2 = data->stack[--data->sp];
+				int val1 = pop(ssvm);
+				int val2 = pop(ssvm);
 				int result;
 				switch (inst) {
 					case SSVM_INST_ADD:
@@ -69,11 +80,11 @@ static void eval(struct vm *vm, struct ssvm_ir *ir) {
 						result = val1 / val2;
 						break;
 				}
-				data->stack[data->sp++] = result;
+				push(ssvm, result);
 				break;
 			}
 		}
-		data->pc++;
+		ssvm->pc++;
 	}
 }
 
