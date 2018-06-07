@@ -13,6 +13,8 @@ set(LIBNOTPSEUDO_SRC
     parser.h
     visitor.h
     object.h  
+    string.h
+    state.h
 
     notpseudo.c
     vm/ssvm.c
@@ -24,6 +26,8 @@ set(LIBNOTPSEUDO_SRC
     parser.c
     visitor.c
     object.c
+    string.c
+    state.c
 )
 
 add_library(libnotpseudo OBJECT ${LIBNOTPSEUDO_SRC})
