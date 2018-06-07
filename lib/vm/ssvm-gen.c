@@ -26,7 +26,7 @@ static void emit_op(struct ssvm_ir *ir, enum op_type op) {
 }
 
 static void gen_block(struct visitor *visitor, struct node_block *block) {
-	for (int i = 0; i < block->stmts.count; i++) {
+	for (unsigned int i = 0; i < block->stmts.count; i++) {
 		visitor_visit(visitor, vector_get(&block->stmts, i));
 	}
 }
@@ -45,7 +45,8 @@ static void gen_real(struct visitor *visitor, struct node_real *real) {
 }
 
 static void gen_string(struct visitor *visitor, struct node_string *string) {
-	// emit val
+	emit(visitor->data, SSVM_INST_PUSH);
+	emit(visitor->data, string->val);
 }
 
 static void gen_op_unary(struct visitor *visitor, struct node_op_unary *unary) {
@@ -70,7 +71,6 @@ struct ssvm_ir *vm_ssvm_ir_gen(struct vm *vm, struct node *node) {
 	struct visitor visitor;
 
 	vector_init(&ir->instructions);
-
 	visitor.data = ir;
 	visitor.visit_block = gen_block;
 	visitor.visit_boolean = gen_boolean;
@@ -80,7 +80,7 @@ struct ssvm_ir *vm_ssvm_ir_gen(struct vm *vm, struct node *node) {
 	visitor.visit_op_unary = gen_op_unary;
 	visitor.visit_op_binary = gen_op_binary;
 	visitor.visit_stmt_output = gen_stmt_output;
-
 	visitor_visit(&visitor, node);
+
 	return ir;
 }

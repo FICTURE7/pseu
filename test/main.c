@@ -169,6 +169,7 @@ int test_ssvm_gen() {
 	struct lexer lexer;
 	struct parser parser;
 	struct vm vm;
+	struct ssvm_ir *ir;
 	struct node *node;
 
 	lexer_init(&lexer, NULL, "OUTPUT (100 + 10 * 2)*2");
@@ -176,10 +177,22 @@ int test_ssvm_gen() {
 	vm_ssvm_init(&vm);
 
 	parser_parse(&parser, &node);
-	struct ssvm_ir *ir = vm_ssvm_ir_gen(&vm, node);
+	ir = vm_ssvm_ir_gen(&vm, node);
 
 	vm.init(&vm);
 	vm.eval(&vm, ir);
+	return 0;
+}
+
+int test_unescape_string() {
+	struct lexer lexer;
+	struct parser parser;
+	struct node *node;
+
+	lexer_init(&lexer, NULL, "OUTPUT \"xD \\\"a \\ \"");
+	parser_init(&parser, &lexer);
+
+	parser_parse(&parser, &node);
 	return 0;
 }
 
@@ -188,7 +201,8 @@ int main(int argc, char **argv) {
 	//TEST(test_lexer);
 	//TEST(test_vector);
 	//TEST(test_ssvm);
-	TEST(test_ssvm_gen);
+	//TEST(test_ssvm_gen);
+	TEST(test_unescape_string);
 	TEST_DEINIT();
 
 	getchar();
