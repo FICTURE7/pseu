@@ -15,10 +15,10 @@ void vector_deinit(struct vector *vec);
 
 void vector_add(struct vector *vec, void *item);
 
-void vector_remove(struct vector *vec, int index);
+void vector_remove(struct vector *vec, unsigned int index);
 
-void *vector_get(struct vector *vec, int index);
+void *vector_get(struct vector *vec, unsigned int index);
 
-void vector_set(struct vector *vec, int index, void *item);
+void vector_set(struct vector *vec, unsigned int index, void *item);
 
 #endif
