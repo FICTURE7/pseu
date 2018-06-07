@@ -1,4 +1,5 @@
 ﻿#include <stdio.h>
+#include "string.h"
 #include "visitor.h"
 #include "token.h"
 #include "pretty.h"
@@ -62,7 +63,7 @@ static void print_op(enum token_type type) {
 
 static void print_string(struct visitor *visitor, struct node_string *string) {
 	ident();
-	printf("string('%s')\n", string->val);
+	printf("string(%d, '%s')\n", strlen(string->val), string->val);
 }
 
 static void print_real(struct visitor *visitor, struct node_real *real) {
