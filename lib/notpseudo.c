@@ -8,6 +8,7 @@
 #include "vm/ssvm.h"
 
 struct notpseudo {
+	struct state state;
 	struct lexer lexer;
 	struct parser parser;
 	struct node *root;
@@ -24,8 +25,9 @@ void notpseudo_free(notpseudo_t *notpseudo) {
 }
 
 void notpseudo_init(notpseudo_t *notpseudo, char *path, char *src) {
+	state_init(&notpseudo->state);
 	lexer_init(&notpseudo->lexer, path, src);
-	parser_init(&notpseudo->parser, &notpseudo->lexer);
+	parser_init(&notpseudo->parser, &notpseudo->state, &notpseudo->lexer);
 	vm_ssvm_init(&notpseudo->vm);
 
 	/* parse the src right away */

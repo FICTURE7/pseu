@@ -6,7 +6,7 @@
 struct string_table {
 	int count;
 	size_t capacity;
-	struct string **strings;
+	struct string **items;
 };
 
 struct string {
@@ -15,6 +15,8 @@ struct string {
 	char *val;
 };
 
-void string_table_init(struct string_table *string_table);
+void string_table_init(struct string_table *strings);
+
+void string_table_deinit(struct string_table *strings);
 
 #endif /* STRING_H */

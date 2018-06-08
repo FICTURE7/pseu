@@ -166,14 +166,16 @@ int test_ssvm() {
 }
 
 int test_ssvm_gen() {
+	struct state state;
 	struct lexer lexer;
 	struct parser parser;
 	struct vm vm;
 	struct ssvm_ir *ir;
 	struct node *node;
 
+	state_init(&state);
 	lexer_init(&lexer, NULL, "OUTPUT (100 + 10 * 2)*2");
-	parser_init(&parser, &lexer);
+	parser_init(&parser, &state, &lexer);
 	vm_ssvm_init(&vm);
 
 	parser_parse(&parser, &node);
@@ -185,12 +187,14 @@ int test_ssvm_gen() {
 }
 
 int test_unescape_string() {
+	struct state state;
 	struct lexer lexer;
 	struct parser parser;
 	struct node *node;
 
+	state_init(&state);
 	lexer_init(&lexer, NULL, "OUTPUT \"xD \\\"a \\ \"");
-	parser_init(&parser, &lexer);
+	parser_init(&parser, &state, &lexer);
 
 	parser_parse(&parser, &node);
 	return 0;

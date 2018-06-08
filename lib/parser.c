@@ -21,7 +21,7 @@ static void error(struct parser *parser, struct location loc, char *message) {
 	diagnostic->loc = loc;
 	diagnostic->message = message;
 
-	vector_add(&parser->diagnostics, diagnostic);
+	vector_add(parser->state->diagnostics, diagnostic);
 #ifdef PARSER_DEBUG
 	printf("error(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
 #endif
@@ -33,7 +33,7 @@ static void warning(struct parser *parser, struct location loc, char *message) {
 	diagnostic->loc = loc;
 	diagnostic->message = message;
 
-	vector_add(&parser->diagnostics, diagnostic);
+	vector_add(parser->state->diagnostics, diagnostic);
 #ifdef PARSER_DEBUG
 	printf("warning(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
 #endif
@@ -433,9 +433,9 @@ static struct node *block(struct parser *parser) {
 	return (struct node *)block;
 }
 
-void parser_init(struct parser *parser, struct lexer *lexer) {
+void parser_init(struct parser *parser, struct state *state, struct lexer *lexer) {
+	parser->state = state;
 	parser->lexer = lexer;
-	vector_init(&parser->diagnostics);
 	/* scan first token */
 	lexer_scan(lexer, &parser->token);
 
@@ -449,14 +449,6 @@ void parser_init(struct parser *parser, struct lexer *lexer) {
 	lexer->loc.col = 1;
 	lexer_scan(lexer, &parser->token);
 #endif
-}
-
-void parser_deinit(struct parser *parser) {
-	/* free the diagnostic structs on the heap in the vector/list */
-	for (int i = 0; i < parser->diagnostics.count; i++) {
-		free(vector_get(&parser->diagnostics, i));
-	}
-	vector_deinit(&parser->diagnostics);
 }
 
 void parser_parse(struct parser *parser, struct node **root) {

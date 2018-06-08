@@ -3,18 +3,17 @@
 
 #include "node.h"
 #include "lexer.h"
-#include "diagnostic.h"
+#include "state.h"
 #include "parser.h"
+#include "diagnostic.h"
 
 struct parser {
-	struct token token;
+	struct state *state;
     struct lexer *lexer;
-	struct vector diagnostics;
+	struct token token;
 };
 
-void parser_init(struct parser *parser, struct lexer *lexer);
-
-void parser_deinit(struct parser *parser);
+void parser_init(struct parser *parser, struct state *state, struct lexer *lexer);
 
 void parser_parse(struct parser *parser, struct node **root);
 
