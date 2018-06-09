@@ -4,6 +4,7 @@
 #include "node.h"
 #include "lexer.h"
 #include "diagnostic.h"
+#include "string.h"
 #include "parser.h"
 
 #ifdef PARSER_DEBUG
@@ -87,17 +88,14 @@ static char *identifier(struct parser *parser) {
 }
 
 static struct node *string(struct parser *parser) {
-	/* todo: unescape strings */
-	struct node_string *node = malloc(sizeof(struct node_string));
-	node->base.type = NODE_LIT_STRING;
-	node->val = malloc(parser->token.len + 1);
+	char *buf = malloc(parser->token.len + 1);
 
 	/* unescape string */
-	int count = parser->token.len;
-	char *valpos = node->val;
+	size_t len = parser->token.len;
+	char *bufpos = buf;
 	char *tokpos = parser->token.loc.pos;
 	char *tokend = parser->token.loc.pos + parser->token.len;
-	for (int i = 0; i < count; i++) {
+	for (int i = 0; i < len; i++) {
 		char c = *tokpos;
 		if (c == '\\') {
 			/* reached end of string */
@@ -145,7 +143,7 @@ static struct node *string(struct parser *parser) {
 						.pos = tokpos + 1
 					};
 					warning(parser, loc, "unknown escape character");
-					count--;
+					len--;
 					goto add;
 				}
 			}
@@ -154,23 +152,26 @@ static struct node *string(struct parser *parser) {
 
 add_unescape:
 		/* adds an unescaped character */
-		count--;
+		len--;
 		tokpos++;
 add:
 		tokpos++;
 		/* adds a single character */
-		*valpos++ = c;
+		*bufpos++ = c;
 	}
 
-	node->val[count] = '\0';
+	buf[len] = '\0';
 	/* trim excess which may be caused from unescaping characters */
-	if (count < parser->token.len) {
-		realloc(node->val, count + 1);
+	if (len < parser->token.len) {
+		realloc(buf, len + 1);
 	}
 
 	/* eat string */
 	eat(parser);
-	/* todo: register in a string table for interning */
+
+	struct node_string *node = malloc(sizeof(struct node_string));
+	node->base.type = NODE_LIT_STRING;
+	node->val = string_table_intern(parser->state->strings, buf, len);
 	return (struct node *)node;
 }
 

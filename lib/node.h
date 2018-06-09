@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "vector.h"
+#include "string.h"
 #include "token.h"
 
 enum op_type {
@@ -59,7 +60,7 @@ struct node_real {
 
 struct node_string {
 	struct node base;
-	char *val;
+	struct string *val;
 };
 
 struct node_op_unary {

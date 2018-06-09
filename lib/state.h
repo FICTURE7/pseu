@@ -6,7 +6,7 @@
 
 struct state {
 	struct vector *diagnostics;
-    struct string_table *strings;
+	struct string_table *strings;
 };
 
 void state_init(struct state *state);

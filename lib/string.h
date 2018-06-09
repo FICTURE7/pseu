@@ -3,10 +3,15 @@
 
 #include <stdlib.h>
 
+struct string_table_entry {
+	struct string *val;
+	struct string_table_entry *next;
+};
+
 struct string_table {
-	int count;
+	size_t count;
 	size_t capacity;
-	struct string **items;
+	struct string_table_entry **entries;
 };
 
 struct string {
@@ -15,8 +20,10 @@ struct string {
 	char *val;
 };
 
-void string_table_init(struct string_table *strings);
+void string_table_init(struct string_table *table);
 
-void string_table_deinit(struct string_table *strings);
+void string_table_deinit(struct string_table *table);
+
+struct string *string_table_intern(struct string_table *table, char *val, size_t len);
 
 #endif /* STRING_H */
