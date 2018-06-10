@@ -29,7 +29,7 @@ void vector_add(struct vector *vec, void *item) {
 }
 
 void vector_remove(struct vector *vec, unsigned int index) {
-	if (index < 0 || index >= vec->count) {
+	if (index >= vec->count) {
 		return;
 	}
 	void *dst = vec->items + index;
@@ -42,14 +42,14 @@ void vector_remove(struct vector *vec, unsigned int index) {
 }
 
 void *vector_get(struct vector *vec, unsigned int index) {
-	if (index < 0 || index >= vec->count) {
+	if (index >= vec->count) {
 		return NULL;
 	}
 	return vec->items[index];
 }
 
 void vector_set(struct vector *vec, unsigned int index, void *item) {
-	if (index < 0 || index >= vec->count) {
+	if (index >= vec->count) {
 		return;
 	}
 	vec->items[index] = item;
