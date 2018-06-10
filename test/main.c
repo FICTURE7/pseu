@@ -200,13 +200,41 @@ int test_unescape_string() {
 	return 0;
 }
 
+int test_string_intern() {
+	struct string_table table;
+	struct string *str1;
+	struct string *str2;
+
+	string_table_init(&table);
+	str1 = string_table_intern(&table, "xD", 2);
+	str2 = string_table_intern(&table, "xD", 2);
+	
+	TEST_EQ(str1, str2);
+	TEST_EQ(table.count, 1);
+
+	/*
+	struct string *str3;
+	struct string *str4;
+	str3 = string_table_intern(&table, "xDD", 3);
+	str4 = string_table_intern(&table, "xDD", 3);
+	TEST_EQ(str3, str4);
+	TEST_EQ(table.count, 1);
+
+	string_table_intern(&table, "xDDD", 4);
+	TEST_EQ(table.count, 1);
+	*/
+
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
 	//TEST(test_lexer);
 	//TEST(test_vector);
 	//TEST(test_ssvm);
 	//TEST(test_ssvm_gen);
-	TEST(test_unescape_string);
+	//TEST(test_unescape_string);
+	TEST(test_string_intern);
 	TEST_DEINIT();
 
 	getchar();
