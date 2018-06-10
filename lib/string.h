@@ -17,7 +17,7 @@ struct string_table {
 struct string {
 	unsigned int hash;
 	size_t len;
-	char *val;
+	char *buf;
 };
 
 void string_table_init(struct string_table *table);
