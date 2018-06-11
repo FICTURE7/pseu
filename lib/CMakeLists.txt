@@ -30,15 +30,23 @@ set(LIBNOTPSEUDO_SRC
     state.c
 )
 
+# objects
 add_library(libnotpseudo OBJECT ${LIBNOTPSEUDO_SRC})
 target_include_directories(libnotpseudo PUBLIC ${LIBNOTPSEUDO_INCLUDE_DIR})
 
 # static library
 add_library(libnotpseudo-static STATIC $<TARGET_OBJECTS:libnotpseudo>)
 target_include_directories(libnotpseudo-static PUBLIC ${LIBNOTPSEUDO_INCLUDE_DIR})
-set_target_properties(libnotpseudo-static PROPERTIES OUTPUT_NAME libnotpseudo)
 
 # shared library
 add_library(libnotpseudo-shared SHARED $<TARGET_OBJECTS:libnotpseudo>)
 target_include_directories(libnotpseudo-shared PUBLIC ${LIBNOTPSEUDO_INCLUDE_DIR})
-set_target_properties(libnotpseudo-shared PROPERTIES OUTPUT_NAME libnotpseudo)
+
+# use different names for different platforms
+if(WIN32)
+    set_target_properties(libnotpseudo-static PROPERTIES OUTPUT_NAME "notpseudo")
+    set_target_properties(libnotpseudo-shared PROPERTIES OUTPUT_NAME "notpseudo")
+else()
+    set_target_properties(libnotpseudo-static PROPERTIES OUTPUT_NAME "libnotpseudo")
+    set_target_properties(libnotpseudo-shared PROPERTIES OUTPUT_NAME "libnotpseudo")
+endif()
