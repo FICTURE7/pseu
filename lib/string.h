@@ -5,9 +5,14 @@
 
 struct string_table_entry {
 	struct string *val;
+	/* next item in the link list/chain */
 	struct string_table_entry *next;
 };
 
+/*
+ * string table is a hashtable with a
+ * seperate chain strategy for collisions
+ */
 struct string_table {
 	size_t count;
 	size_t capacity;
