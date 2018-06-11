@@ -95,7 +95,6 @@ struct string *string_table_intern(struct string_table *table, char *buf, size_t
 		table->entries[index] = entry;
 		table->count++;
 	} else {
-		struct string_table_entry *previous;
 		do {
 			/*
 			 * compare the hash, length and content
@@ -105,8 +104,6 @@ struct string *string_table_intern(struct string_table *table, char *buf, size_t
 				string = entry->val;
 				return string;
 			}
-
-			previous = entry;
 			entry = entry->next;
 		} while (entry != NULL);
 
@@ -119,7 +116,10 @@ struct string *string_table_intern(struct string_table *table, char *buf, size_t
 		/* string not found in chain, create a new one and extend chain */
 		string = string_new(buf, len, hash);
 		entry = table_entry_new(string);
-		previous->next = entry;
+
+		/* insert at the start of the chain/list */
+		entry->next = table->entries[index];
+		table->entries[index] = entry;
 	}
 
 	return string;
