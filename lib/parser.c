@@ -88,7 +88,7 @@ static char *identifier(struct parser *parser) {
 }
 
 static struct node *string(struct parser *parser) {
-	char *buf = malloc(parser->token.len + 1);
+	char *buf = malloc(parser->token.len);
 
 	/* unescape string */
 	size_t len = parser->token.len;
@@ -160,18 +160,18 @@ add:
 		*bufpos++ = c;
 	}
 
-	buf[len] = '\0';
-	/* trim excess which may be caused from unescaping characters */
-	if (len < parser->token.len) {
-		realloc(buf, len + 1);
-	}
-
 	/* eat string */
 	eat(parser);
 
 	struct node_string *node = malloc(sizeof(struct node_string));
 	node->base.type = NODE_LIT_STRING;
 	node->val = string_table_intern(parser->state->strings, buf, len);
+
+	/* 
+	 * free buffer, since string_table_intern has duplicated 
+	 * the string, or returned an interned string
+	 */
+	free(buf);
 	return (struct node *)node;
 }
 

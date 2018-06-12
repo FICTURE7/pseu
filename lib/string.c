@@ -13,9 +13,12 @@ static unsigned int hash_djb2(char *buf, size_t len) {
 
 static struct string *string_new(char *buf, size_t len, unsigned int hash) {
 	struct string *string = malloc(sizeof(struct string));
-	string->buf = buf;
+	string->buf = malloc(len + 1);
+	string->buf[len] = '\0';
 	string->len = len;
 	string->hash = hash;
+
+	memcpy(string->buf, buf, len);
 	return string;
 }
 
