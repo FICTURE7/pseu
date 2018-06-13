@@ -1,47 +1,52 @@
-/*
- *  MIT License
- *
- *  Copyright (c) 2018 ficture7@gmail.com
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in all
- *  copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *  SOFTWARE.
- */
-
 #ifndef OBJECT_H
 #define OBJECT_H
 
 #include <stdbool.h>
 
-enum object_type {
-	OBJECT_BOOL,
-	OBJECT_INT,
-	OBJECT_FLOAT,
-	OBJECT_STRING
+/* types of values */
+enum value_type {
+	VALUE_TYPE_BOOL,
+	VALUE_TYPE_INT,
+	VALUE_TYPE_REAL,
+	VALUE_TYPE_OBJECT
 };
 
-struct object {
-	enum object_type type;
+/* represents a value */
+struct value {
+	enum value_type type;
 	union {
 		bool as_bool;
 		int as_int;
 		float as_float;
-		char *as_string;
-	} value;
+		struct object *as_object;
+	};
 };
 
-#endif
+/* represents an object which is under garbage collection */
+struct object {
+	unsigned int type;
+	unsigned int refc;
+};
+
+/* represents an array which contains an array of values */
+struct array_object {
+	struct object base;
+	int start_index;
+	int end_index;
+	size_t len;
+	struct value *items;
+};
+
+/* represents a string object */
+struct string_object {
+	struct object base;
+	struct string val;
+};
+
+/* represents a user defined object */
+struct user_object {
+	struct object base;
+	void *data;
+};
+
+#endif /* OBJECT_H */
