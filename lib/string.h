@@ -3,6 +3,11 @@
 
 #include <stdlib.h>
 
+/*
+ * string table entry which
+ * contains a reference to the string object
+ * and a seperate chain 'next'
+ */
 struct string_table_entry {
 	struct string *item;
 	/* next item in the link list/chain */
