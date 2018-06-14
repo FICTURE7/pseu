@@ -24,23 +24,24 @@ struct value {
 
 /* represents an object which is under garbage collection */
 struct object {
-	unsigned int type;
 	unsigned int refc;
 };
 
 /* represents an array which contains an array of values */
 struct array_object {
 	struct object base;
-	int start_index;
-	int end_index;
+	unsigned int start_index;
+	unsigned int end_index;
 	size_t len;
-	struct value *items;
+	struct value **items;
 };
 
 /* represents a string object */
 struct string_object {
 	struct object base;
-	struct string val;
+	unsigned int hash;
+	size_t len;
+	char *buf;
 };
 
 /* represents a user defined object */
