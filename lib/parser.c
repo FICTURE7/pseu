@@ -3,9 +3,9 @@
 #include <string.h>
 #include "node.h"
 #include "lexer.h"
-#include "diagnostic.h"
 #include "string.h"
 #include "parser.h"
+#include "diagnostic.h"
 
 #ifdef PARSER_DEBUG
 #include <stdio.h>

@@ -4,6 +4,7 @@
 #include "vector.h"
 #include "token.h"
 #include "lexer.h"
+#include "object.h"
 #include "parser.h"
 #include "vm.h"
 #include "vm/ssvm.h"
@@ -202,8 +203,8 @@ int test_unescape_string() {
 
 int test_string_intern() {
 	struct string_table table;
-	struct string *str1;
-	struct string *str2;
+	struct string_object *str1;
+	struct string_object *str2;
 
 	string_table_init(&table);
 	str1 = string_table_intern(&table, "xD", 2);
@@ -213,8 +214,8 @@ int test_string_intern() {
 	TEST_EQ(table.count, 1);
 
 	/*
-	struct string *str3;
-	struct string *str4;
+	struct string_object *str3;
+	struct string_object *str4;
 	str3 = string_table_intern(&table, "xDD", 3);
 	str4 = string_table_intern(&table, "xDD", 3);
 	TEST_EQ(str3, str4);

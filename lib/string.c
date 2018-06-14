@@ -11,8 +11,8 @@ static unsigned int hash_djb2(char *buf, size_t len) {
 	return hash;
 }
 
-static struct string *string_new(char *buf, size_t len, unsigned int hash) {
-	struct string *string = malloc(sizeof(struct string));
+static struct string_object *string_new(char *buf, size_t len, unsigned int hash) {
+	struct string_object *string = malloc(sizeof(struct string_object));
 	string->buf = malloc(len + 1);
 	string->buf[len] = '\0';
 	string->len = len;
@@ -22,7 +22,7 @@ static struct string *string_new(char *buf, size_t len, unsigned int hash) {
 	return string;
 }
 
-static struct string_table_entry *table_entry_new(struct string *val) {
+static struct string_table_entry *table_entry_new(struct string_object *val) {
 	struct string_table_entry *entry = malloc(sizeof(struct string_table_entry));
 	entry->item = val;
 	entry->next = NULL;
@@ -84,10 +84,10 @@ void string_table_deinit(struct string_table *table) {
 	free(table->entries);
 }
 
-struct string *string_table_intern(struct string_table *table, char *buf, size_t len) {
+struct string_object *string_table_intern(struct string_table *table, char *buf, size_t len) {
 	unsigned int hash = hash_djb2(buf, len);
 	unsigned int index = hash % table->capacity;
-	struct string *string = NULL;
+	struct string_object *string = NULL;
 	struct string_table_entry *entry = table->entries[index];
 
 	if (entry == NULL) {
