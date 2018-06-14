@@ -24,7 +24,7 @@ static struct string *string_new(char *buf, size_t len, unsigned int hash) {
 
 static struct string_table_entry *table_entry_new(struct string *val) {
 	struct string_table_entry *entry = malloc(sizeof(struct string_table_entry));
-	entry->val = val;
+	entry->item = val;
 	entry->next = NULL;
 	return entry;
 }
@@ -48,7 +48,7 @@ static void table_resize(struct string_table *table, size_t capacity) {
 
 			while (entry != NULL) {
 				struct string_table_entry *next = entry->next;
-				unsigned int index = entry->val->hash % table->capacity;
+				unsigned int index = entry->item->hash % table->capacity;
 
 				/* insert at the start of the chain/list */
 				entry->next = table->entries[index];
@@ -103,8 +103,8 @@ struct string *string_table_intern(struct string_table *table, char *buf, size_t
 			 * compare the hash, length and content
 			 * of the string to find a matching interned string
 			 */
-			if (entry->val->hash == hash && entry->val->len == len && memcmp(entry->val->buf, buf, len) == 0) {
-				string = entry->val;
+			if (entry->item->hash == hash && entry->item->len == len && memcmp(entry->item->buf, buf, len) == 0) {
+				string = entry->item;
 				return string;
 			}
 			entry = entry->next;

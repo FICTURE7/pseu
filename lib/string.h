@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 struct string_table_entry {
-	struct string *val;
+	struct string *item;
 	/* next item in the link list/chain */
 	struct string_table_entry *next;
 };
