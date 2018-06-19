@@ -63,7 +63,7 @@ static void gen_op_binary(struct visitor *visitor, struct node_op_binary *binary
 
 static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
 	visitor_visit(visitor, output->expr);
-	emit(visitor->data, SSVM_INST_POP);
+	emit(visitor->data, SSVM_INST_OUTPUT);
 }
 
 struct ssvm_ir *vm_ssvm_ir_gen(struct vm *vm, struct node *node) {

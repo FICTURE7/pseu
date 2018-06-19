@@ -3,11 +3,12 @@
 #include <stdbool.h>
 #include "ssvm.h"
 #include "../vm.h"
+#include "../object.h"
 
 struct ssvm_data {
 	int pc;
 	int sp;
-	int stack[256];
+	void *stack[256];
 };
 
 /* fetches the next instruction to be executed */
@@ -17,13 +18,13 @@ static int fetch(struct vm *vm, struct ssvm_ir *ir) {
 }
 
 /* push a 32-bit integer on the stack */
-static void push(struct ssvm_data *ssvm, int val) {
+static void push(struct ssvm_data *ssvm, struct value *val) {
 	ssvm->stack[ssvm->sp++] = val;
 }
 
 /* pops a 32-bit integer from the stack */
-static int pop(struct ssvm_data *ssvm) {
-	return ssvm->stack[--ssvm->sp];
+static struct value *pop(struct ssvm_data *ssvm) {
+	return (struct value *)ssvm->stack[--ssvm->sp];
 }
 
 static void init(struct vm *vm) {
@@ -48,6 +49,10 @@ static void eval(struct vm *vm, struct ssvm_ir *ir) {
 				running = false;
 				break;
 			}
+			case SSVM_INST_OUTPUT: {
+				struct value *val = pop(ssvm);
+				break;
+			}
 			case SSVM_INST_PUSH: {
 				ssvm->pc++;
 				int val = fetch(vm, ir);
@@ -56,7 +61,6 @@ static void eval(struct vm *vm, struct ssvm_ir *ir) {
 			}
 			case SSVM_INST_POP: {
 				int val = pop(ssvm);
-				printf("%d\n", val);
 				break;
 			}
 			case SSVM_INST_ADD:

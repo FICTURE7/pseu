@@ -16,6 +16,8 @@
 enum ssvm_ir_inst {
 	SSVM_INST_RET,
 
+	SSVM_INST_OUTPUT,
+
 	SSVM_INST_PUSH,
 	SSVM_INST_POP,
 
