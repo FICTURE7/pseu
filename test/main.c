@@ -7,7 +7,6 @@
 #include "object.h"
 #include "parser.h"
 #include "vm.h"
-#include "vm/ssvm.h"
 
 struct test_data_token {
 	enum token_type type;
@@ -145,6 +144,7 @@ void vector_addrange(struct vector *vec, void **items, int size) {
 }
 
 int test_ssvm() {
+    /*
 	enum ssvm_ir_inst inst[] = {
 		SSVM_INST_PUSH, 2,
 		SSVM_INST_PUSH, 50,
@@ -152,21 +152,25 @@ int test_ssvm() {
 		SSVM_INST_POP,
 		SSVM_INST_RET
 	};
-	
+	*/
+
+	/*
 	struct ssvm_ir ir;
 	vector_init(&ir.instructions);
 	vector_addrange(&ir.instructions, &inst, sizeof(inst) / sizeof(enum ssvm_ir_inst));
+	*/
 
+	/*
 	struct vm vm;
-	vm_ssvm_init(&vm);
-
-	vm.init(&vm);
-	vm.eval(&vm, &ir);
+	vm_init(&vm);
+	vm_eval(&vm, &ir);
+	*/
 
 	return 0;
 }
 
 int test_ssvm_gen() {
+	/*
 	struct state state;
 	struct lexer lexer;
 	struct parser parser;
@@ -182,8 +186,9 @@ int test_ssvm_gen() {
 	parser_parse(&parser, &node);
 	ir = vm_ssvm_ir_gen(&vm, node);
 
-	vm.init(&vm);
-	vm.eval(&vm, ir);
+	vm_init(&vm);
+	vm_eval(&vm, ir);
+	*/
 	return 0;
 }
 

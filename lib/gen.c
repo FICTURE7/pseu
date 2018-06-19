@@ -1,26 +1,26 @@
 #include <stdlib.h>
-#include "ssvm.h"
-#include "../visitor.h"
-#include "../vector.h"
-#include "../node.h"
+#include "vm.h"
+#include "visitor.h"
+#include "vector.h"
+#include "node.h"
 
-static void emit(struct ssvm_ir *ir, int inst) {
+static void emit(struct vm_ir *ir, int inst) {
 	vector_add(&ir->instructions, (void *)inst);
 }
 
-static void emit_op(struct ssvm_ir *ir, enum op_type op) {
+static void emit_op(struct vm_ir *ir, enum op_type op) {
 	switch (op) {
 		case OP_ADD:
-			emit(ir, SSVM_INST_ADD);
+			emit(ir, VM_INST_ADD);
 			break;
 		case OP_SUB:
-			emit(ir, SSVM_INST_SUB);
+			emit(ir, VM_INST_SUB);
 			break;
 		case OP_MUL:
-			emit(ir, SSVM_INST_MUL);
+			emit(ir, VM_INST_MUL);
 			break;
 		case OP_DIV:
-			emit(ir, SSVM_INST_DIV);
+			emit(ir, VM_INST_DIV);
 			break;
 	}
 }
@@ -36,7 +36,7 @@ static void gen_boolean(struct visitor *visitor, struct node_boolean *boolean) {
 }
 
 static void gen_integer(struct visitor *visitor, struct node_integer *integer) {
-	emit(visitor->data, SSVM_INST_PUSH);
+	emit(visitor->data, VM_INST_PUSH);
 	emit(visitor->data, integer->val);
 }
 
@@ -45,7 +45,7 @@ static void gen_real(struct visitor *visitor, struct node_real *real) {
 }
 
 static void gen_string(struct visitor *visitor, struct node_string *string) {
-	emit(visitor->data, SSVM_INST_PUSH);
+	emit(visitor->data, VM_INST_PUSH);
 	emit(visitor->data, string->val);
 }
 
@@ -63,11 +63,11 @@ static void gen_op_binary(struct visitor *visitor, struct node_op_binary *binary
 
 static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
 	visitor_visit(visitor, output->expr);
-	emit(visitor->data, SSVM_INST_OUTPUT);
+	emit(visitor->data, VM_INST_OUTPUT);
 }
 
-struct ssvm_ir *vm_ssvm_ir_gen(struct vm *vm, struct node *node) {
-	struct ssvm_ir *ir = malloc(sizeof(struct ssvm_ir));
+struct vm_ir *vm_gen(struct vm *vm, struct node *node) {
+	struct vm_ir *ir = malloc(sizeof(struct vm_ir));
 	struct visitor visitor;
 
 	vector_init(&ir->instructions);

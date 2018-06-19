@@ -12,9 +12,9 @@ set(VERSION_PATCH 0)
 if(${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Wall")
 elseif(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall")
 elseif(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall")
 endif()
 
 # directory containing the lib
