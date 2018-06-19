@@ -1,2 +1,5 @@
 # build directory
 build/
+
+# vim
+*.sw[a-p]
