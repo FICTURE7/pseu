@@ -42,6 +42,6 @@ struct vm_ir *vm_gen(struct vm *vm, struct node *node);
 
 void vm_init(struct vm *vm);
 
-void vm_eval(struct vm *vm, struct vm_ir *ir);
+void vm_exec(struct vm *vm, struct vm_ir *ir);
 
 #endif /* VM_H */
