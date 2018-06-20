@@ -18,10 +18,10 @@
 	}
 
 #define TEST_ASSERT(x)								\
-	if (x != 1) return 1;
+	if ((x) != 1) return 1;
 
 #define TEST_EQ(x, y)								\
-	TEST_ASSERT(x == y)
+	TEST_ASSERT((x) == (y))
 
 #define TEST_EQ_TOK(t, tt, tv)						\
 	TEST_ASSERT(t.type == tt);						\
