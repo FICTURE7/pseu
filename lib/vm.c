@@ -1,3 +1,4 @@
+#include "state.h"
 #include "vm.h"
 
 void vm_init(struct vm *vm) {
@@ -5,6 +6,6 @@ void vm_init(struct vm *vm) {
 	vm->sp = 0;
 }
 
-void vm_exec(struct vm *vm, struct vm_ir *ir) {
-
+int vm_exec(struct vm *vm, struct state *state, vm_inst_t *inst) {
+	return 0;
 }

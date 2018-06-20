@@ -1,33 +1,27 @@
 #ifndef VM_H
 #define VM_H
 
-#include "node.h"
-#include "vector.h"
-
-enum vm_ir_inst {
-	VM_INST_RET,
-
-	VM_INST_OUTPUT,
-
-	VM_INST_PUSH,
-	VM_INST_POP,
-
-	VM_INST_ADD,
-	VM_INST_SUB,
-	VM_INST_MUL,
-	VM_INST_DIV
-};
+#include "state.h"
 
 /*
- * intermediate representation
+ * represents a virtual machine instruction
  */
-struct vm_ir {
-	struct vector instructions;
+typedef int vm_inst_t;
+
+/*
+ * operations the virtual machine is capabale of executing
+ */
+enum vm_inst_op {
+	VM_INST_OP_HALT,
+
+	VM_INST_OP_PUSH,
+	VM_INST_OP_POP,
+	
+	VM_INST_OP_OUTPUT
 };
 
 /*
- * virtual machine
- * implementation
+ * virtual machine implementaiton
  */
 struct vm {
 	/* program counter */
@@ -35,13 +29,11 @@ struct vm {
 	/* stack pointer */
 	int sp;
 	/* stack */
-	void *stack[256];
+	struct value stack[256];
 };
-
-struct vm_ir *vm_gen(struct vm *vm, struct node *node);
 
 void vm_init(struct vm *vm);
 
-void vm_exec(struct vm *vm, struct vm_ir *ir);
+int vm_exec(struct vm *vm, struct state *state, vm_inst_t *inst);
 
 #endif /* VM_H */

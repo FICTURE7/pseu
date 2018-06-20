@@ -1,6 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include <stdlib.h>
 #include <stdbool.h>
 
 /* types of values */
@@ -32,7 +33,6 @@ struct array_object {
 	struct object base;
 	unsigned int start_index;
 	unsigned int end_index;
-	size_t len;
 	struct value **items;
 };
 

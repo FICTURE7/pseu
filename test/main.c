@@ -144,55 +144,6 @@ void vector_addrange(struct vector *vec, void **items, int size) {
 	}
 }
 
-int test_ssvm() {
-    /*
-	enum ssvm_ir_inst inst[] = {
-		SSVM_INST_PUSH, 2,
-		SSVM_INST_PUSH, 50,
-		SSVM_INST_ADD,
-		SSVM_INST_POP,
-		SSVM_INST_RET
-	};
-	*/
-
-	/*
-	struct ssvm_ir ir;
-	vector_init(&ir.instructions);
-	vector_addrange(&ir.instructions, &inst, sizeof(inst) / sizeof(enum ssvm_ir_inst));
-	*/
-
-	/*
-	struct vm vm;
-	vm_init(&vm);
-	vm_eval(&vm, &ir);
-	*/
-
-	return 0;
-}
-
-int test_ssvm_gen() {
-	/*
-	struct state state;
-	struct lexer lexer;
-	struct parser parser;
-	struct vm vm;
-	struct ssvm_ir *ir;
-	struct node *node;
-
-	state_init(&state);
-	lexer_init(&lexer, NULL, "OUTPUT (100 + 10 * 2)*2");
-	parser_init(&parser, &state, &lexer);
-	vm_ssvm_init(&vm);
-
-	parser_parse(&parser, &node);
-	ir = vm_ssvm_ir_gen(&vm, node);
-
-	vm_init(&vm);
-	vm_eval(&vm, ir);
-	*/
-	return 0;
-}
-
 int test_unescape_string() {
 	struct state state;
 	struct lexer lexer;
@@ -220,6 +171,8 @@ int test_string_intern() {
 	TEST_EQ(table.count, 1);
 
 	/*
+	NOTE: hack string.c to always collide
+
 	struct string_object *str3;
 	struct string_object *str4;
 	str3 = string_table_intern(&table, "xDD", 3);
@@ -234,16 +187,30 @@ int test_string_intern() {
 	return 0;
 }
 
+int test_vm() {
+	struct vm vm;
+	struct state state;
+
+	vm_init(&vm);
+	state_init(&state);
+
+	vm_exec(&vm, &state);
+
+	state_deinit(&state);
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
 	//TEST(test_lexer);
 	//TEST(test_vector);
-	//TEST(test_ssvm);
-	//TEST(test_ssvm_gen);
 	//TEST(test_unescape_string);
-	TEST(test_string_intern);
+	//TEST(test_string_intern);
+	TEST(test_vm)
 	TEST_DEINIT();
 
+#if WIN32
 	getchar();
+#endif
 	return 0;
 }
