@@ -8,6 +8,7 @@
 #include "object.h"
 #include "parser.h"
 #include "vm.h"
+#include "function.h"
 
 struct test_data_token {
 	enum token_type type;
@@ -190,11 +191,25 @@ int test_string_intern() {
 int test_vm() {
 	struct vm vm;
 	struct state state;
-
+	struct function fn;
+	struct string_object *str;
+	
 	vm_init(&vm);
 	state_init(&state);
 
-	vm_exec(&vm, &state);
+	fn.code = (vm_instr_t[]) {
+		VM_OP_PUSH_OBJECT, (vm_instr_t)0,
+		VM_OP_OUTPUT,
+		VM_OP_HALT,
+	};
+
+	str = string_table_intern(state.strings, "xD", 2);
+	vector_init(&fn.consts);
+	vector_add(&fn.consts, str);
+
+	printf("\n\n>>> OUTPUT: \n");
+	vm_exec(&vm, &state, &fn);
+	printf("\n");
 
 	state_deinit(&state);
 	return 0;
