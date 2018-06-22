@@ -15,4 +15,4 @@ void lexer_init(struct lexer *lexer, char *path, char *buffer);
 
 void lexer_scan(struct lexer *lexer, struct token *token);
 
-#endif
+#endif /* LEXER_H */
