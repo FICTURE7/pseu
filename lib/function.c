@@ -7,6 +7,5 @@ void function_init(struct function *fn) {
 }
 
 void function_deinit(struct function *fn) {
-	free(fn->code);
 	vector_deinit(&fn->consts);
 }
