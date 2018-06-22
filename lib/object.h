@@ -6,8 +6,8 @@
 
 /* types of values */
 enum value_type {
-	VALUE_TYPE_BOOL,
-	VALUE_TYPE_INT,
+	VALUE_TYPE_BOOLEAN,
+	VALUE_TYPE_INTEGER,
 	VALUE_TYPE_REAL,
 	VALUE_TYPE_OBJECT
 };
