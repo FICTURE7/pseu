@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef int32_t vm_instr_t;
+typedef int8_t vm_instr_t;
 
 /*
  * operations the virtual machine is capabale of executing
@@ -11,10 +11,12 @@ typedef int32_t vm_instr_t;
 enum vm_op {
 	VM_OP_HALT,
 
-	VM_OP_PUSH_BOOLEAN,
-	VM_OP_PUSH_REAL,
-	VM_OP_PUSH_INTEGER,
-	VM_OP_PUSH_OBJECT,
+	VM_OP_ADD,
+	VM_OP_SUB,
+	VM_OP_MUL,
+	VM_OP_DIV,
+
+	VM_OP_PUSH,
 	VM_OP_POP,
 	
 	VM_OP_OUTPUT
