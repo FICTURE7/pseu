@@ -9,6 +9,8 @@
  * virtual machine implementaiton
  */
 struct vm {
+	/* state which owns the vm instance */
+	struct state *state;
 	/* program counter */
 	int pc;
 	/* stack pointer */
@@ -17,8 +19,8 @@ struct vm {
 	struct value stack[256];
 };
 
-void vm_init(struct vm *vm);
+void vm_init(struct vm *vm, struct state *state);
 
-int vm_exec(struct vm *vm, struct state *state, struct function *fn);
+int vm_exec(struct vm *vm, struct function *fn);
 
 #endif /* VM_H */

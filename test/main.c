@@ -188,30 +188,51 @@ int test_string_intern() {
 	return 0;
 }
 
-int test_vm() {
+int test_vm_output() {
 	struct vm vm;
 	struct state state;
 	struct function fn;
-	struct string_object *str;
+	struct string_object *str1;
+	struct string_object *str2;
 	
-	vm_init(&vm);
 	state_init(&state);
+	vm_init(&vm, &state);
+	function_init(&fn);
 
+	str1 = string_table_intern(state.strings, "xD", 2);
+	str2 = string_table_intern(state.strings, "xD2", 3);
+
+	/* add string object to the function's constant list */
+	vector_add(&fn.consts, str1);
+	vector_add(&fn.consts, str2);
+	
 	fn.code = (vm_instr_t[]) {
-		VM_OP_PUSH_OBJECT, (vm_instr_t)0,
+		VM_OP_PUSH_OBJECT, (vm_instr_t)0, /* 0 -> str1 */
+		VM_OP_OUTPUT,
+		VM_OP_PUSH_OBJECT, (vm_instr_t)1, /* 1 -> str2 */
 		VM_OP_OUTPUT,
 		VM_OP_HALT,
 	};
 
-	str = string_table_intern(state.strings, "xD", 2);
-	vector_init(&fn.consts);
-	vector_add(&fn.consts, str);
-
 	printf("\n\n>>> OUTPUT: \n");
-	vm_exec(&vm, &state, &fn);
-	printf("\n");
+	vm_exec(&vm, &fn);
+	printf("\n --\n");
+
+	printf("vm(pc: %d, sp: %d)\n", vm.pc, vm.sp);
 
 	state_deinit(&state);
+	function_deinit(&fn);
+	return 0;
+}
+
+int test_vm_arithmetics() {
+	struct vm vm;
+	struct state state;
+	struct function fn;
+
+	state_init(&state);
+	vm_init(&vm, &state);
+
 	return 0;
 }
 
@@ -221,7 +242,7 @@ int main(int argc, char **argv) {
 	//TEST(test_vector);
 	//TEST(test_unescape_string);
 	//TEST(test_string_intern);
-	TEST(test_vm)
+	TEST(test_vm_output);
 	TEST_DEINIT();
 
 #if WIN32

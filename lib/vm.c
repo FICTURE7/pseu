@@ -27,12 +27,13 @@ static void stack_push(struct vm *vm, struct value *val) {
 	vm->stack[vm->sp++] = *val;
 }
 
-void vm_init(struct vm *vm) {
+void vm_init(struct vm *vm, struct state *state) {
+	vm->state = state;
 	vm->pc = 0;
 	vm->sp = 0;
 }
 
-int vm_exec(struct vm *vm, struct state *state, struct function *fn) {
+int vm_exec(struct vm *vm, struct function *fn) {
 	while (true) {
 		/* fetch instruction at pc */
 		enum vm_op op = (enum vm_op)fn->code[vm->pc++];
@@ -52,8 +53,12 @@ int vm_exec(struct vm *vm, struct state *state, struct function *fn) {
 			case VM_OP_OUTPUT: {
 				struct value val = stack_pop(vm);
 				struct string_object *str = (struct string_object *)val.as_object;
-				printf("%s", str->buf);
+				printf("%s\n", str->buf);
 				break;
+			}
+			default: {
+				/* unknown/unhandled instruction */
+				return 1;
 			}
 		}
 	}

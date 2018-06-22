@@ -26,7 +26,7 @@ void notpseudo_init(notpseudo_t *notpseudo, char *path, char *src) {
 	state_init(&notpseudo->state);
 	lexer_init(&notpseudo->lexer, path, src);
 	parser_init(&notpseudo->parser, &notpseudo->state, &notpseudo->lexer);
-	vm_init(&notpseudo->vm);
+	vm_init(&notpseudo->vm, &notpseudo->state);
 
 	/* parse the src right away */
 	parser_parse(&notpseudo->parser, &notpseudo->root);
