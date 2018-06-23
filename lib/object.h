@@ -31,8 +31,8 @@ struct object {
 /* represents an array which contains an array of values */
 struct array_object {
 	struct object base;
-	unsigned int start_index;
-	unsigned int end_index;
+	unsigned int from;
+	unsigned int to;
 	struct value **items;
 };
 
