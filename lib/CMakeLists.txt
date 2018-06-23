@@ -12,7 +12,7 @@ set(LIBNOTPSEUDO_SRC
     node.h
     parser.h
     visitor.h
-    object.h  
+    value.h  
     string.h
     state.h
 
@@ -26,7 +26,7 @@ set(LIBNOTPSEUDO_SRC
     token.c
     parser.c
     visitor.c
-    object.c
+    value.c
     string.c
     state.c
 )

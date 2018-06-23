@@ -5,7 +5,7 @@
 #include "vector.h"
 #include "token.h"
 #include "lexer.h"
-#include "object.h"
+#include "value.h"
 #include "parser.h"
 #include "vm.h"
 #include "function.h"
@@ -194,6 +194,8 @@ int test_vm_output() {
 	struct function fn;
 	struct string_object *str1;
 	struct string_object *str2;
+	struct value val1;
+	struct value val2;
 	
 	state_init(&state);
 	vm_init(&vm, &state);
@@ -202,14 +204,24 @@ int test_vm_output() {
 	str1 = string_table_intern(state.strings, "xD", 2);
 	str2 = string_table_intern(state.strings, "xD2", 3);
 
+	val1 = (struct value) {
+		.type = VALUE_TYPE_OBJECT,
+		.as_object = (struct object *)str1
+	};
+
+	val2 = (struct value) {
+		.type = VALUE_TYPE_OBJECT,
+		.as_object = (struct object *)str2
+	};
+
 	/* add string object to the function's constant list */
-	vector_add(&fn.consts, str1);
-	vector_add(&fn.consts, str2);
+	vector_add(&fn.consts, &val1);
+	vector_add(&fn.consts, &val2);
 	
 	fn.code = (vm_instr_t[]) {
-		VM_OP_PUSH_OBJECT, (vm_instr_t)0, /* 0 -> str1 */
+		VM_OP_PUSH, (vm_instr_t)0, /* 0 -> str1 */
 		VM_OP_OUTPUT,
-		VM_OP_PUSH_OBJECT, (vm_instr_t)1, /* 1 -> str2 */
+		VM_OP_PUSH, (vm_instr_t)1, /* 1 -> str2 */
 		VM_OP_OUTPUT,
 		VM_OP_HALT,
 	};
@@ -229,10 +241,40 @@ int test_vm_arithmetics() {
 	struct vm vm;
 	struct state state;
 	struct function fn;
+	struct value val1;
+	struct value val2;
 
 	state_init(&state);
 	vm_init(&vm, &state);
+	function_init(&fn);
 
+	val1 = (struct value) {
+		.type = VALUE_TYPE_INTEGER,
+		.as_int = 10
+	};
+
+	val2 = (struct value) {
+		.type = VALUE_TYPE_INTEGER,
+		.as_int = 100
+	};
+
+	vector_add(&fn.consts, &val1);
+	vector_add(&fn.consts, &val2);
+	fn.code = (vm_instr_t[]) {
+		VM_OP_PUSH, (vm_instr_t)0,
+		VM_OP_PUSH, (vm_instr_t)1,
+		VM_OP_ADD,
+		VM_OP_OUTPUT
+	};
+
+	printf("\n\n>>> OUTPUT: \n");
+	vm_exec(&vm, &fn);
+	printf("\n --\n");
+
+	printf("vm(pc: %d, sp: %d)\n", vm.pc, vm.sp);
+
+	state_deinit(&state);
+	function_deinit(&fn);
 	return 0;
 }
 
@@ -243,6 +285,7 @@ int main(int argc, char **argv) {
 	//TEST(test_unescape_string);
 	//TEST(test_string_intern);
 	TEST(test_vm_output);
+	TEST(test_vm_arithmetics);
 	TEST_DEINIT();
 
 #if WIN32

@@ -2,11 +2,11 @@
 #define STRING_H
 
 #include <stdlib.h>
-#include "object.h"
+#include "value.h"
 
 /*
  * string table entry which
- * contains a reference to the string object
+ * contains a reference to a string object
  * and a seperate chain 'next'
  */
 struct string_table_entry {

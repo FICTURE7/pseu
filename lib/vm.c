@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include "vm.h"
 #include "state.h"
-#include "object.h"
+#include "value.h"
 #include "vector.h"
 #include "opcodes.h"
 #include "function.h"
@@ -39,21 +39,39 @@ int vm_exec(struct vm *vm, struct function *fn) {
 		enum vm_op op = (enum vm_op)fn->code[vm->pc++];
 		switch (op) {
 			case VM_OP_HALT: {
+				/* graceful exit */
 				return 0;
 			}
-			case VM_OP_PUSH_OBJECT: {
+			case VM_OP_PUSH: {
+				/* pushses a constant on the stack */
 				unsigned int index = fn->code[vm->pc++];
-				struct value val = {
-					.type = VALUE_TYPE_OBJECT,
-					.as_object = (struct object *)vector_get(&fn->consts, index)
+				struct value *val = vector_get(&fn->consts, index);
+				stack_push(vm, val);
+				break;
+			}
+			case VM_OP_ADD: {
+				struct value a = stack_pop(vm);
+				struct value b = stack_pop(vm);	
+				struct value result = {
+					.type = VALUE_TYPE_INTEGER,
+					.as_int = a.as_int + b.as_int
 				};
-				stack_push(vm, &val);
+				stack_push(vm, &result);
 				break;
 			}
 			case VM_OP_OUTPUT: {
 				struct value val = stack_pop(vm);
-				struct string_object *str = (struct string_object *)val.as_object;
-				printf("%s\n", str->buf);
+				switch (val.type) {
+					case VALUE_TYPE_INTEGER: {
+						printf("%d\n", val.as_int);
+						break;
+					}
+					case VALUE_TYPE_OBJECT: {
+						struct string_object *str = (struct string_object *)val.as_object;
+						printf("%s\n", str->buf);
+						break;
+					}
+				}
 				break;
 			}
 			default: {

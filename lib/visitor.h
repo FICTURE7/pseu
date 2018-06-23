@@ -2,7 +2,7 @@
 #define VISITOR_H
 
 #include "node.h"
-#include "object.h"
+#include "value.h"
 
 struct visitor {
 	void *data;

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include "vector.h"
-#include "object.h"
+#include "value.h"
 #include "token.h"
 
 enum op_type {

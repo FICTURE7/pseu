@@ -2,7 +2,7 @@
 #define VM_H
 
 #include "state.h"
-#include "object.h"
+#include "value.h"
 #include "function.h"
 
 /*
@@ -15,8 +15,11 @@ struct vm {
 	int pc;
 	/* stack pointer */
 	int sp;
-	/* stack */
-	struct value stack[256];
+	/* 
+	 * stack
+	 * TODO: implement dynamic stack
+	 */
+	struct value stack[256 * sizeof(struct value)];
 };
 
 void vm_init(struct vm *vm, struct state *state);
