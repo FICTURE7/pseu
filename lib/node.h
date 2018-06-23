@@ -6,6 +6,7 @@
 #include "value.h"
 #include "token.h"
 
+/* types of operations */
 enum op_type {
 	OP_ADD = TOK_OP_ADD,
 	OP_SUB,
@@ -16,6 +17,7 @@ enum op_type {
 	OP_LOGICAL_OR
 };
 
+/* types of nodes */
 enum node_type {
 	NODE_BLOCK,
 
@@ -25,17 +27,21 @@ enum node_type {
 	NODE_LIT_STRING,
 	NODE_LIT_BOOLEAN,
 
+	/* operations unary/binary */
 	NODE_OP_UNARY,
 	NODE_OP_BINARY,
 
+	/* statements */
 	NODE_STMT_DECLARE,
 	NODE_STMT_OUTPUT,
 	NODE_STMT_IF,
 	NODE_STMT_WHILE
 };
 
+/* === NODES === */
+/* represents a node */
 struct node {
-	enum node_type type;
+	enum node_type type; /* type of node */
 };
 
 struct node_block {
@@ -43,6 +49,7 @@ struct node_block {
 	struct vector stmts;
 };
 
+/* === LITERALS === */
 struct node_boolean {
 	struct node base;
 	bool val;
@@ -63,6 +70,7 @@ struct node_string {
 	struct string_object *val;
 };
 
+/* === OPERATIONS === */
 struct node_op_unary {
 	struct node base;
 	enum op_type op;
@@ -76,6 +84,7 @@ struct node_op_binary {
 	struct node *left;
 };
 
+/* === STATEMENTS === */
 struct node_stmt_decl {
 	struct node base;
 	char *ident;
