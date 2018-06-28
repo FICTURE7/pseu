@@ -23,12 +23,22 @@ struct value {
 	};
 };
 
-/* represents an object which is under garbage collection */
-struct object {
-	unsigned int nref; /* number of refs */
+/* represents the type of an object */
+struct type {
+	const char *ident; /* type identifier */
+	unsigned int nfields; /* number of fields in the object */
 };
 
-/* represents an array which contains an array of values */
+/* 
+ * represents an instance object
+ * which is heap allocated
+ */
+struct object {
+	unsigned int nref; /* number of refs */
+	struct type *type; /* type of object */
+};
+
+/* represents an array which is within a range */
 struct array_object {
 	struct object base; /* to be an object */
 
@@ -50,7 +60,7 @@ struct string_object {
 struct user_object {
 	struct object base; /* to be an object */
 
-	void *data;
+	struct value *fields; /* fields in the object */
 };
 
 #endif /* OBJECT_H */

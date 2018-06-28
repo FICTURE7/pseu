@@ -278,14 +278,40 @@ int test_vm_arithmetics() {
 	return 0;
 }
 
+int test_object() {
+	struct type type = {
+		.ident = "TestType",
+		.nfields = 1
+	};
+
+	struct user_object object = {
+		.base = (struct object) {
+			.type = &type,
+			.nref = 0
+		},
+		.fields = (struct value[]) {
+			(struct value) {
+				.type = VALUE_TYPE_INTEGER,
+				.as_int = 1
+			}
+		}
+	};
+
+	struct value val = object.fields[0];
+	printf("%d\n", val.as_int);
+	
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
 	//TEST(test_lexer);
 	//TEST(test_vector);
 	//TEST(test_unescape_string);
 	//TEST(test_string_intern);
-	TEST(test_vm_output);
-	TEST(test_vm_arithmetics);
+	//TEST(test_vm_output);
+	//TEST(test_vm_arithmetics);
+	TEST(test_object);
 	TEST_DEINIT();
 
 #if WIN32
