@@ -294,6 +294,7 @@ int test_object() {
 	};
 
 	printf("%d\n", object->fields[0].as_int);
+	printf("%s\n", string_type.ident);
 	/*
 	struct value val = object.fields[0];
 	printf("%d\n", val.as_int);

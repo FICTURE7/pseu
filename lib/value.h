@@ -29,6 +29,11 @@ struct type {
 	unsigned int nfields; /* number of fields in the object */
 };
 
+/* type for string_object */
+extern const struct type string_type;
+/* type for array_object */
+extern const struct type array_type;
+
 /* 
  * represents an instance object
  * which is heap allocated
