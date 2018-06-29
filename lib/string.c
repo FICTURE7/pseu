@@ -11,17 +11,6 @@ static unsigned int hash_djb2(char *buf, size_t len) {
 	return hash;
 }
 
-static struct string_object *string_new(char *buf, size_t len, unsigned int hash) {
-	struct string_object *string = malloc(sizeof(struct string_object));
-	string->buf = malloc(len + 1);
-	string->buf[len] = '\0';
-	string->len = len;
-	string->hash = hash;
-
-	memcpy(string->buf, buf, len);
-	return string;
-}
-
 static struct string_table_entry *table_entry_new(struct string_object *val) {
 	struct string_table_entry *entry = malloc(sizeof(struct string_table_entry));
 	entry->item = val;
@@ -92,7 +81,7 @@ struct string_object *string_table_intern(struct string_table *table, char *buf,
 
 	if (entry == NULL) {
 		/* create new entry if not found */
-		string = string_new(buf, len, hash);
+		string = object_new_string(buf, len, hash);
 		entry = table_entry_new(string);
 
 		table->entries[index] = entry;
@@ -117,7 +106,7 @@ struct string_object *string_table_intern(struct string_table *table, char *buf,
 		}
 
 		/* string not found in chain, create a new one and extend chain */
-		string = string_new(buf, len, hash);
+		string = object_new_string(buf, len, hash);
 		entry = table_entry_new(string);
 
 		/* insert at the start of the chain/list */

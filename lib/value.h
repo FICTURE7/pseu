@@ -29,10 +29,10 @@ struct type {
 	unsigned int nfields; /* number of fields in the object */
 };
 
-/* type for string_object */
-extern const struct type string_type;
 /* type for array_object */
 extern const struct type array_type;
+/* type for string_object */
+extern const struct type string_type;
 
 /* 
  * represents an instance object
@@ -68,6 +68,8 @@ struct user_object {
 	struct value fields[]; /* fields in the object */
 };
 
-struct object *object_new(struct type *type);
+struct user_object *object_new(struct type *type);
+struct array_object *object_new_array(unsigned int from, unsigned int to);
+struct string_object *object_new_string(char *buf, size_t len, unsigned int hash);
 
 #endif /* OBJECT_H */
