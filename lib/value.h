@@ -34,7 +34,7 @@ struct type {
  * which is heap allocated
  */
 struct object {
-	unsigned int nref; /* number of refs */
+	unsigned int nrefs; /* number of refs for gc */
 	struct type *type; /* type of object */
 };
 
@@ -44,7 +44,7 @@ struct array_object {
 
 	unsigned int from; /* start index of the array */
 	unsigned int to; /* end index of the array */
-	struct value **items; /* elements in the array */
+	struct value items[]; /* elements in the array */
 };
 
 /* represents a string object */
@@ -60,7 +60,9 @@ struct string_object {
 struct user_object {
 	struct object base; /* to be an object */
 
-	struct value *fields; /* fields in the object */
+	struct value fields[]; /* fields in the object */
 };
+
+struct object *object_new(struct type *type);
 
 #endif /* OBJECT_H */

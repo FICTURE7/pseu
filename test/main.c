@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <alloca.h>
 #include "test.h"
 #include "vector.h"
 #include "token.h"
@@ -284,21 +285,19 @@ int test_object() {
 		.nfields = 1
 	};
 
-	struct user_object object = {
-		.base = (struct object) {
-			.type = &type,
-			.nref = 0
-		},
-		.fields = (struct value[]) {
-			(struct value) {
-				.type = VALUE_TYPE_INTEGER,
-				.as_int = 1
-			}
-		}
+	struct user_object *object = alloca(sizeof(struct user_object) + (type.nfields * sizeof(struct value)));
+	object->base.type = &type;
+	object->base.nrefs = 0;
+	object->fields[0] = (struct value) {
+		.type = VALUE_TYPE_INTEGER,
+		.as_int = 1
 	};
 
+	printf("%d\n", object->fields[0].as_int);
+	/*
 	struct value val = object.fields[0];
 	printf("%d\n", val.as_int);
+	*/
 	
 	return 0;
 }
