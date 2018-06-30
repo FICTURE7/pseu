@@ -27,6 +27,40 @@ static void stack_push(struct vm *vm, struct value *val) {
 	vm->stack[vm->sp++] = *val;
 }
 
+/* outputs the specified value */
+static void output(struct value *value) {
+	switch (value->type) {
+		case VALUE_TYPE_BOOLEAN:
+			printf(value->as_bool ? "TRUE" : "FALSE");
+			break;
+		case VALUE_TYPE_INTEGER:
+			printf("%d\n", value->as_int);
+			break;
+		case VALUE_TYPE_REAL:
+			printf("%.f\n", value->as_float);
+			break;
+		case VALUE_TYPE_OBJECT:
+			if (value->as_object->type == &string_type) {
+				struct string_object *string = (struct string_object *)value->as_object;
+				printf("%s\n", string->buf);
+			} else {
+				printf("object<%p>\n", value->as_object);
+			}
+			break;
+	}
+}
+
+static struct value add(struct value *a, struct value *b) {
+	/*TODO: Implement */
+	if (a->type == VALUE_TYPE_REAL || b->type == VALUE_TYPE_REAL) {
+		return (struct value) {
+			.type = VALUE_TYPE_REAL,
+			.as_float = a->as_float + b->as_float
+		};
+	}
+	return (struct value) { };
+}
+
 void vm_init(struct vm *vm, struct state *state) {
 	vm->state = state;
 	vm->pc = 0;
@@ -61,17 +95,7 @@ int vm_exec(struct vm *vm, struct function *fn) {
 			}
 			case VM_OP_OUTPUT: {
 				struct value val = stack_pop(vm);
-				switch (val.type) {
-					case VALUE_TYPE_INTEGER: {
-						printf("%d\n", val.as_int);
-						break;
-					}
-					case VALUE_TYPE_OBJECT: {
-						struct string_object *str = (struct string_object *)val.as_object;
-						printf("%s\n", str->buf);
-						break;
-					}
-				}
+				output(&val);
 				break;
 			}
 			default: {

@@ -309,9 +309,9 @@ int main(int argc, char **argv) {
 	//TEST(test_vector);
 	//TEST(test_unescape_string);
 	//TEST(test_string_intern);
-	//TEST(test_vm_output);
+	TEST(test_vm_output);
 	//TEST(test_vm_arithmetics);
-	TEST(test_object);
+	//TEST(test_object);
 	TEST_DEINIT();
 
 #if WIN32
