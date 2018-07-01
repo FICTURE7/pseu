@@ -3,7 +3,7 @@
 
 #include "state.h"
 #include "value.h"
-#include "function.h"
+#include "funct.h"
 
 /*
  * virtual machine implementaiton
@@ -23,7 +23,6 @@ struct vm {
 };
 
 void vm_init(struct vm *vm, struct state *state);
-
-int vm_exec(struct vm *vm, struct function *fn);
+int vm_exec(struct vm *vm, struct funct *fn);
 
 #endif /* VM_H */

@@ -5,7 +5,7 @@
 #include "value.h"
 #include "vector.h"
 #include "opcodes.h"
-#include "function.h"
+#include "funct.h"
 
 /*
  * pops a value from the top of the
@@ -67,7 +67,8 @@ void vm_init(struct vm *vm, struct state *state) {
 	vm->sp = 0;
 }
 
-int vm_exec(struct vm *vm, struct function *fn) {
+int vm_exec(struct vm *vm, struct funct *fn) {
+	/* vm dispatch loop */
 	while (true) {
 		/* fetch instruction at pc */
 		enum vm_op op = (enum vm_op)fn->code[vm->pc++];
