@@ -40,6 +40,7 @@ static void output(struct value *value) {
 			printf("%.f\n", value->as_float);
 			break;
 		case VALUE_TYPE_OBJECT:
+			/* TODO: handle arrays as well. */
 			if (value->as_object->type == &string_type) {
 				struct string_object *string = (struct string_object *)value->as_object;
 				printf("%s\n", string->buf);
@@ -50,14 +51,38 @@ static void output(struct value *value) {
 	}
 }
 
-static struct value add(struct value *a, struct value *b) {
-	/*TODO: Implement */
-	if (a->type == VALUE_TYPE_REAL || b->type == VALUE_TYPE_REAL) {
-		return (struct value) {
-			.type = VALUE_TYPE_REAL,
-			.as_float = a->as_float + b->as_float
-		};
+/* carries out an arithmetic operation */
+static struct value arithmetic(struct value *a, struct value *b, enum vm_op op) {
+	if (value_is_string(a)) {
+		
 	}
+
+	/* either one of them is a float, then carry out operation in floating point. */
+	if (a->type == VALUE_TYPE_REAL || b->type == VALUE_TYPE_REAL) {
+		switch (op) {
+			case VM_OP_ADD:
+				return (struct value) {
+					.type = VALUE_TYPE_REAL,
+					.as_float = a->as_float + b->as_float
+				};
+			case VM_OP_SUB:
+				return (struct value) {
+					.type = VALUE_TYPE_REAL,
+					.as_float = a->as_float - b->as_float
+				};
+			case VM_OP_MUL:
+				return (struct value) {
+					.type = VALUE_TYPE_REAL,
+					.as_float = a->as_float * b->as_float
+				};
+			case VM_OP_DIV:
+				return (struct value) {
+					.type = VALUE_TYPE_REAL,
+					.as_float = a->as_float / b->as_float
+				};
+		}
+	}
+
 	return (struct value) { };
 }
 
@@ -87,10 +112,7 @@ int vm_exec(struct vm *vm, struct funct *fn) {
 			case VM_OP_ADD: {
 				struct value a = stack_pop(vm);
 				struct value b = stack_pop(vm);	
-				struct value result = {
-					.type = VALUE_TYPE_INTEGER,
-					.as_int = a.as_int + b.as_int
-				};
+				struct value result = arithmetic(&a, &b, VM_OP_ADD);
 				stack_push(vm, &result);
 				break;
 			}

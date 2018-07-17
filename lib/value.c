@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include "value.h"
 
 const struct type array_type = {
@@ -43,4 +44,12 @@ struct string_object *object_new_string(char *buf, size_t len, unsigned int hash
 
 	memcpy(obj->buf, buf, len);
 	return obj;
+}
+
+inline bool value_is_string(struct value *value) {
+	return value->type == VALUE_TYPE_OBJECT && value->as_object->type == &string_type;
+}
+
+inline bool value_is_array(struct value *value) {
+	return value->type == VALUE_TYPE_OBJECT && value->as_object->type == &array_type;
 }
