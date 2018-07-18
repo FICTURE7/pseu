@@ -31,7 +31,7 @@ static void stack_push(struct vm *vm, struct value *val) {
 static void output(struct value *value) {
 	switch (value->type) {
 		case VALUE_TYPE_BOOLEAN:
-			printf(value->as_bool ? "TRUE" : "FALSE");
+			printf(value->as_bool ? "TRUE\n" : "FALSE\n");
 			break;
 		case VALUE_TYPE_INTEGER:
 			printf("%d\n", value->as_int);
@@ -51,38 +51,59 @@ static void output(struct value *value) {
 	}
 }
 
-/* carries out an arithmetic operation */
-static struct value arithmetic(struct value *a, struct value *b, enum vm_op op) {
-	if (value_is_string(a)) {
-		
-	}
-
-	/* either one of them is a float, then carry out operation in floating point. */
-	if (a->type == VALUE_TYPE_REAL || b->type == VALUE_TYPE_REAL) {
-		switch (op) {
-			case VM_OP_ADD:
-				return (struct value) {
-					.type = VALUE_TYPE_REAL,
-					.as_float = a->as_float + b->as_float
-				};
-			case VM_OP_SUB:
-				return (struct value) {
-					.type = VALUE_TYPE_REAL,
-					.as_float = a->as_float - b->as_float
-				};
-			case VM_OP_MUL:
-				return (struct value) {
-					.type = VALUE_TYPE_REAL,
-					.as_float = a->as_float * b->as_float
-				};
-			case VM_OP_DIV:
-				return (struct value) {
-					.type = VALUE_TYPE_REAL,
-					.as_float = a->as_float / b->as_float
-				};
+#define BINOP_REAL(_op, _a, _b) 							\
+		(struct value) { 									\
+			.type = VALUE_TYPE_REAL, 						\
+			.as_float = (_a)->as_float _op (_b)->as_float 	\
 		}
-	}
 
+#define BINOP_INTEGER(_op, _a, _b) 							\
+		(struct value) { 									\
+			.type = VALUE_TYPE_INTEGER,						\
+			.as_int = (_a)->as_int _op (_b)->as_int 		\
+		}
+
+/* carry out arithmetic operations on real values. */
+static struct value arithmetic_real(enum vm_op op, struct value *a, struct value *b) {
+	switch (op) {
+		case VM_OP_ADD:
+			return BINOP_REAL(+, a, b);
+		case VM_OP_SUB:
+			return BINOP_REAL(-, a, b);
+		case VM_OP_MUL:
+			return BINOP_REAL(*, a, b);
+		case VM_OP_DIV:
+			return BINOP_REAL(/, a, b);
+		default:
+			/* TODO: push error. */
+			break;
+	}
+}
+
+/* carry out arithmetic operations on integer values. */
+static struct value arithmetic_integer(enum vm_op op, struct value *a, struct value *b) {	
+	switch (op) {
+		case VM_OP_ADD:
+			return BINOP_INTEGER(+, a, b);
+		case VM_OP_SUB:
+			return BINOP_INTEGER(-, a, b);
+		case VM_OP_MUL:
+			return BINOP_INTEGER(*, a, b);
+		case VM_OP_DIV:
+			return BINOP_INTEGER(/, a, b);
+		default:
+			/* TODO: push error. */
+			break;
+	}
+}
+
+/* carries out an arithmetic operation */
+static struct value arithmetic(enum vm_op op, struct value *a, struct value *b) {
+	if (a->type == VALUE_TYPE_REAL && a->type == VALUE_TYPE_REAL) {
+		return arithmetic_real(op, a, b);	
+	} else if (a->type == VALUE_TYPE_INTEGER && a->type == VALUE_TYPE_INTEGER) {
+		return arithmetic_integer(op, a, b);
+	}
 	return (struct value) { };
 }
 
@@ -112,11 +133,12 @@ int vm_exec(struct vm *vm, struct funct *fn) {
 			case VM_OP_ADD: {
 				struct value a = stack_pop(vm);
 				struct value b = stack_pop(vm);	
-				struct value result = arithmetic(&a, &b, VM_OP_ADD);
+				struct value result = arithmetic(VM_OP_ADD, &a, &b);
 				stack_push(vm, &result);
 				break;
 			}
 			case VM_OP_OUTPUT: {
+				/* pop the top value on the stack and print it.*/
 				struct value val = stack_pop(vm);
 				output(&val);
 				break;
