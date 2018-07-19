@@ -1,20 +1,26 @@
+#include <stdlib.h>
 #include "state.h"
 #include "string.h"
 #include "vector.h"
+#include "diagnostic.h"
 
 void state_init(struct state *state) {
-	state->diagnostics = malloc(sizeof(struct vector));
+	state->diagnostics = NULL;
 	state->strings = malloc(sizeof(struct string_table));
 
-	vector_init(state->diagnostics);
 	string_table_init(state->strings);
 }
 
 void state_deinit(struct state *state) {
-	/* free diagnostics allocations */
-	for (unsigned int i = 0; i < state->diagnostics->count; i++) {
-		free(vector_get(state->diagnostics, i));
+	/* free the linked list of chains */
+	struct diagnostic *current;
+	struct diagnostic *next;
+
+	current = state->diagnostics;
+	for (; current != NULL; current = next) {
+		next = current->next;
+		free(current);
 	}
-	vector_deinit(state->diagnostics);
+
 	string_table_deinit(state->strings);
 }

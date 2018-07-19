@@ -18,6 +18,8 @@ struct diagnostic {
 	enum diagnostic_type type; /* type of diagnostic */
 	struct location loc; /* location in source of the error */
 	char *message; /* null terminated string message descripting the diagnostic */
+
+	struct diagnostic *next; /* next diagnostic in the list */
 };
 
 #endif
