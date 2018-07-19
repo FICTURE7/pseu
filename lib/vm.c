@@ -7,6 +7,28 @@
 #include "opcodes.h"
 #include "funct.h"
 
+/* 
+ * carries out the specified operation on
+ * the specified operand _a and _b which are in
+ * the type of `struct value`, as floats
+ */
+#define BINOP_REAL(_op, _a, _b) 							\
+		(struct value) { 									\
+			.type = VALUE_TYPE_REAL, 						\
+			.as_float = (_a)->as_float _op (_b)->as_float 	\
+		}
+
+/* 
+ * carries out the specified operation on
+ * the specified operand _a and _b which are in
+ * the type of `struct value`, as ints
+ */
+#define BINOP_INTEGER(_op, _a, _b) 							\
+		(struct value) { 									\
+			.type = VALUE_TYPE_INTEGER,						\
+			.as_int = (_a)->as_int _op (_b)->as_int 		\
+		}
+
 /*
  * pops a value from the top of the
  * stack of the virtual machine
@@ -40,7 +62,7 @@ static void output(struct value *value) {
 			printf("%.f\n", value->as_float);
 			break;
 		case VALUE_TYPE_OBJECT:
-			/* TODO: handle arrays as well. */
+			/* TODO: handle arrays as well */
 			if (value->as_object->type == &string_type) {
 				struct string_object *string = (struct string_object *)value->as_object;
 				printf("%s\n", string->buf);
@@ -51,19 +73,7 @@ static void output(struct value *value) {
 	}
 }
 
-#define BINOP_REAL(_op, _a, _b) 							\
-		(struct value) { 									\
-			.type = VALUE_TYPE_REAL, 						\
-			.as_float = (_a)->as_float _op (_b)->as_float 	\
-		}
-
-#define BINOP_INTEGER(_op, _a, _b) 							\
-		(struct value) { 									\
-			.type = VALUE_TYPE_INTEGER,						\
-			.as_int = (_a)->as_int _op (_b)->as_int 		\
-		}
-
-/* carry out arithmetic operations on real values. */
+/* carry out arithmetic operations on real values */
 static struct value arithmetic_real(enum vm_op op, struct value *a, struct value *b) {
 	switch (op) {
 		case VM_OP_ADD:
@@ -75,12 +85,12 @@ static struct value arithmetic_real(enum vm_op op, struct value *a, struct value
 		case VM_OP_DIV:
 			return BINOP_REAL(/, a, b);
 		default:
-			/* TODO: push error. */
+			/* TODO: push error */
 			break;
 	}
 }
 
-/* carry out arithmetic operations on integer values. */
+/* carry out arithmetic operations on integer values */
 static struct value arithmetic_integer(enum vm_op op, struct value *a, struct value *b) {	
 	switch (op) {
 		case VM_OP_ADD:
@@ -92,7 +102,7 @@ static struct value arithmetic_integer(enum vm_op op, struct value *a, struct va
 		case VM_OP_DIV:
 			return BINOP_INTEGER(/, a, b);
 		default:
-			/* TODO: push error. */
+			/* TODO: push error */
 			break;
 	}
 }
@@ -104,6 +114,7 @@ static struct value arithmetic(enum vm_op op, struct value *a, struct value *b) 
 	} else if (a->type == VALUE_TYPE_INTEGER && a->type == VALUE_TYPE_INTEGER) {
 		return arithmetic_integer(op, a, b);
 	}
+
 	return (struct value) { };
 }
 
@@ -124,7 +135,10 @@ int vm_exec(struct vm *vm, struct funct *fn) {
 				return 0;
 			}
 			case VM_OP_PUSH: {
-				/* pushses a constant on the stack */
+				/*
+				 * pushses the constant at `index` in 
+				 * the current `fn` on the stack
+				 */
 				unsigned int index = fn->code[vm->pc++];
 				struct value *val = vector_get(&fn->consts, index);
 				stack_push(vm, val);
