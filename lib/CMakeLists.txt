@@ -1,10 +1,11 @@
-set(LIBNOTPSEUDO_INCLUDE_DIR "../include")
-set(LIBNOTPSEUDO_SRC
-    ${LIBNOTPSEUDO_INCLUDE_DIR}/notpseudo.h
+set(LIBPSEU_INCLUDE_DIR "../include")
+set(LIBPSEU_SRC
+    ${LIBPSEU_INCLUDE_DIR}/pseu.h
 	funct.h
     vm.h
     diagnostic.h
     location.h
+	opcode.h
     vector.h
     pretty.h
     lexer.h
@@ -16,10 +17,10 @@ set(LIBNOTPSEUDO_SRC
     string.h
     state.h
 
-    notpseudo.c
+    pseu.c
 	funct.c
     vm.c
-    gen.c
+    codegen.c
     vector.c
     pretty.c
     lexer.c
@@ -32,22 +33,22 @@ set(LIBNOTPSEUDO_SRC
 )
 
 # objects
-add_library(libnotpseudo OBJECT ${LIBNOTPSEUDO_SRC})
-target_include_directories(libnotpseudo PUBLIC ${LIBNOTPSEUDO_INCLUDE_DIR})
+add_library(libpseu OBJECT ${LIBPSEU_SRC})
+target_include_directories(libpseu PUBLIC ${LIBPSEU_INCLUDE_DIR})
 
 # static library
-add_library(libnotpseudo-static STATIC $<TARGET_OBJECTS:libnotpseudo>)
-target_include_directories(libnotpseudo-static PUBLIC ${LIBNOTPSEUDO_INCLUDE_DIR})
+add_library(libpseu-static STATIC $<TARGET_OBJECTS:libpseu>)
+target_include_directories(libpseu-static PUBLIC ${LIBPSEU_INCLUDE_DIR})
 
 # shared library
-add_library(libnotpseudo-shared SHARED $<TARGET_OBJECTS:libnotpseudo>)
-target_include_directories(libnotpseudo-shared PUBLIC ${LIBNOTPSEUDO_INCLUDE_DIR})
+add_library(libpseu-shared SHARED $<TARGET_OBJECTS:libpseu>)
+target_include_directories(libpseu-shared PUBLIC ${LIBPSEU_INCLUDE_DIR})
 
 # use different names for different platforms
 if(WIN32)
-    set_target_properties(libnotpseudo-static PROPERTIES OUTPUT_NAME "notpseudo")
-    set_target_properties(libnotpseudo-shared PROPERTIES OUTPUT_NAME "notpseudo")
+    set_target_properties(libpseu-static PROPERTIES OUTPUT_NAME "pseu")
+    set_target_properties(libpseu-shared PROPERTIES OUTPUT_NAME "pseu")
 else()
-    set_target_properties(libnotpseudo-static PROPERTIES OUTPUT_NAME "libnotpseudo")
-    set_target_properties(libnotpseudo-shared PROPERTIES OUTPUT_NAME "libnotpseudo")
+    set_target_properties(libpseu-static PROPERTIES OUTPUT_NAME "libpseu")
+    set_target_properties(libpseu-shared PROPERTIES OUTPUT_NAME "libpseu")
 endif()

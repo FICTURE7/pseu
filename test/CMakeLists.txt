@@ -1,7 +1,7 @@
 # test target
-add_executable(libnotpseudo-test
+add_executable(libpseu-test
     main.c 
     test.h
-    $<TARGET_OBJECTS:libnotpseudo>
+    $<TARGET_OBJECTS:libpseu>
 )
-target_include_directories(libnotpseudo-test PUBLIC "../include" PRIVATE "../lib")
+target_include_directories(libpseu-test PUBLIC "../include" PRIVATE "../lib")

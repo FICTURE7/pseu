@@ -1,4 +1,4 @@
 # main target
-add_executable(notpseudo main.c)
+add_executable(pseu main.c)
 # link the core static library to it
-target_link_libraries(notpseudo libnotpseudo-static)
+target_link_libraries(pseu libpseu-static)

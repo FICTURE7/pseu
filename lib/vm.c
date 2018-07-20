@@ -4,7 +4,7 @@
 #include "state.h"
 #include "value.h"
 #include "vector.h"
-#include "opcodes.h"
+#include "opcode.h"
 #include "funct.h"
 
 /* 

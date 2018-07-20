@@ -1,4 +1,4 @@
-# NotPseudo
+# Pseu
 A wack programming language that resembles the pseudo code found in 
 the [Cambridge International A & AS Level Computer Science](https://www.amazon.com/Cambridge-International-Computer-Coursebook-Examinations/dp/1107546737/)
 book.
@@ -6,7 +6,7 @@ book.
 #### NOTE
 This is still a work in progress thing and cannot do much at the moment until
 things are fleshed out. But I've also written a working compiler which is pretty 
-much complete in C# at the [`roslyn`](https://github.com/FICTURE7/notpseudo/tree/roslyn/) 
+much complete in C# at the [`roslyn`](https://github.com/FICTURE7/pseu/tree/roslyn/) 
 branch which makes use of the [Roslyn](https://github.com/dotnet/roslyn/) compiler platform 
 to compile to IL by transpiling the code to Visual Basic.
 

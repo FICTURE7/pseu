@@ -2,7 +2,7 @@
 #define FUNCTION_H
 
 #include "vector.h"
-#include "opcodes.h"
+#include "opcode.h"
 
 /*
  * represents a function

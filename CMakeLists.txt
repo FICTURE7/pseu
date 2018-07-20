@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 
 # set project
-project(notpseudo C)
+project(pseu C)
 
 # set project version
 set(VERSION_MAJOR 0)
