@@ -5,7 +5,7 @@
 #include "value.h"
 #include "vector.h"
 #include "opcode.h"
-#include "funct.h"
+#include "func.h"
 
 /* 
  * carries out the specified operation on
@@ -124,7 +124,7 @@ void vm_init(struct vm *vm, struct state *state) {
 	vm->sp = 0;
 }
 
-int vm_exec(struct vm *vm, struct funct *fn) {
+int vm_exec(struct vm *vm, struct func *fn) {
 	/* vm dispatch loop */
 	while (true) {
 		/* fetch instruction at pc */

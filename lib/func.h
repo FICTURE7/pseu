@@ -7,14 +7,14 @@
 /*
  * represents a function
  */
-struct funct {
+struct func {
 	/* list of constants in the function */
 	struct vector consts;
 	/* instructions in the function */
 	vm_instr_t *code;
 };
 
-void funct_init(struct funct *fn);
-void funct_deinit(struct funct *fn);
+void func_init(struct func *fn);
+void func_deinit(struct func *fn);
 
 #endif /* FUNCTION_H */

@@ -1,7 +1,7 @@
 set(LIBPSEU_INCLUDE_DIR "../include")
 set(LIBPSEU_SRC
     ${LIBPSEU_INCLUDE_DIR}/pseu.h
-	funct.h
+	func.h
     vm.h
     diagnostic.h
     location.h
@@ -18,7 +18,7 @@ set(LIBPSEU_SRC
     state.h
 
     pseu.c
-	funct.c
+	func.c
     vm.c
     codegen.c
     vector.c

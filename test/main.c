@@ -9,7 +9,7 @@
 #include "value.h"
 #include "parser.h"
 #include "vm.h"
-#include "funct.h"
+#include "func.h"
 
 struct test_data_token {
 	enum token_type type;
@@ -192,7 +192,7 @@ int test_string_intern() {
 int test_vm_output() {
 	struct vm vm;
 	struct state state;
-	struct funct fn;
+	struct func fn;
 	struct string_object *str1;
 	struct string_object *str2;
 	struct value val1;
@@ -200,7 +200,7 @@ int test_vm_output() {
 	
 	state_init(&state);
 	vm_init(&vm, &state);
-	funct_init(&fn);
+	func_init(&fn);
 
 	str1 = string_table_intern(state.strings, "xD", 2);
 	str2 = string_table_intern(state.strings, "xD2", 3);
@@ -234,20 +234,20 @@ int test_vm_output() {
 	printf("vm(pc: %d, sp: %d)\n", vm.pc, vm.sp);
 
 	state_deinit(&state);
-	funct_deinit(&fn);
+	func_deinit(&fn);
 	return 0;
 }
 
 int test_vm_arithmetics() {
 	struct vm vm;
 	struct state state;
-	struct funct fn;
+	struct func fn;
 	struct value val1;
 	struct value val2;
 
 	state_init(&state);
 	vm_init(&vm, &state);
-	funct_init(&fn);
+	func_init(&fn);
 
 	val1 = (struct value) {
 		.type = VALUE_TYPE_INTEGER,
@@ -275,7 +275,7 @@ int test_vm_arithmetics() {
 	printf("vm(pc: %d, sp: %d)\n", vm.pc, vm.sp);
 
 	state_deinit(&state);
-	funct_deinit(&fn);
+	func_deinit(&fn);
 	return 0;
 }
 
