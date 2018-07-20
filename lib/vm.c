@@ -140,7 +140,7 @@ int vm_exec(struct vm *vm, struct func *fn) {
 				 * the current `fn` on the stack
 				 */
 				unsigned int index = fn->code[vm->pc++];
-				struct value *val = vector_get(&fn->consts, index);
+				struct value *val = &fn->constk[index];
 				stack_push(vm, val);
 				break;
 			}
@@ -159,6 +159,7 @@ int vm_exec(struct vm *vm, struct func *fn) {
 			}
 			default: {
 				/* unknown/unhandled instruction */
+				vm->state->onerror(1);
 				return 1;
 			}
 		}

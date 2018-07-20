@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-typedef int8_t vm_instr_t;
+/* represents an instruction */
+typedef int8_t instr_t;
 
 /*
  * operations the virtual machine is capabale of executing
@@ -22,4 +23,4 @@ enum vm_op {
 	VM_OP_OUTPUT
 };
 
-#endif /* OPCODES_H */
+#endif /* OPCODE_H */

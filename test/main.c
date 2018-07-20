@@ -216,13 +216,15 @@ int test_vm_output() {
 	};
 
 	/* add string object to the function's constant list */
-	vector_add(&fn.consts, &val1);
-	vector_add(&fn.consts, &val2);
+	fn.constkc = 2;
+	fn.constk = malloc(sizeof(struct value) * 2);
+	fn.constk[0] = val1;
+	fn.constk[1] = val2;
 	
-	fn.code = (vm_instr_t[]) {
-		VM_OP_PUSH, (vm_instr_t)0, /* 0 -> str1 */
+	fn.code = (instr_t[]) {
+		VM_OP_PUSH, (instr_t)0, /* 0 -> str1 */
 		VM_OP_OUTPUT,
-		VM_OP_PUSH, (vm_instr_t)1, /* 1 -> str2 */
+		VM_OP_PUSH, (instr_t)1, /* 1 -> str2 */
 		VM_OP_OUTPUT,
 		VM_OP_HALT,
 	};
@@ -259,11 +261,14 @@ int test_vm_arithmetics() {
 		.as_int = 100
 	};
 
-	vector_add(&fn.consts, &val1);
-	vector_add(&fn.consts, &val2);
-	fn.code = (vm_instr_t[]) {
-		VM_OP_PUSH, (vm_instr_t)0,
-		VM_OP_PUSH, (vm_instr_t)1,
+	fn.constkc = 2;
+	fn.constk = malloc(sizeof(struct value) * 2);
+	fn.constk[0] = val1;
+	fn.constk[1] = val2;
+
+	fn.code = (instr_t[]) {
+		VM_OP_PUSH, (instr_t)0,
+		VM_OP_PUSH, (instr_t)1,
 		VM_OP_ADD,
 		VM_OP_OUTPUT
 	};
@@ -309,8 +314,8 @@ int main(int argc, char **argv) {
 	//TEST(test_vector);
 	//TEST(test_unescape_string);
 	//TEST(test_string_intern);
-	TEST(test_vm_output);
-	//TEST(test_vm_arithmetics);
+	//TEST(test_vm_output);
+	TEST(test_vm_arithmetics);
 	//TEST(test_object);
 	TEST_DEINIT();
 
