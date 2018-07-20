@@ -1,11 +1,10 @@
 #include <stdlib.h>
-#include "vector.h"
 #include "func.h"
 
 void func_init(struct func *fn) {
-	vector_init(&fn->consts);
+	/* space */
 }
 
 void func_deinit(struct func *fn) {
-	vector_deinit(&fn->consts);
+	free(fn->constk);
 }
