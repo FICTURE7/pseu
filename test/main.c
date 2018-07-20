@@ -216,10 +216,10 @@ int test_vm_output() {
 	};
 
 	/* add string object to the function's constant list */
-	fn.constkc = 2;
-	fn.constk = malloc(sizeof(struct value) * 2);
-	fn.constk[0] = val1;
-	fn.constk[1] = val2;
+	fn.nconsts = 2;
+	fn.consts = malloc(sizeof(struct value) * 2);
+	fn.consts[0] = val1;
+	fn.consts[1] = val2;
 	
 	fn.code = (instr_t[]) {
 		VM_OP_PUSH, (instr_t)0, /* 0 -> str1 */
@@ -261,10 +261,10 @@ int test_vm_arithmetics() {
 		.as_int = 100
 	};
 
-	fn.constkc = 2;
-	fn.constk = malloc(sizeof(struct value) * 2);
-	fn.constk[0] = val1;
-	fn.constk[1] = val2;
+	fn.nconsts = 2;
+	fn.consts = malloc(sizeof(struct value) * 2);
+	fn.consts[0] = val1;
+	fn.consts[1] = val2;
 
 	fn.code = (instr_t[]) {
 		VM_OP_PUSH, (instr_t)0,

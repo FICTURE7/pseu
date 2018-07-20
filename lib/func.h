@@ -9,8 +9,8 @@
  */
 struct func {
 	struct proto *proto; /* prototype of the function */
-	size_t constkc; /* constant count */
-	struct value *constk; /* array of constants */
+	size_t nconsts; /* constant count */
+	struct value *consts; /* array of constants */
 	instr_t *code; /* instructions in the function */
 };
 
@@ -28,8 +28,8 @@ struct cfunc {
  */
 struct proto {
 	char *ident; /* identifier of the function */
-	size_t paramc; /* parameter count */
-	struct type *paramt; /* array of parameter types */
+	size_t nparams; /* parameter count */
+	struct type *paramst; /* array of parameter types */
 	struct type *rett; /* return type */
 };
 

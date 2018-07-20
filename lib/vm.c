@@ -140,7 +140,7 @@ int vm_exec(struct vm *vm, struct func *fn) {
 				 * the current `fn` on the stack
 				 */
 				unsigned int index = fn->code[vm->pc++];
-				struct value *val = &fn->constk[index];
+				struct value *val = &fn->consts[index];
 				stack_push(vm, val);
 				break;
 			}

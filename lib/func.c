@@ -6,5 +6,5 @@ void func_init(struct func *fn) {
 }
 
 void func_deinit(struct func *fn) {
-	free(fn->constk);
+	free(fn->consts);
 }
