@@ -29,6 +29,8 @@ struct type {
 	unsigned int nfields; /* number of fields in the object */
 };
 
+/* type for void objects */
+extern const struct type void_type;
 /* type for array_object */
 extern const struct type array_type;
 /* type for string_object */

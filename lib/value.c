@@ -2,6 +2,11 @@
 #include <stdbool.h>
 #include "value.h"
 
+const struct type void_type = {
+	.ident = "VOID",
+	.nfields = -1 /* -1 since they are hardcoded fields */
+};
+
 const struct type array_type = {
 	.ident = "ARRAY",
 	.nfields = -1 /* -1 since they are hardcoded fields */
