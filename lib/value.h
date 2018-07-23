@@ -1,5 +1,5 @@
-#ifndef OBJECT_H
-#define OBJECT_H
+#ifndef VALUE_H
+#define VALUE_H
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -77,4 +77,4 @@ struct string_object *object_new_string(char *buf, size_t len, unsigned int hash
 bool value_is_string(struct value *value);
 bool value_is_array(struct value *value);
 
-#endif /* OBJECT_H */
+#endif /* VALUE_H */
