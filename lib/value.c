@@ -51,6 +51,10 @@ struct string_object *object_new_string(char *buf, size_t len, unsigned int hash
 	return obj;
 }
 
+inline bool value_is_number(struct value *value) {
+	return value->type == VALUE_TYPE_INTEGER || value->type == VALUE_TYPE_REAL;
+}
+
 inline bool value_is_string(struct value *value) {
 	return value->type == VALUE_TYPE_OBJECT && value->as_object->type == &string_type;
 }

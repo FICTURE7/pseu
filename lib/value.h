@@ -74,6 +74,7 @@ struct user_object *object_new(struct type *type);
 struct array_object *object_new_array(unsigned int from, unsigned int to);
 struct string_object *object_new_string(char *buf, size_t len, unsigned int hash);
 
+bool value_is_number(struct value *value);
 bool value_is_string(struct value *value);
 bool value_is_array(struct value *value);
 
