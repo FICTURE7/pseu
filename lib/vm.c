@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "vm.h"
+#include "func.h"
 #include "state.h"
 #include "value.h"
-#include "vector.h"
 #include "opcode.h"
-#include "func.h"
 
 /* 
  * carries out the specified operation on
@@ -73,8 +72,12 @@ static void output(struct value *value) {
 	}
 }
 
-/* carry out arithmetic operations on real values */
-static struct value arithmetic_real(enum vm_op op, struct value *a, struct value *b) {
+static struct value string_to_number(struct value *a) {
+	return (struct value) { };
+}
+
+/* carries out arithmetic operations on real values */
+static struct value arith_real(enum vm_op op, struct value *a, struct value *b) {
 	switch (op) {
 		case VM_OP_ADD:
 			return BINOP_REAL(+, a, b);
@@ -88,10 +91,11 @@ static struct value arithmetic_real(enum vm_op op, struct value *a, struct value
 			/* TODO: push error */
 			break;
 	}
+	return (struct value) { };
 }
 
-/* carry out arithmetic operations on integer values */
-static struct value arithmetic_integer(enum vm_op op, struct value *a, struct value *b) {	
+/* carries out arithmetic operations on integer values */
+static struct value arith_integer(enum vm_op op, struct value *a, struct value *b) {	
 	switch (op) {
 		case VM_OP_ADD:
 			return BINOP_INTEGER(+, a, b);
@@ -105,17 +109,40 @@ static struct value arithmetic_integer(enum vm_op op, struct value *a, struct va
 			/* TODO: push error */
 			break;
 	}
+	return (struct value) { };
+}
+
+/* coerce values and carries out arithemtic operations on them */
+static struct value arith_coerce(enum vm_op op, struct value *a, struct value *b) {
+	/* coerce stuff */
+	if (value_is_string(a)) {
+		a = &(string_to_number(a));
+	}
+	if (value_is_string(b)) {
+		b = &(string_to_number(b));
+	}
+
+	/*
+	 * if both is integer, carry out operation as integer
+	 * otherwise carry out as floats
+	 */
+	if (a->type == VALUE_TYPE_INTEGER && b->type == VALUE_TYPE_INTEGER) {
+		return arith_integer(op, a, b);
+	}
+
+	return arith_real(op, a, b);	
 }
 
 /* carries out an arithmetic operation */
-static struct value arithmetic(enum vm_op op, struct value *a, struct value *b) {
-	if (a->type == VALUE_TYPE_REAL && a->type == VALUE_TYPE_REAL) {
-		return arithmetic_real(op, a, b);	
-	} else if (a->type == VALUE_TYPE_INTEGER && a->type == VALUE_TYPE_INTEGER) {
-		return arithmetic_integer(op, a, b);
+static struct value arith(enum vm_op op, struct value *a, struct value *b) {
+	if (a->type == VALUE_TYPE_REAL && b->type == VALUE_TYPE_REAL) {
+		return arith_real(op, a, b);	
+	} else if (a->type == VALUE_TYPE_INTEGER && b->type == VALUE_TYPE_INTEGER) {
+		return arith_integer(op, a, b);
 	}
 
-	return (struct value) { };
+	/* try to carry out operation with coercion */
+	return arith_coerce(op, a, b);	
 }
 
 void vm_init(struct vm *vm, struct state *state) {
@@ -145,14 +172,22 @@ int vm_exec(struct vm *vm, struct func *fn) {
 				break;
 			}
 			case VM_OP_ADD: {
+				/*
+				 * pops the last 2 values fromt he stack
+				 * and adds them, then push the result
+				 * back on the stack
+				 */
 				struct value a = stack_pop(vm);
 				struct value b = stack_pop(vm);	
-				struct value result = arithmetic(VM_OP_ADD, &a, &b);
+				struct value result = arith(VM_OP_ADD, &a, &b);
 				stack_push(vm, &result);
 				break;
 			}
 			case VM_OP_OUTPUT: {
-				/* pop the top value on the stack and print it.*/
+				/*
+				 * pop the top value on the stack and 
+				 * print it.
+				 */
 				struct value val = stack_pop(vm);
 				output(&val);
 				break;

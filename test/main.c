@@ -308,6 +308,53 @@ int test_object() {
 	return 0;
 }
 
+int test_vm_coerce_arithmetics() {
+	struct vm vm;
+	struct state state;
+	struct func fn;
+	struct string_object str;
+	struct value val1;
+	struct value val2;
+
+	state_init(&state);
+	vm_init(&vm, &state);
+	func_init(&fn);
+	
+	str = string_table_intern(state.strings, "100", 3);
+
+	val1 = (struct value) {
+		.type = VALUE_TYPE_INTEGER,
+		.as_int = 10
+	};
+
+	val2 = (struct value) {
+		.type = VALUE_TYPE_INTEGER,
+		.as_object = str;
+	};
+
+	fn.nconsts = 2;
+	fn.consts = malloc(sizeof(struct value) * 2);
+	fn.consts[0] = val1;
+	fn.consts[1] = val2;
+
+	fn.code = (instr_t[]) {
+		VM_OP_PUSH, (instr_t)0,
+		VM_OP_PUSH, (instr_t)1,
+		VM_OP_ADD,
+		VM_OP_OUTPUT
+	};
+
+	printf("\n\n>>> OUTPUT: \n");
+	vm_exec(&vm, &fn);
+	printf("\n --\n");
+
+	printf("vm(pc: %d, sp: %d)\n", vm.pc, vm.sp);
+
+	state_deinit(&state);
+	func_deinit(&fn);
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
 	//TEST(test_lexer);
@@ -316,6 +363,7 @@ int main(int argc, char **argv) {
 	//TEST(test_string_intern);
 	//TEST(test_vm_output);
 	TEST(test_vm_arithmetics);
+	TEST(test_vm_coerce_arithmetics);
 	//TEST(test_object);
 	TEST_DEINIT();
 
