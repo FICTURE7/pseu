@@ -312,7 +312,8 @@ int test_vm_coerce_arithmetics() {
 	struct vm vm;
 	struct state state;
 	struct func fn;
-	struct string_object str;
+	struct string_object *str;
+	struct string_object *str2;
 	struct value val1;
 	struct value val2;
 
@@ -320,16 +321,17 @@ int test_vm_coerce_arithmetics() {
 	vm_init(&vm, &state);
 	func_init(&fn);
 	
-	str = string_table_intern(state.strings, "100", 3);
+	str = string_table_intern(state.strings, "100e3", 5);
+	str2 = string_table_intern(state.strings, "10.0", 2);
 
 	val1 = (struct value) {
-		.type = VALUE_TYPE_INTEGER,
-		.as_int = 10
+		.type = VALUE_TYPE_OBJECT,
+		.as_int = str2
 	};
 
 	val2 = (struct value) {
-		.type = VALUE_TYPE_INTEGER,
-		.as_object = str;
+		.type = VALUE_TYPE_OBJECT,
+		.as_object = str
 	};
 
 	fn.nconsts = 2;
@@ -355,6 +357,16 @@ int test_vm_coerce_arithmetics() {
 	return 0;
 }
 
+int test_value() {
+	struct value v = {
+		.as_int = 10
+	};
+
+	printf("%d\n", v.as_int);
+	printf("%f\n", (float)v.as_int);
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	TEST_INIT();
 	//TEST(test_lexer);
@@ -362,9 +374,10 @@ int main(int argc, char **argv) {
 	//TEST(test_unescape_string);
 	//TEST(test_string_intern);
 	//TEST(test_vm_output);
-	TEST(test_vm_arithmetics);
+	//TEST(test_vm_arithmetics);
 	TEST(test_vm_coerce_arithmetics);
 	//TEST(test_object);
+	//TEST(test_value);
 	TEST_DEINIT();
 
 #if WIN32
