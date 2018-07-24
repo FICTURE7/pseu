@@ -39,10 +39,9 @@ struct array_object *object_new_array(unsigned int from, unsigned int to) {
 }
 
 struct string_object *object_new_string(char *buf, size_t len, unsigned int hash) {
-	struct string_object *obj = malloc(sizeof(struct string_object));
+	struct string_object *obj = malloc(sizeof(struct string_object) + len + 1);
 	obj->base.nrefs = 0;
 	obj->base.type = &string_type;
-	obj->buf = malloc(len + 1);
 	obj->buf[len] = '\0';
 	obj->len = len;
 	obj->hash = hash;

@@ -60,7 +60,7 @@ struct string_object {
 
 	unsigned int hash; /* hash of the string */
 	size_t len; /* length of the string */
-	char *buf; /* pointer to the NULL terminated string */
+	char buf[]; /* pointer to the NULL terminated string */
 };
 
 /* represents a user defined object */
