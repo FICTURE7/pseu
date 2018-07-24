@@ -322,7 +322,7 @@ int test_vm_coerce_arithmetics() {
 	func_init(&fn);
 	
 	str = string_table_intern(state.strings, "100e3", 5);
-	str2 = string_table_intern(state.strings, "10.0", 2);
+	str2 = string_table_intern(state.strings, "0xA", 3);
 
 	val1 = (struct value) {
 		.type = VALUE_TYPE_OBJECT,
