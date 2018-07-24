@@ -12,7 +12,7 @@ struct lexer {
 	struct location loc; /* current location/position of the lexer */
 };
 
-void lexer_init(struct lexer *lexer, char *path, char *buffer);
+void lexer_init(struct lexer *lexer, char *path, char *src);
 void lexer_scan(struct lexer *lexer, struct token *token);
 
 #endif /* LEXER_H */
