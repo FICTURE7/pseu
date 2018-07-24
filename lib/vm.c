@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include "vm.h"
 #include "func.h"
@@ -101,7 +102,7 @@ static int string_to_number(struct value *a, struct value *result) {
 			break;
 
 		default:
-			/* non number token */
+			/* non number literal token */
 			return 1;
 	}
 
@@ -120,7 +121,8 @@ static int string_to_number(struct value *a, struct value *result) {
 	return 0;
 }
 
-static inline void to_real(struct value *a) {
+/* converts an integer value type to a real value type */
+static inline void integer_to_real(struct value *a) {
 	a->type = VALUE_TYPE_REAL;
 	a->as_float = (float)a->as_int;
 }
@@ -145,10 +147,8 @@ static int arith_real(enum vm_op op, struct value *a, struct value *b, struct va
 			return 0;
 
 		default:
-			/* TODO: push error */
-			break;
+			return 1;
 	}
-	return 1;
 }
 
 /* carries out arithmetic operations on integer values */
@@ -171,10 +171,8 @@ static int arith_integer(enum vm_op op, struct value *a, struct value *b, struct
 			return 0;
 
 		default:
-			/* TODO: push error */
-			break;
+			return 1;
 	}
-	return 1;
 }
 
 /* coerce values and carries out arithemtic operations on them */
@@ -210,10 +208,10 @@ static int arith_coerce(enum vm_op op, struct value *a, struct value *b, struct 
 
 	/* make sure both values are reals */
 	if (a->type == VALUE_TYPE_INTEGER) {
-		to_real(a);
+		integer_to_real(a);
 	}
 	if (b->type == VALUE_TYPE_INTEGER) {
-		to_real(b);
+		integer_to_real(b);
 	}
 
 	return arith_real(op, a, b, result);
