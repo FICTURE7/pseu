@@ -22,4 +22,4 @@ struct diagnostic {
 	struct diagnostic *next; /* next diagnostic in the list */
 };
 
-#endif
+#endif /* DIAGNOSTIC_H */
