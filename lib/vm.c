@@ -33,8 +33,8 @@
  * 
  * TODO: check underflow
  */
-static struct value stack_pop(struct vm *vm) {
-	return vm->stack[--vm->sp];
+static inline struct value *stack_pop(struct vm *vm) {
+	return &vm->stack[--vm->sp];
 }
 
 /*
@@ -43,7 +43,7 @@ static struct value stack_pop(struct vm *vm) {
  *
  * TODO: check overflow
  */
-static void stack_push(struct vm *vm, struct value *val) {
+static inline void stack_push(struct vm *vm, struct value *val) {
 	vm->stack[vm->sp++] = *val;
 }
 
@@ -269,11 +269,11 @@ int vm_exec(struct vm *vm, struct func *fn) {
 				 * and adds them, then push the result
 				 * back on the stack
 				 */
-				struct value a = stack_pop(vm);
-				struct value b = stack_pop(vm);	
+				struct value *a = stack_pop(vm);
+				struct value *b = stack_pop(vm);	
 				struct value result;
 
-				arith(VM_OP_ADD, &a, &b, &result);
+				arith(VM_OP_ADD, a, b, &result);
 
 				stack_push(vm, &result);
 				break;
@@ -283,8 +283,8 @@ int vm_exec(struct vm *vm, struct func *fn) {
 				 * pop the top value on the stack and 
 				 * print it.
 				 */
-				struct value val = stack_pop(vm);
-				output(&val);
+				struct value *val = stack_pop(vm);
+				output(val);
 				break;
 			}
 			default: {
