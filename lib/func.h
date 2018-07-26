@@ -29,9 +29,17 @@ struct cfunc {
 struct proto {
 	char *ident; /* identifier of the function */
 	size_t nparams; /* parameter count */
-	struct type *paramst; /* array of parameter types */
+	struct type *params; /* array of parameter types */
 	struct type *rett; /* return type */
+	struct location location; /* where in the source code the proto was definied */
 };
+
+/*
+ * represents a call
+ */
+struct call {
+	struct proto *proto; /* prototype of the function */
+}
 
 void func_init(struct func *fn);
 void func_deinit(struct func *fn);

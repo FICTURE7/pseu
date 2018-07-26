@@ -9,17 +9,15 @@
  * virtual machine implementaiton
  */
 struct vm {
-	/* state which owns the vm instance */
-	struct state *state;
-	/* program counter */
-	int pc;
-	/* stack pointer */
-	int sp;
-	/* 
-	 * stack
-	 * TODO: implement dynamic stack
-	 */
-	struct value stack[256 * sizeof(struct value)];
+	struct state *state; /* state which owns the vm instance */
+	struct call *call; /* current call */
+	int pc; /* program counter */
+	int sp;	/* stack pointer */
+
+	/* TODO: implement dynamic stack */
+	struct value stack[256 * sizeof(struct value)]; /* stack */
+
+	void (*onerror)(struct diagnostic *err); /* function to call whenever stuff happens */
 };
 
 void vm_init(struct vm *vm, struct state *state);

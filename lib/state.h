@@ -1,15 +1,17 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include "func.h"
 #include "string.h"
 #include "vector.h"
 
-/* represents a state */
+/*
+ * represents a state
+ */
 struct state {
 	struct diagnostic *diagnostics; /* linked list of diagnostics related to the state */
 	struct string_table *strings; /* string table in the state */
-
-	void (*onerror)(int errcode); /* function to call whenever stuff happens */
+	struct func *main; /* main function */
 };
 
 void state_init(struct state *state);

@@ -47,6 +47,9 @@ static inline void stack_push(struct vm *vm, struct value *val) {
 	vm->stack[vm->sp++] = *val;
 }
 
+static void error(struct vm *vm) {
+}
+
 /* outputs the specified value */
 static void output(struct value *value) {
 	switch (value->type) {
