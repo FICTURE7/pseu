@@ -143,6 +143,11 @@ static int arith_real(enum vm_op op, struct value *a, struct value *b, struct va
 			return 0;
 
 		case VM_OP_DIV:
+			/* prevent divided by 0s */
+			if (b->as_real == 0) {
+				return 1;
+			}
+
 			BINOP_REAL(/, a, b, result);
 			return 0;
 
@@ -167,6 +172,11 @@ static int arith_integer(enum vm_op op, struct value *a, struct value *b, struct
 			return 0;
 
 		case VM_OP_DIV:
+			/* prevent divided by 0s */
+			if (b->as_int == 0) {
+				return 1;
+			}
+
 			BINOP_INTEGER(/, a, b, result);
 			return 0;
 
@@ -258,7 +268,7 @@ int vm_exec(struct vm *vm, struct func *fn) {
 				 * pushses the constant at `index` in 
 				 * the current `fn` on the stack
 				 */
-				unsigned int index = fn->code[vm->pc++];
+				unsigned int index = (int)fn->code[vm->pc++];
 				struct value *val = &fn->consts[index];
 				stack_push(vm, val);
 				break;
