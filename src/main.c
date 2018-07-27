@@ -3,10 +3,9 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-	pseu_t *pseu = pseu_alloc();
-	pseu_init(pseu, "hello world.pseu", "OUTPUT ((1+1))\nWTF");
-	pseu_free(pseu);
+	struct pseu *pseu = pseu_new(NULL);
 
-	getchar();
+	pseu_interpret(pseu, "OUTPUT \"xD\"");
+	pseu_free(pseu);
 	return 0;
 }

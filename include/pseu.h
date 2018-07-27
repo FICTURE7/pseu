@@ -1,11 +1,35 @@
 #ifndef PSEU_H
 #define PSEU_H
 
-typedef struct pseu pseu_t;
+/*
+ * represents a pseu instance
+ */
+struct pseu;
 
-pseu_t *pseu_alloc(void);
-void pseu_free(pseu_t *pseu);
-void pseu_init(pseu_t *pseu, char *path, char *src);
-void pseu_eval(pseu_t *pseu);
+/*
+ * represents the configuration of a
+ * pseu instance
+ */
+struct pseu_config {
+	int stub;
+};
+
+/*
+ * allocates a new pseu instance with the
+ * specified configuration
+ */
+struct pseu *pseu_new(struct pseu_config *config);
+
+/*
+ * frees the specified pseu instance along
+ * with its resources
+ */
+void pseu_free(struct pseu *pseu);
+
+/*
+ * interprets the specified source using
+ * the specified pseu instance
+ */
+void pseu_interpret(struct pseu *pseu, char *src);
 
 #endif /* PSEU_H */

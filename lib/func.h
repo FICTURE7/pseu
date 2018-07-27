@@ -1,8 +1,10 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
-#include "opcode.h"
+#include <stdlib.h>
 #include "state.h"
+#include "opcode.h"
+#include "location.h"
 
 /*
  * represents a function
@@ -39,7 +41,7 @@ struct proto {
  */
 struct call {
 	struct proto *proto; /* prototype of the function */
-}
+};
 
 void func_init(struct func *fn);
 void func_deinit(struct func *fn);

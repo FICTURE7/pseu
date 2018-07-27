@@ -14,24 +14,22 @@ struct pseu {
 	struct vm vm;
 };
 
-pseu_t *pseu_alloc(void) {
-	return malloc(sizeof(struct pseu));
+struct pseu *pseu_new(struct pseu_config *config) {
+	struct pseu *pseu = malloc(sizeof(struct pseu));
+	state_init(&pseu->state);
+	vm_init(&pseu->vm, &pseu->state);
+
+	return pseu;
 }
 
-void pseu_free(pseu_t *pseu) {
+void pseu_free(struct pseu *pseu) {
 	free(pseu);
 }
 
-void pseu_init(pseu_t *pseu, char *path, char *src) {
-	state_init(&pseu->state);
-	lexer_init(&pseu->lexer, path, src);
+void pseu_interpret(struct pseu *pseu, char *src) {
+	lexer_init(&pseu->lexer, NULL, src);
 	parser_init(&pseu->parser, &pseu->state, &pseu->lexer);
-	vm_init(&pseu->vm, &pseu->state);
 
-	/* parse the src right away */
 	parser_parse(&pseu->parser, &pseu->root);
-}
-
-void notpseudo_eval(pseu_t *pseu) {
-	/* todo: implement */
+	/* TODO: codegen and all the good stuff */
 }

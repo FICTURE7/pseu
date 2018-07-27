@@ -8,6 +8,7 @@
 #include "lexer.h"
 #include "token.h"
 #include "opcode.h"
+#include "diagnostic.h"
 
 /* 
  * carries out the specified operation on
@@ -47,7 +48,21 @@ static inline void stack_push(struct vm *vm, struct value *val) {
 	vm->stack[vm->sp++] = *val;
 }
 
-static void error(struct vm *vm) {
+/* passes the control to the error handler */
+static inline void error(struct vm *vm, struct diagnostic *diagnostic) {
+	vm->onerror(diagnostic);
+}
+
+static inline void vmerror(struct vm *vm, char *message) {
+}
+
+static inline void runerror(struct vm *vm, char *message) {
+}
+
+static inline void typerror(struct vm *vm, char *message) {
+}
+
+static inline void memerror(struct vm *vm, char *message) {
 }
 
 /* outputs the specified value */
@@ -147,7 +162,7 @@ static int arith_real(enum vm_op op, struct value *a, struct value *b, struct va
 
 		case VM_OP_DIV:
 			/* prevent divided by 0s */
-			if (b->as_real == 0) {
+			if (b->as_float == 0) {
 				return 1;
 			}
 
@@ -257,6 +272,11 @@ void vm_init(struct vm *vm, struct state *state) {
 }
 
 int vm_exec(struct vm *vm, struct func *fn) {
+	/* set the current vm call to the fn passed */
+	struct call *call = malloc(sizeof(struct call));
+	call->proto = fn->proto;
+	vm->call = call;
+
 	/* vm dispatch loop */
 	while (true) {
 		/* fetch instruction at pc */
@@ -302,7 +322,7 @@ int vm_exec(struct vm *vm, struct func *fn) {
 			}
 			default: {
 				/* unknown/unhandled instruction */
-				vm->state->onerror(1);
+				vm->onerror(1);
 				return 1;
 			}
 		}
