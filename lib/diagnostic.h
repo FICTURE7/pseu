@@ -16,7 +16,7 @@ enum diagnostic_type {
  */
 struct diagnostic {
 	enum diagnostic_type type; /* type of diagnostic */
-	struct location loc; /* location in source of the error */
+	struct location loc; /* location in the source which might have cause the error */
 	char *message; /* null terminated string message descripting the diagnostic */
 
 	struct diagnostic *next; /* next diagnostic in the list */

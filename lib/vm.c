@@ -49,20 +49,9 @@ static inline void stack_push(struct vm *vm, struct value *val) {
 }
 
 /* passes the control to the error handler */
-static inline void error(struct vm *vm, struct diagnostic *diagnostic) {
-	vm->onerror(diagnostic);
-}
-
-static inline void vmerror(struct vm *vm, char *message) {
-}
-
-static inline void runerror(struct vm *vm, char *message) {
-}
-
-static inline void typerror(struct vm *vm, char *message) {
-}
-
-static inline void memerror(struct vm *vm, char *message) {
+static inline void error(struct vm *vm, struct diagnostic *err) {
+	vm->error = err;
+	vm->onerror(err);
 }
 
 /* outputs the specified value */
@@ -146,7 +135,7 @@ static inline void integer_to_real(struct value *a) {
 }
 
 /* carries out arithmetic operations on real values */
-static int arith_real(enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith_real(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {
 	switch (op) {
 		case VM_OP_ADD:
 			BINOP_REAL(+, a, b, result);
@@ -163,6 +152,7 @@ static int arith_real(enum vm_op op, struct value *a, struct value *b, struct va
 		case VM_OP_DIV:
 			/* prevent divided by 0s */
 			if (b->as_float == 0) {
+				error(vm, NULL);
 				return 1;
 			}
 
@@ -175,7 +165,7 @@ static int arith_real(enum vm_op op, struct value *a, struct value *b, struct va
 }
 
 /* carries out arithmetic operations on integer values */
-static int arith_integer(enum vm_op op, struct value *a, struct value *b, struct value *result) {	
+static int arith_integer(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {	
 	switch (op) {
 		case VM_OP_ADD:
 			BINOP_INTEGER(+, a, b, result);
@@ -204,7 +194,7 @@ static int arith_integer(enum vm_op op, struct value *a, struct value *b, struct
 }
 
 /* coerce values and carries out arithemtic operations on them */
-static int arith_coerce(enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith_coerce(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {
 	/* for when we convert types */
 	struct value na;
 	struct value nb;
@@ -231,7 +221,7 @@ static int arith_coerce(enum vm_op op, struct value *a, struct value *b, struct 
 	 * otherwise carry out as floats
 	 */
 	if (a->type == VALUE_TYPE_INTEGER && b->type == VALUE_TYPE_INTEGER) {
-		return arith_integer(op, a, b, result);
+		return arith_integer(vm, op, a, b, result);
 	}
 
 	/* make sure both values are reals */
@@ -242,19 +232,19 @@ static int arith_coerce(enum vm_op op, struct value *a, struct value *b, struct 
 		integer_to_real(b);
 	}
 
-	return arith_real(op, a, b, result);
+	return arith_real(vm, op, a, b, result);
 }
 
 /* carries out an arithmetic operation */
-static int arith(enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {
 	/*
 	 * if a & b is both of the same type and is either real or integer,
 	 * carry out the operation directly
 	 */
 	if (a->type == VALUE_TYPE_REAL && b->type == VALUE_TYPE_REAL) {
-		return arith_real(op, a, b, result);	
+		return arith_real(vm, op, a, b, result);	
 	} else if (a->type == VALUE_TYPE_INTEGER && b->type == VALUE_TYPE_INTEGER) {
-		return arith_integer(op, a, b, result);
+		return arith_integer(vm, op, a, b, result);
 	}
 
 	/*
@@ -262,7 +252,7 @@ static int arith(enum vm_op op, struct value *a, struct value *b, struct value *
 	 * values of a and b to type which supports arithmetic
 	 * operations (integer or real)
 	 */
-	return arith_coerce(op, a, b, result);
+	return arith_coerce(vm, op, a, b, result);
 }
 
 void vm_init(struct vm *vm, struct state *state) {
@@ -284,7 +274,7 @@ int vm_exec(struct vm *vm, struct func *fn) {
 		switch (op) {
 			case VM_OP_HALT: {
 				/* graceful exit */
-				return 0;
+				return VM_RESULT_SUCCESS;
 			}
 			case VM_OP_PUSH: {
 				/*
@@ -306,7 +296,7 @@ int vm_exec(struct vm *vm, struct func *fn) {
 				struct value *b = stack_pop(vm);	
 				struct value result;
 
-				arith(VM_OP_ADD, a, b, &result);
+				arith(vm, VM_OP_ADD, a, b, &result);
 
 				stack_push(vm, &result);
 				break;
