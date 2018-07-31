@@ -8,13 +8,10 @@
 
 struct pseu {
 	struct state state;
-	struct lexer lexer;
-	struct parser parser;
-	struct node *root;
 	struct vm vm;
 };
 
-struct pseu *pseu_new(struct pseu_config *config) {
+pseu_t *pseu_new(pseu_config_t *config) {
 	struct pseu *pseu = malloc(sizeof(struct pseu));
 	state_init(&pseu->state);
 	vm_init(&pseu->vm, &pseu->state);
@@ -22,14 +19,21 @@ struct pseu *pseu_new(struct pseu_config *config) {
 	return pseu;
 }
 
-void pseu_free(struct pseu *pseu) {
+void pseu_free(pseu_t *pseu) {
 	free(pseu);
 }
 
-void pseu_interpret(struct pseu *pseu, char *src) {
-	lexer_init(&pseu->lexer, NULL, src);
-	parser_init(&pseu->parser, &pseu->state, &pseu->lexer);
+enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
+	struct lexer lexer;
+	struct parser parser;
+	struct node *root;
 
-	parser_parse(&pseu->parser, &pseu->root);
+	lexer_init(&lexer, NULL, src);
+	parser_init(&parser, &pseu->state, &lexer);
+
+	parser_parse(&parser, &root);
+
+	/* TODO: free node tree */
 	/* TODO: codegen and all the good stuff */
+	return PSEU_RESULT_SUCCESS;
 }

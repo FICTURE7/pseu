@@ -51,7 +51,6 @@ static inline void stack_push(struct vm *vm, struct value *val) {
 /* passes the control to the error handler */
 static inline void error(struct vm *vm, struct diagnostic *err) {
 	vm->error = err;
-	vm->onerror(err);
 }
 
 /* outputs the specified value */
@@ -261,7 +260,7 @@ void vm_init(struct vm *vm, struct state *state) {
 	vm->sp = 0;
 }
 
-int vm_exec(struct vm *vm, struct func *fn) {
+enum vm_result vm_exec(struct vm *vm, struct func *fn) {
 	/* set the current vm call to the fn passed */
 	struct call *call = malloc(sizeof(struct call));
 	call->proto = fn->proto;
@@ -312,10 +311,9 @@ int vm_exec(struct vm *vm, struct func *fn) {
 			}
 			default: {
 				/* unknown/unhandled instruction */
-				vm->onerror(1);
-				return 1;
+				return VM_RESULT_ERROR;
 			}
 		}
 	}
-	return 0;
+	return VM_RESULT_SUCCESS;
 }

@@ -12,13 +12,11 @@ struct vm {
 	struct diagnostic *error; /* current error of the vm */
 	struct state *state; /* state which owns the vm instance */
 	struct call *call; /* current call */
+
 	int pc; /* program counter */
 	int sp;	/* stack pointer */
-
 	/* TODO: implement dynamic stack */
 	struct value stack[256 * sizeof(struct value)]; /* stack */
-
-	void (*onerror)(struct diagnostic *err); /* function to call whenever stuff happens */
 };
 
 /*
