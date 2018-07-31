@@ -5,7 +5,6 @@
 #include "lexer.h"
 #include "state.h"
 #include "parser.h"
-#include "diagnostic.h"
 
 struct parser {
 	struct state *state;
@@ -14,7 +13,6 @@ struct parser {
 };
 
 void parser_init(struct parser *parser, struct state *state, struct lexer *lexer);
-
 void parser_parse(struct parser *parser, struct node **root);
 
-#endif
+#endif /* PARSER_H */
