@@ -9,7 +9,8 @@ enum value_type {
 	VALUE_TYPE_BOOLEAN,
 	VALUE_TYPE_INTEGER,
 	VALUE_TYPE_REAL,
-	VALUE_TYPE_OBJECT
+	VALUE_TYPE_OBJECT,
+	VALUE_TYPE_POINTER
 };
 
 /* represents a value */
@@ -20,6 +21,7 @@ struct value {
 		int as_int; /* value as an integer */
 		float as_float; /* value as a real*/
 		struct object *as_object; /* value as an object */
+		struct value *as_pointer; /* value as a pointer */
 	};
 };
 
