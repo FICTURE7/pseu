@@ -285,7 +285,7 @@ void lexer_init(struct lexer *lexer, char *path, char *src) {
 	struct token token;
 	printf("\nlex(%s)\n", src);
 
-	lexer_scan(lexer, &token);
+	lexer_lex(lexer, &token);
 	while (token.type != TOK_EOF) {
 		prettyprint_token(&token);
 		lexer_scan(lexer, &token);
@@ -297,7 +297,7 @@ void lexer_init(struct lexer *lexer, char *path, char *src) {
 #endif
 }
 
-void lexer_scan(struct lexer *lexer, struct token *token) {
+void lexer_lex(struct lexer *lexer, struct token *token) {
 	/* peek character */
 	char p;
 	/* current character */

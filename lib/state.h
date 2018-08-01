@@ -1,17 +1,22 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include <pseu.h>
 #include "func.h"
+#include "value.h"
 #include "string.h"
-#include "vector.h"
 
 /*
  * represents a state
  */
 struct state {
-	struct diagnostic *diagnostics; /* linked list of diagnostics related to the state */
+	struct pseu *pseu; /* pseu instance which owns this state */
+	struct diagnostic *errors; /* linked list of errors of this state instance */
 	struct string_table *strings; /* string table in the state */
-	struct func *main; /* main function */
+	int pc; /* program counter */
+	int sp;	/* stack pointer */
+	/* TODO: implement dynamic stack */
+	struct value stack[256]; /* stack */
 };
 
 void state_init(struct state *state);

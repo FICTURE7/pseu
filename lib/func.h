@@ -30,7 +30,7 @@ struct cfunc {
  */
 struct proto {
 	char *ident; /* identifier of the function */
-	size_t nparams; /* parameter count */
+	size_t nparams; /* parameter count or arity */
 	struct type *params; /* array of parameter types */
 	struct type *rett; /* return type */
 	struct location location; /* where in the source code the proto was definied */

@@ -13,6 +13,6 @@ struct lexer {
 };
 
 void lexer_init(struct lexer *lexer, char *path, char *src);
-void lexer_scan(struct lexer *lexer, struct token *token);
+void lexer_lex(struct lexer *lexer, struct token *token);
 
 #endif /* LEXER_H */

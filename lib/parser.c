@@ -23,8 +23,8 @@ static void error(struct parser *parser, struct location loc, char *message) {
 	diagnostic->message = message;
 
 	/* add to front of link list */
-	diagnostic->next = parser->state->diagnostics;
-	parser->state->diagnostics = diagnostic;
+	diagnostic->next = parser->state->errors;
+	parser->state->errors = diagnostic;
 
 #ifdef PARSER_DEBUG
 	printf("error(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
@@ -38,8 +38,8 @@ static void warning(struct parser *parser, struct location loc, char *message) {
 	diagnostic->message = message;
 	
 	/* add to front of link list */
-	diagnostic->next = parser->state->diagnostics;
-	parser->state->diagnostics = diagnostic;
+	diagnostic->next = parser->state->errors;
+	parser->state->errors = diagnostic;
 
 #ifdef PARSER_DEBUG
 	printf("warning(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
@@ -440,11 +440,11 @@ static struct node *block(struct parser *parser) {
 	return (struct node *)block;
 }
 
-void parser_init(struct parser *parser, struct state *state, struct lexer *lexer) {
+void parser_init(struct parser *parser, struct lexer *lexer, struct state *state) {
 	parser->state = state;
 	parser->lexer = lexer;
 	/* scan first token */
-	lexer_scan(lexer, &parser->token);
+	lexer_lex(lexer, &parser->token);
 
 #ifdef PARSER_DEBUG
 	struct node *root;
@@ -454,7 +454,7 @@ void parser_init(struct parser *parser, struct state *state, struct lexer *lexer
 	lexer->loc.pos = lexer->src;
 	lexer->loc.ln = 1;
 	lexer->loc.col = 1;
-	lexer_scan(lexer, &parser->token);
+	lexer_lex(lexer, &parser->token);
 #endif
 }
 

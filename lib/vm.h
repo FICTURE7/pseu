@@ -10,13 +10,14 @@
  */
 struct vm {
 	struct diagnostic *error; /* current error of the vm */
+	struct pseu *pseu; /* pseu instance which owns this vm instance */
 	struct state *state; /* state which owns the vm instance */
 	struct call *call; /* current call */
 
 	int pc; /* program counter */
 	int sp;	/* stack pointer */
 	/* TODO: implement dynamic stack */
-	struct value stack[256 * sizeof(struct value)]; /* stack */
+	struct value stack[256]; /* stack */
 };
 
 /*
