@@ -273,8 +273,7 @@ again:
 	advance(lexer);
 }
 
-void lexer_init(struct lexer *lexer, char *path, char *src) {
-	lexer->path = path;
+void lexer_init(struct lexer *lexer, char *src) {
 	lexer->src = src;
 	lexer->end = src + strlen(src);
 	lexer->loc.pos = src;

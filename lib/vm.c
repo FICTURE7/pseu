@@ -92,7 +92,7 @@ static int string_to_number(struct value *a, struct value *result) {
 	struct string_object *str;
 
 	str = (struct string_object *)a->as_object;
-	lexer_init(&lexer, NULL, str->buf);
+	lexer_init(&lexer, str->buf);
 	lexer_lex(&lexer, &token);
 
 	/* convert to the appropriate type */

@@ -60,7 +60,7 @@ enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 	struct node *root;
 
 	/* initial lexer & parser */
-	lexer_init(&lexer, NULL, src);
+	lexer_init(&lexer, src);
 	parser_init(&parser, &lexer, &pseu->state);
 
 	/* parse the src into a syntax tree */
