@@ -33,5 +33,11 @@ void visitor_visit(struct visitor *visitor, struct node *node) {
 		case NODE_STMT_OUTPUT:
 			visitor->visit_stmt_output(visitor, (struct node_stmt_output *)node);
 			break;
+		case NODE_STMT_IF:
+			visitor->visit_stmt_if(visitor, (struct node_stmt_if *)node);
+			break;
+		case NODE_STMT_WHILE:
+			visitor->visit_stmt_while(visitor, (struct node_stmt_while *)node);
+			break;
 	}
 }

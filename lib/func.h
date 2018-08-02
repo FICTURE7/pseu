@@ -16,15 +16,6 @@ struct func {
 	instr_t *code; /* instructions in the function */
 };
 
-
-/*
- * represents a C function
- */
-struct cfunc {
-	struct proto *proto; /* prototype of the function */
-	int (*fn)(struct state); /* C function pointer */
-};
-
 /*
  * represents a function prototype
  */
