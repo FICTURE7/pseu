@@ -34,8 +34,8 @@
  * 
  * TODO: check underflow
  */
-static inline struct value *stack_pop(struct vm *vm) {
-	return &vm->stack[--vm->sp];
+static inline struct value *stack_pop(struct state *state) {
+	return &state->stack[--state->sp];
 }
 
 /*
@@ -44,13 +44,13 @@ static inline struct value *stack_pop(struct vm *vm) {
  *
  * TODO: check overflow
  */
-static inline void stack_push(struct vm *vm, struct value *val) {
-	vm->stack[vm->sp++] = *val;
+static inline void stack_push(struct state *state, struct value *val) {
+	state->stack[state->sp++] = *val;
 }
 
 /* passes the control to the error handler */
-static inline void error(struct vm *vm, struct diagnostic *err) {
-	vm->error = err;
+static inline void error(struct state *state, struct diagnostic *err) {
+	//state->error = err;
 }
 
 /* outputs the specified value */
@@ -137,7 +137,7 @@ static inline void integer_to_real(struct value *a) {
 }
 
 /* carries out arithmetic operations on real values */
-static int arith_real(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith_real(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {
 	switch (op) {
 		case VM_OP_ADD:
 			BINOP_REAL(+, a, b, result);
@@ -154,7 +154,7 @@ static int arith_real(struct vm *vm, enum vm_op op, struct value *a, struct valu
 		case VM_OP_DIV:
 			/* prevent divided by 0s */
 			if (b->as_float == 0) {
-				error(vm, NULL);
+				error(state, NULL);
 				return 1;
 			}
 
@@ -167,7 +167,7 @@ static int arith_real(struct vm *vm, enum vm_op op, struct value *a, struct valu
 }
 
 /* carries out arithmetic operations on integer values */
-static int arith_integer(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {	
+static int arith_integer(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {	
 	switch (op) {
 		case VM_OP_ADD:
 			BINOP_INTEGER(+, a, b, result);
@@ -196,7 +196,7 @@ static int arith_integer(struct vm *vm, enum vm_op op, struct value *a, struct v
 }
 
 /* coerce values and carries out arithemtic operations on them */
-static int arith_coerce(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith_coerce(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {
 	/* for when we convert types */
 	struct value na;
 	struct value nb;
@@ -223,7 +223,7 @@ static int arith_coerce(struct vm *vm, enum vm_op op, struct value *a, struct va
 	 * otherwise carry out as floats
 	 */
 	if (a->type == VALUE_TYPE_INTEGER && b->type == VALUE_TYPE_INTEGER) {
-		return arith_integer(vm, op, a, b, result);
+		return arith_integer(state, op, a, b, result);
 	}
 
 	/* make sure both values are reals */
@@ -234,19 +234,19 @@ static int arith_coerce(struct vm *vm, enum vm_op op, struct value *a, struct va
 		integer_to_real(b);
 	}
 
-	return arith_real(vm, op, a, b, result);
+	return arith_real(state, op, a, b, result);
 }
 
 /* carries out an arithmetic operation */
-static int arith(struct vm *vm, enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {
 	/*
 	 * if a & b is both of the same type and is either real or integer,
 	 * carry out the operation directly
 	 */
 	if (a->type == VALUE_TYPE_REAL && b->type == VALUE_TYPE_REAL) {
-		return arith_real(vm, op, a, b, result);	
+		return arith_real(state, op, a, b, result);	
 	} else if (a->type == VALUE_TYPE_INTEGER && b->type == VALUE_TYPE_INTEGER) {
-		return arith_integer(vm, op, a, b, result);
+		return arith_integer(state, op, a, b, result);
 	}
 
 	/*
@@ -254,25 +254,18 @@ static int arith(struct vm *vm, enum vm_op op, struct value *a, struct value *b,
 	 * values of a and b to type which supports arithmetic
 	 * operations (integer or real)
 	 */
-	return arith_coerce(vm, op, a, b, result);
+	return arith_coerce(state, op, a, b, result);
 }
 
-void vm_init(struct vm *vm, struct state *state) {
-	vm->state = state;
-	vm->pc = 0;
-	vm->sp = 0;
-}
-
-enum vm_result vm_exec(struct vm *vm, struct func *fn) {
+enum vm_result vm_call(struct state *state, struct func *fn) {
 	/* set the current vm call to the fn passed */
 	struct call *call = malloc(sizeof(struct call));
 	call->proto = fn->proto;
-	vm->call = call;
 
 	/* vm dispatch loop */
 	while (true) {
 		/* fetch instruction at pc */
-		enum vm_op op = (enum vm_op)fn->code[vm->pc++];
+		enum vm_op op = (enum vm_op)fn->code[state->pc++];
 		switch (op) {
 			case VM_OP_HALT: {
 				/* graceful exit */
@@ -283,9 +276,9 @@ enum vm_result vm_exec(struct vm *vm, struct func *fn) {
 				 * pushses the constant at `index` in 
 				 * the current `fn` on the stack
 				 */
-				unsigned int index = (int)fn->code[vm->pc++];
+				unsigned int index = (int)fn->code[state->pc++];
 				struct value *val = &fn->consts[index];
-				stack_push(vm, val);
+				stack_push(state, val);
 				break;
 			}
 			case VM_OP_ADD: {
@@ -294,13 +287,13 @@ enum vm_result vm_exec(struct vm *vm, struct func *fn) {
 				 * and adds them, then push the result
 				 * back on the stack
 				 */
-				struct value *a = stack_pop(vm);
-				struct value *b = stack_pop(vm);	
+				struct value *a = stack_pop(state);
+				struct value *b = stack_pop(state);	
 				struct value result;
 
-				arith(vm, VM_OP_ADD, a, b, &result);
+				arith(state, VM_OP_ADD, a, b, &result);
 
-				stack_push(vm, &result);
+				stack_push(state, &result);
 				break;
 			}
 			case VM_OP_OUTPUT: {
@@ -308,7 +301,7 @@ enum vm_result vm_exec(struct vm *vm, struct func *fn) {
 				 * pop the top value on the stack and 
 				 * print it.
 				 */
-				struct value *val = stack_pop(vm);
+				struct value *val = stack_pop(state);
 				output(val);
 				break;
 			}
@@ -318,5 +311,9 @@ enum vm_result vm_exec(struct vm *vm, struct func *fn) {
 			}
 		}
 	}
+	return VM_RESULT_SUCCESS;
+}
+
+enum vm_result vm_exec(struct state *state, instr_t *code) {
 	return VM_RESULT_SUCCESS;
 }

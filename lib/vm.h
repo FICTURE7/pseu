@@ -1,24 +1,10 @@
 #ifndef VM_H
 #define VM_H
 
+#include "node.h"
 #include "func.h"
 #include "state.h"
 #include "value.h"
-
-/*
- * virtual machine implementaiton
- */
-struct vm {
-	struct diagnostic *error; /* current error of the vm */
-	struct pseu *pseu; /* pseu instance which owns this vm instance */
-	struct state *state; /* state which owns the vm instance */
-	struct call *call; /* current call */
-
-	int pc; /* program counter */
-	int sp;	/* stack pointer */
-	/* TODO: implement dynamic stack */
-	struct value stack[256]; /* stack */
-};
 
 /*
  * represents the results of
@@ -30,7 +16,8 @@ enum vm_result {
 	VM_RESULT_ERROR
 };
 
-void vm_init(struct vm *vm, struct state *state);
-enum vm_result vm_exec(struct vm *vm, struct func *fn);
+instr_t *vm_gen(struct node *node);
+enum vm_result vm_call(struct state *state, struct func *fn);
+enum vm_result vm_exec(struct state *state, instr_t *code);
 
 #endif /* VM_H */
