@@ -65,6 +65,9 @@ static void output(struct value *value) {
 		case VALUE_TYPE_REAL:
 			printf("%.f\n", value->as_float);
 			break;
+		case VALUE_TYPE_POINTER:
+			printf("pointer<%p>\n", value->as_pointer);
+			break;
 		case VALUE_TYPE_OBJECT:
 			/* TODO: handle arrays as well */
 			if (value->as_object->type == &string_type) {
@@ -90,7 +93,7 @@ static int string_to_number(struct value *a, struct value *result) {
 
 	str = (struct string_object *)a->as_object;
 	lexer_init(&lexer, NULL, str->buf);
-	lexer_scan(&lexer, &token);
+	lexer_lex(&lexer, &token);
 
 	/* convert to the appropriate type */
 	switch (token.type) {
@@ -119,7 +122,7 @@ static int string_to_number(struct value *a, struct value *result) {
 	 * so things like this "12 oixD" is not coerced
 	 * to 12
 	 */
-	lexer_scan(&lexer, &token);
+	lexer_lex(&lexer, &token);
 	if (token.type != TOK_EOF) {
 		return 1;
 	}

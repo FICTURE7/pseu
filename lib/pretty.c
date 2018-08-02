@@ -7,7 +7,7 @@
 void prettyprint_token(struct token *token) {
 	char buffer[255];
 	token_value(token, buffer);
-	printf("tok[%d,%d:%d](%d, '%s')\n", token->loc.ln, token->loc.col, token->len, token->type, buffer);
+	printf("tok[%d,%d:%zu](%d, '%s')\n", token->loc.ln, token->loc.col, token->len, token->type, buffer);
 }
 
 /* ¯\_(ツ)_/¯ */
@@ -63,7 +63,7 @@ static void print_op(enum token_type type) {
 
 static void print_string(struct visitor *visitor, struct node_string *string) {
 	ident();
-	printf("string(%d, '%s')\n", string->val->len, string->val->buf);
+	printf("string(%zu, '%s')\n", string->val->len, string->val->buf);
 }
 
 static void print_real(struct visitor *visitor, struct node_real *real) {
@@ -112,7 +112,7 @@ static void print_op_binary(struct visitor *visitor, struct node_op_binary *op_b
 
 static void print_block(struct visitor *visitor, struct node_block *block) {
 	ident();
-	printf("block(%d):\n", block->stmts.count);
+	printf("block(%zu):\n", block->stmts.count);
 	depth++;
 	for (int i = 0; i < block->stmts.count; i++) {
 		print_node(visitor, vector_get(&block->stmts, i));

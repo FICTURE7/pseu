@@ -5,7 +5,6 @@
 #include "diagnostic.h"
 
 void state_init(struct state *state) {
-	state->diagnostics = NULL;
 	state->strings = malloc(sizeof(struct string_table));
 
 	string_table_init(state->strings);
@@ -13,6 +12,7 @@ void state_init(struct state *state) {
 
 void state_deinit(struct state *state) {
 	/* free the linked list of chains */
+	/*
 	struct diagnostic *current;
 	struct diagnostic *next;
 
@@ -21,6 +21,7 @@ void state_deinit(struct state *state) {
 		next = current->next;
 		free(current);
 	}
+	*/
 
 	string_table_deinit(state->strings);
 }

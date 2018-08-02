@@ -288,7 +288,7 @@ void lexer_init(struct lexer *lexer, char *path, char *src) {
 	lexer_lex(lexer, &token);
 	while (token.type != TOK_EOF) {
 		prettyprint_token(&token);
-		lexer_scan(lexer, &token);
+		lexer_lex(lexer, &token);
 	}
 	/* reset */
 	lexer->loc.pos = src;

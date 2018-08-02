@@ -13,7 +13,7 @@
 #endif
 
 static void eat(struct parser *parser) {
-	lexer_scan(parser->lexer, &parser->token);
+	lexer_lex(parser->lexer, &parser->token);
 }
 
 static void error(struct parser *parser, struct location loc, char *message) {
@@ -211,6 +211,11 @@ static struct node *integer(struct parser *parser) {
 			memcpy(buf, parser->token.loc.pos + 2, parser->token.len - 2);
 			val->val = strtol(buf, NULL, 16);
 			break;
+
+		default:
+			/* unexpected token type (should not happen) */
+			free(val);
+			return NULL;
 	}
 
 	free(buf);
@@ -229,6 +234,8 @@ static struct node *number(struct parser *parser) {
 			return integer(parser);
 		case TOK_LIT_REAL:
 			return real(parser);
+		default:
+			return NULL;
 	}
 }
 
@@ -244,6 +251,9 @@ static struct node *boolean(struct parser *parser) {
 		case TOK_LIT_BOOLEAN_FALSE:
 			val = false;
 			break;
+		default:
+			/* unexpected token type */
+			return NULL;
 	}
 
 	struct node_boolean *node = malloc(sizeof(struct node_boolean));

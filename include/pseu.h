@@ -26,7 +26,7 @@ enum pseu_warn_type {
 	PSEU_WARN_RUNTIME,
 	/* compile time warning */
 	PSEU_WARN_COMPILE
-}
+};
 
 /*
  * represents the configuration of a

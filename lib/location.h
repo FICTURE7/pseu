@@ -7,4 +7,4 @@ struct location {
 	int col;
 };
 
-#endif
+#endif /* LOCATION_H */

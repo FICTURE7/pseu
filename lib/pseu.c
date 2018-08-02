@@ -1,6 +1,7 @@
 #include <pseu.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "vm.h"
 #include "node.h"
 #include "lexer.h"
