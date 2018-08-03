@@ -58,8 +58,8 @@ enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 	struct lexer lexer;
 	struct parser parser;
 	struct node *root;
+	struct func *fn;
 	enum pseu_result result;
-	instr_t *code;
 
 	/* initial lexer & parser */
 	lexer_init(&lexer, src);
@@ -67,24 +67,27 @@ enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 
 	/* parse the src into a syntax tree */
 	parser_parse(&parser, &root);
-
 	/* failed to parse the code */
 	if (parser.errors != NULL) {
+		/* TODO: pass errors to pseu->config.onerror*/
 		return PSEU_ERROR_COMPILE;
 	}
 
-	/* generate the code */
-	code = vm_gen(root);
-	/* execute the code */
-	result = vm_exec(&pseu->state, code);
+	/* generate the main function */
+	fn = vm_gen(root);	
+	/* failed to compile the code */
+	if (fn == NULL) {
+		return PSEU_ERROR_COMPILE;
+	}
 
+	/* execute the code */
+	result = vm_call(&pseu->state, fn);
 	/* check if an error occured when running the code */
 	if (result != 0) { 
 		/* pass stuff to the callback */
 		if (pseu->state.errors != NULL) {
 			
 		}
-
 		return PSEU_ERROR_RUNTIME;
 	}
 

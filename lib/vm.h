@@ -1,10 +1,9 @@
 #ifndef VM_H
 #define VM_H
 
-#include "node.h"
 #include "func.h"
+#include "node.h"
 #include "state.h"
-#include "value.h"
 
 /*
  * represents the results of
@@ -16,8 +15,7 @@ enum vm_result {
 	VM_RESULT_ERROR
 };
 
-instr_t *vm_gen(struct node *node);
+struct func *vm_gen(struct node *node);
 enum vm_result vm_call(struct state *state, struct func *fn);
-enum vm_result vm_exec(struct state *state, instr_t *code);
 
 #endif /* VM_H */

@@ -262,6 +262,8 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 	struct call *call = malloc(sizeof(struct call));
 	call->proto = fn->proto;
 
+	/* reset the pc */
+	state->pc = 0;
 	/* vm dispatch loop */
 	while (true) {
 		/* fetch instruction at pc */
@@ -281,17 +283,21 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 				stack_push(state, val);
 				break;
 			}
-			case VM_OP_ADD: {
+			case VM_OP_ADD:
+			case VM_OP_SUB: 
+			case VM_OP_MUL:
+			case VM_OP_DIV: {
 				/*
-				 * pops the last 2 values fromt he stack
-				 * and adds them, then push the result
-				 * back on the stack
+				 * pops the last 2 values from the stack
+				 * and carry out the operation on them, 
+				 * then push the result  back on the stack
 				 */
 				struct value *a = stack_pop(state);
 				struct value *b = stack_pop(state);	
 				struct value result;
 
-				arith(state, VM_OP_ADD, a, b, &result);
+				/* carry out the arithmetic operation */
+				arith(state, op, a, b, &result);
 
 				stack_push(state, &result);
 				break;
@@ -311,9 +317,5 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 			}
 		}
 	}
-	return VM_RESULT_SUCCESS;
-}
-
-enum vm_result vm_exec(struct state *state, instr_t *code) {
 	return VM_RESULT_SUCCESS;
 }
