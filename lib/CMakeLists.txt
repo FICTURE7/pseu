@@ -36,6 +36,10 @@ set(LIBPSEU_SRC
 add_library(libpseu OBJECT ${LIBPSEU_SRC})
 target_include_directories(libpseu PUBLIC ${LIBPSEU_INCLUDE_DIR})
 
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+	target_compile_definitions(libpseu PRIVATE DEBUG)
+endif()
+
 # static library
 add_library(libpseu-static STATIC $<TARGET_OBJECTS:libpseu>)
 target_include_directories(libpseu-static PUBLIC ${LIBPSEU_INCLUDE_DIR})
