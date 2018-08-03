@@ -43,16 +43,10 @@ endif()
 # static library
 add_library(libpseu-static STATIC $<TARGET_OBJECTS:libpseu>)
 target_include_directories(libpseu-static PUBLIC ${LIBPSEU_INCLUDE_DIR})
+set_target_properties(libpseu-static PROPERTIES OUTPUT_NAME "pseu")
 
 # shared library
 add_library(libpseu-shared SHARED $<TARGET_OBJECTS:libpseu>)
 target_include_directories(libpseu-shared PUBLIC ${LIBPSEU_INCLUDE_DIR})
+set_target_properties(libpseu-shared PROPERTIES OUTPUT_NAME "pseu")
 
-# use different names for different platforms
-if(WIN32)
-    set_target_properties(libpseu-static PROPERTIES OUTPUT_NAME "pseu")
-    set_target_properties(libpseu-shared PROPERTIES OUTPUT_NAME "pseu")
-else()
-    set_target_properties(libpseu-static PROPERTIES OUTPUT_NAME "libpseu")
-    set_target_properties(libpseu-shared PROPERTIES OUTPUT_NAME "libpseu")
-endif()
