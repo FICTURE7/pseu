@@ -1,35 +1,35 @@
 set(LIBPSEU_INCLUDE_DIR "../include")
 set(LIBPSEU_SRC
-    ${LIBPSEU_INCLUDE_DIR}/pseu.h
+	${LIBPSEU_INCLUDE_DIR}/pseu.h
 	func.h
-    vm.h
-    diagnostic.h
-    location.h
+	vm.h
+	diagnostic.h
+	location.h
 	opcode.h
-    vector.h
-    pretty.h
-    lexer.h
-    token.h
-    node.h
-    parser.h
-    visitor.h
-    value.h  
-    string.h
-    state.h
+	vector.h
+	pretty.h
+	lexer.h
+	token.h
+	node.h
+	parser.h
+	visitor.h
+	value.h  
+	string.h
+	state.h
 
-    pseu.c
+	pseu.c
 	func.c
-    vm.c
-    codegen.c
-    vector.c
-    pretty.c
-    lexer.c
-    token.c
-    parser.c
-    visitor.c
-    value.c
-    string.c
-    state.c
+	vm.c
+	codegen.c
+	vector.c
+	pretty.c
+	lexer.c
+	token.c
+	parser.c
+	visitor.c
+	value.c
+	string.c
+	state.c
 )
 
 # objects
