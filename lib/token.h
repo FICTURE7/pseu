@@ -53,9 +53,7 @@ struct token {
 };
 
 void token_init(struct token *token, enum token_type type, struct location loc, size_t len);
-
 void token_value(struct token *token, char *buffer);
-
 int token_value_cmp(struct token *token, char *buffer);
 
-#endif
+#endif /* TOKEN_H */
