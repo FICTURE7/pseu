@@ -35,7 +35,7 @@
  * TODO: check underflow
  */
 static inline struct value *stack_pop(struct state *state) {
-	return &state->stack[--state->sp];
+	return --state->sp;
 }
 
 /*
@@ -45,10 +45,10 @@ static inline struct value *stack_pop(struct state *state) {
  * TODO: check overflow
  */
 static inline void stack_push(struct state *state, struct value *val) {
-	state->stack[state->sp++] = *val;
+	*state->sp++ = *val;
 }
 
-/* passes the control to the error handler */
+/* adds an error the list of errors in the specified state */
 static inline void error(struct state *state, struct diagnostic *err) {
 	//state->error = err;
 }
@@ -69,13 +69,20 @@ static void output(struct value *value) {
 			printf("pointer<%p>\n", value->as_pointer);
 			break;
 		case VALUE_TYPE_OBJECT:
-			/* TODO: handle arrays as well */
-			if (value->as_object->type == &string_type) {
-				struct string_object *string = (struct string_object *)value->as_object;
-				printf("%s\n", string->buf);
+			if (value->as_object == NULL) {
+				printf("object<NULL>\n");
 			} else {
-				printf("object<%p>\n", value->as_object);
+				/* TODO: handle arrays as well */
+				if (value->as_object->type == &string_type) {
+					struct string_object *string = (struct string_object *)value->as_object;
+					printf("%s\n", string->buf);
+				} else {
+					printf("object<%p>\n", value->as_object);
+				}
 			}
+			break;
+		default:
+			printf("unknown(%d)<%p>\n", value->type, value->as_object);
 			break;
 	}
 }
@@ -117,7 +124,7 @@ static int string_to_number(struct value *a, struct value *result) {
 
 	/*
 	 * expect the next token to be EOF, which means
-	 * we strict on the coercions
+	 * we are strict on the coercions
 	 *
 	 * so things like this "12 oixD" is not coerced
 	 * to 12
@@ -142,15 +149,12 @@ static int arith_real(struct state *state, enum vm_op op, struct value *a, struc
 		case VM_OP_ADD:
 			BINOP_REAL(+, a, b, result);
 			return 0;
-
 		case VM_OP_SUB:
 			BINOP_REAL(-, a, b, result);
 			return 0;
-
 		case VM_OP_MUL:
 			BINOP_REAL(*, a, b, result);
 			return 0;
-
 		case VM_OP_DIV:
 			/* prevent divided by 0s */
 			if (b->as_float == 0) {
@@ -172,15 +176,12 @@ static int arith_integer(struct state *state, enum vm_op op, struct value *a, st
 		case VM_OP_ADD:
 			BINOP_INTEGER(+, a, b, result);
 			return 0;
-
 		case VM_OP_SUB:
 			BINOP_INTEGER(-, a, b, result);
 			return 0;
-
 		case VM_OP_MUL:
 			BINOP_INTEGER(*, a, b, result);
 			return 0;
-
 		case VM_OP_DIV:
 			/* prevent divided by 0s */
 			if (b->as_int == 0) {
@@ -213,14 +214,14 @@ static int arith_coerce(struct state *state, enum vm_op op, struct value *a, str
 		b = &nb;
 	}
 	
-	/* check if both a and b is a number */
+	/* check if both a and b are numbers */
 	if (!value_is_number(a) || !value_is_number(b)) {
 		return 1;
 	}
 
 	/*
-	 * if both is integer, carry out operation as integer
-	 * otherwise carry out as floats
+	 * if both are integers, carry out operation as an integer operation
+	 * otherwise carry out as reals;
 	 */
 	if (a->type == VALUE_TYPE_INTEGER && b->type == VALUE_TYPE_INTEGER) {
 		return arith_integer(state, op, a, b, result);
@@ -251,23 +252,22 @@ static int arith(struct state *state, enum vm_op op, struct value *a, struct val
 
 	/*
 	 * otherwise try to carry out the operations while coercing the 
-	 * values of a and b to type which supports arithmetic
+	 * values of a and b to a type which supports arithmetic
 	 * operations (integer or real)
 	 */
 	return arith_coerce(state, op, a, b, result);
 }
 
 enum vm_result vm_call(struct state *state, struct func *fn) {
-	/* set the current vm call to the fn passed */
-	struct call *call = malloc(sizeof(struct call));
-	call->proto = fn->proto;
+	/* TODO: optionally implement direct threading dispatching */
 
 	/* reset the pc */
-	state->pc = 0;
+	state->ip = fn->code;;
+
 	/* vm dispatch loop */
 	while (true) {
 		/* fetch instruction at pc */
-		enum vm_op op = (enum vm_op)fn->code[state->pc++];
+		enum vm_op op = (enum vm_op)*state->ip++;
 		switch (op) {
 			case VM_OP_HALT: {
 				/* graceful exit */
@@ -278,7 +278,7 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 				 * pushses the constant at `index` in 
 				 * the current `fn` on the stack
 				 */
-				unsigned int index = (int)fn->code[state->pc++];
+				unsigned int index = (int)*state->ip++;
 				struct value *val = &fn->consts[index];
 				stack_push(state, val);
 				break;
@@ -290,14 +290,16 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 				/*
 				 * pops the last 2 values from the stack
 				 * and carry out the operation on them, 
-				 * then push the result  back on the stack
+				 * then push the result back on the stack
 				 */
 				struct value *a = stack_pop(state);
 				struct value *b = stack_pop(state);	
 				struct value result;
 
 				/* carry out the arithmetic operation */
-				arith(state, op, a, b, &result);
+				if (arith(state, op, a, b, &result)) {
+					return VM_RESULT_ERROR;
+				}
 
 				stack_push(state, &result);
 				break;

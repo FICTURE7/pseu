@@ -451,6 +451,7 @@ static struct node *block(struct parser *parser) {
 }
 
 void parser_init(struct parser *parser, struct lexer *lexer, struct state *state) {
+	parser->errors = NULL;
 	parser->state = state;
 	parser->lexer = lexer;
 	/* scan first token */

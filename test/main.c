@@ -12,7 +12,12 @@ int main(int argc, char **argv) {
 	}
 
 	/* interpret some pseu code */
-	pseu_interpret(pseu, "OUTPUT \"hello there! from the vm!\"");
+	int result = pseu_interpret(pseu, "OUTPUT \"hello there! from the vm!\"");
+	if (result != PSEU_RESULT_SUCCESS) {
+		fprintf(stderr, "error: failed to interpret code");
+	}
+
+	/* free the pseu instance */
 	pseu_free(pseu);
-	return 0;
+	return result;
 }
