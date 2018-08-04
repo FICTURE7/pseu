@@ -16,4 +16,15 @@
 	#define ASSERT(cond, msg) do {} while(0)
 #endif
 
+struct location {
+	int col;
+	int row;
+};
+
+struct error {
+	int code;
+	char *message;
+	struct location location;
+};
+
 #endif /* UTILS_H */

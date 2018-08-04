@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <string.h>
 #include "vm.h"
 #include "func.h"
@@ -6,17 +7,19 @@
 #include "opcode.h"
 #include "visitor.h"
 
+/* represents an emitter to emit bytecode */
 struct emitter {
-	size_t count;
-	size_t capacity;
-	instr_t *code;
+	size_t count; /* number of instr in `code` */
+	size_t capacity; /* size of `code` */
+	instr_t *code; /* buffer containing the instr */
 };
 
+/* represents a compiler */
 struct compiler {
-	struct emitter emitter;
-	struct func *fn;
-	size_t nconsts;
-	struct value consts[256];
+	struct emitter emitter; /* emitter of the compiler */
+	struct func *fn; /* fn which the compiler is compiling */
+	int8_t nconsts; /* number of constants in the fn */
+	struct value consts[256]; /* array of constants in the fn */
 };
 
 static inline void emitter_init(struct emitter *emitter) {
@@ -52,10 +55,26 @@ static inline void emit_output(struct emitter *emitter) {
 	emit(emitter, VM_OP_OUTPUT);
 }
 
+static inline void emit_op(struct emitter *emitter, enum op_type op) {
+	emit(emitter, op - OP_ADD + 1);
+}
+
 static void gen_block(struct visitor *visitor, struct node_block *block) {
 	for (size_t i = 0; i < block->stmts.count; i++) {
 		visitor_visit(visitor, block->stmts.items[i]);
 	}
+}
+
+static void gen_integer(struct visitor *visitor, struct node_integer *integer) {	
+	struct compiler *compiler = visitor->data;
+
+	/* add string to list of constants */
+	compiler->consts[compiler->nconsts] = (struct value) {
+		.type = VALUE_TYPE_INTEGER,
+		.as_int = integer->val
+	};
+
+	emit_push(&compiler->emitter, compiler->nconsts++);
 }
 
 static void gen_string(struct visitor *visitor, struct node_string *string) {
@@ -68,6 +87,30 @@ static void gen_string(struct visitor *visitor, struct node_string *string) {
 	};
 
 	emit_push(&compiler->emitter, compiler->nconsts++);
+}
+
+static void gen_op_unary(struct visitor *visitor, struct node_op_unary *op_unary) {
+	struct compiler *compiler = visitor->data;
+	switch (op_unary->op) {
+		case OP_ADD:
+			visitor_visit(visitor, op_unary->expr);
+			break;
+		case OP_SUB:
+			visitor_visit(visitor, op_unary->expr);
+			emit_op(&compiler->emitter, OP_SUB);
+			break;
+
+		default:
+			/* error */
+			break;
+	}
+}
+
+static void gen_op_binary(struct visitor *visitor, struct node_op_binary *op_binary) {
+	struct compiler *compiler = visitor->data;
+	visitor_visit(visitor, op_binary->left);
+	visitor_visit(visitor, op_binary->right);
+	emit_op(&compiler->emitter, op_binary->op);
 }
 
 static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
@@ -97,7 +140,10 @@ struct func *vm_gen(struct node *node) {
 
 	visitor.data = &compiler;
 	visitor.visit_block = gen_block;
+	visitor.visit_integer = gen_integer;
 	visitor.visit_string = gen_string;
+	visitor.visit_op_unary = gen_op_unary;
+	visitor.visit_op_binary = gen_op_binary;
 	visitor.visit_stmt_output = gen_stmt_output;
 	visitor_visit(&visitor, node);
 
