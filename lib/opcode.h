@@ -6,21 +6,28 @@
 /* represents an instruction */
 typedef int8_t instr_t;
 
+/* 
+ * X Macro of vm operations
+ * check https://en.wikipedia.org/wiki/X_Macro
+ * for more information
+ */
+#define VM_OP 	\
+	OP(HALT) 	\
+	OP(ADD) 	\
+	OP(SUB) 	\
+	OP(MUL) 	\
+	OP(DIV) 	\
+	OP(PUSH) 	\
+	OP(POP) 	\
+	OP(OUTPUT) 
+
 /*
  * operations the virtual machine is capabale of executing
  */
 enum vm_op {
-	VM_OP_HALT,
-
-	VM_OP_ADD,
-	VM_OP_SUB,
-	VM_OP_MUL,
-	VM_OP_DIV,
-
-	VM_OP_PUSH,
-	VM_OP_POP,
-	
-	VM_OP_OUTPUT
+	#define OP(_name) VM_OP_##_name,
+	VM_OP
+	#undef OP
 };
 
 #endif /* OPCODE_H */
