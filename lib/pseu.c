@@ -7,10 +7,13 @@
 #include "lexer.h"
 #include "parser.h"
 #include "visitor.h"
+#include "compiler.h"
 
 struct pseu {
 	/* global state instance */
 	struct state state;
+	/* global symbol table */
+	struct symbol_table *symbols;
 
 	/* configuration of the pseu instance */
 	pseu_config_t config;
