@@ -2,7 +2,7 @@
 #define FUNCTION_H
 
 #include <stdlib.h>
-#include "state.h"
+#include "value.h"
 #include "opcode.h"
 #include "location.h"
 
