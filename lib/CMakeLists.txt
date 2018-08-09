@@ -3,6 +3,7 @@ set(LIBPSEU_SRC
 	${LIBPSEU_INCLUDE_DIR}/pseu.h
 	func.h
 	vm.h
+	compiler.h
 	diagnostic.h
 	location.h
 	opcode.h
@@ -20,6 +21,7 @@ set(LIBPSEU_SRC
 	pseu.c
 	func.c
 	vm.c
+	compiler.c
 	codegen.c
 	vector.c
 	pretty.c

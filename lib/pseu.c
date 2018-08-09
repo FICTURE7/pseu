@@ -58,26 +58,18 @@ void pseu_free(pseu_t *pseu) {
 }
 
 enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
-	struct lexer lexer;
-	struct parser parser;
-	struct node *root;
-	struct func *fn;
-	enum vm_result result;
-
-	/* initial lexer & parser */
-	lexer_init(&lexer, src);
-	parser_init(&parser, &lexer, &pseu->state);
-
-	/* parse the src into a syntax tree */
-	parser_parse(&parser, &root);
-	/* failed to parse the code */
-	if (parser.errors != NULL) {
-		/* TODO: pass errors to pseu->config.onerror*/
+	/* exit early if arguments null */
+	if (pseu == NULL || src == NULL) {
 		return PSEU_RESULT_ERROR;
 	}
 
-	/* generate the main function */
-	fn = vm_gen(root);	
+	struct compiler compiler;
+	struct func *fn;
+	enum vm_result result;
+
+	compiler_init(&compiler, &pseu->state);
+	compiler_compile(&compiler, src);
+
 	/* failed to compile the code */
 	if (fn == NULL) {
 		return PSEU_RESULT_ERROR;

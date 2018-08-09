@@ -55,6 +55,7 @@ static inline void emit_output(struct emitter *emitter) {
 	emit(emitter, VM_OP_OUTPUT);
 }
 
+
 static inline void emit_op(struct emitter *emitter, enum op_type op) {
 	emit(emitter, op - OP_ADD + 1);
 }
