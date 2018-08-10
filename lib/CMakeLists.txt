@@ -22,7 +22,6 @@ set(LIBPSEU_SRC
 	func.c
 	vm.c
 	compiler.c
-	codegen.c
 	vector.c
 	pretty.c
 	lexer.c

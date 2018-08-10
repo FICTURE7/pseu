@@ -4,6 +4,7 @@
 #include <string.h>
 #include "vm.h"
 #include "node.h"
+#include "value.h"
 #include "lexer.h"
 #include "parser.h"
 #include "visitor.h"
@@ -12,9 +13,9 @@
 struct pseu {
 	/* global state instance */
 	struct state state;
-	/* global symbol table */
+	/* global variables */
 	struct symbol_table *symbols;
-
+	
 	/* configuration of the pseu instance */
 	pseu_config_t config;
 };
@@ -58,19 +59,20 @@ void pseu_free(pseu_t *pseu) {
 }
 
 enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
+	struct compiler compiler;
+	struct func *fn;
+	enum vm_result result;
+
 	/* exit early if arguments null */
 	if (pseu == NULL || src == NULL) {
 		return PSEU_RESULT_ERROR;
 	}
 
-	struct compiler compiler;
-	struct func *fn;
-	enum vm_result result;
-
+	/* initialize the compiler */
 	compiler_init(&compiler, &pseu->state);
-	compiler_compile(&compiler, src);
 
-	/* failed to compile the code */
+	/* compile the source and check if failed */
+	fn = compiler_compile(&compiler, src);
 	if (fn == NULL) {
 		return PSEU_RESULT_ERROR;
 	}

@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "location.h"
 
 /* types of values */
 enum value_type {
@@ -28,7 +29,24 @@ struct value {
 /* represents the type of an object */
 struct type {
 	const char *ident; /* type identifier */
-	unsigned int nfields; /* number of fields in the object */
+	size_t nfields; /* number of fields in the object */
+};
+
+/* represents a variable */
+struct variable {
+	char *ident; /* identifier of the variable */
+	struct type *type; /* type of the variable */
+};
+
+/*
+ * represents a function prototype
+ */
+struct proto {
+	char *ident; /* identifier of the function */
+	size_t nparams; /* parameter count or arity */
+	struct type *params; /* array of parameter types */
+	struct type *rett; /* return type */
+	struct location location; /* where in the source code the proto was definied */
 };
 
 /* type for void objects */

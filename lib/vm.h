@@ -15,7 +15,6 @@ enum vm_result {
 	VM_RESULT_ERROR
 };
 
-struct func *vm_gen(struct node *node);
 enum vm_result vm_call(struct state *state, struct func *fn);
 
 #endif /* VM_H */
