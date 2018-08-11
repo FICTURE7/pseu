@@ -79,8 +79,8 @@ struct string_object {
 	struct object base; /* to be an object */
 
 	unsigned int hash; /* hash of the string */
-	size_t len; /* length of the string */
-	char buf[]; /* pointer to the NULL terminated string */
+	size_t length; /* length of the string */
+	char buffer[]; /* pointer to the NULL terminated string */
 };
 
 /* represents a user defined object */
@@ -92,7 +92,7 @@ struct user_object {
 
 struct user_object *object_new(struct type *type);
 struct array_object *object_new_array(unsigned int from, unsigned int to);
-struct string_object *object_new_string(char *buf, size_t len, unsigned int hash);
+struct string_object *object_new_string(char *buffer, size_t length, unsigned int hash);
 
 bool value_is_number(struct value *value);
 bool value_is_string(struct value *value);

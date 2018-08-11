@@ -63,7 +63,7 @@ static void print_op(enum token_type type) {
 
 static void print_string(struct visitor *visitor, struct node_string *string) {
 	ident();
-	printf("string(%zu, '%s')\n", string->val->len, string->val->buf);
+	printf("string(%zu, '%s')\n", string->val->length, string->val->buffer);
 }
 
 static void print_real(struct visitor *visitor, struct node_real *real) {

@@ -39,15 +39,15 @@ struct array_object *object_new_array(unsigned int from, unsigned int to) {
 	return obj;
 }
 
-struct string_object *object_new_string(char *buf, size_t len, unsigned int hash) {
-	struct string_object *obj = malloc(sizeof(struct string_object) + len + 1);
+struct string_object *object_new_string(char *buffer, size_t length, unsigned int hash) {
+	struct string_object *obj = malloc(sizeof(struct string_object) + length + 1);
 	obj->base.nrefs = 0;
 	obj->base.type = (struct type *)&string_type;
-	obj->buf[len] = '\0';
-	obj->len = len;
+	obj->buffer[length] = '\0';
+	obj->length = length;
 	obj->hash = hash;
 
-	memcpy(obj->buf, buf, len);
+	memcpy(obj->buffer, buffer, length);
 	return obj;
 }
 

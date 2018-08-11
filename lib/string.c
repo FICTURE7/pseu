@@ -3,10 +3,10 @@
 
 #define STRING_TABLE_INIT_CAPACITY 16
 
-static unsigned int hash_djb2(char *buf, size_t len) {
+static unsigned int hash_djb2(char *buffer, size_t length) {
 	unsigned int hash = 5381;
-	for (unsigned int i = 0; i < len; i++) {
-		hash = ((hash << 5) + hash) + buf[i];
+	for (unsigned int i = 0; i < length; i++) {
+		hash = ((hash << 5) + hash) + buffer[i];
 	}
 	return hash;
 }
@@ -73,15 +73,15 @@ void string_table_deinit(struct string_table *table) {
 	free(table->entries);
 }
 
-struct string_object *string_table_intern(struct string_table *table, char *buf, size_t len) {
-	unsigned int hash = hash_djb2(buf, len);
+struct string_object *string_table_intern(struct string_table *table, char *buffer, size_t length) {
+	unsigned int hash = hash_djb2(buffer, length);
 	unsigned int index = hash % table->capacity;
 	struct string_object *string = NULL;
 	struct string_table_entry *entry = table->entries[index];
 
 	if (entry == NULL) {
 		/* create new entry if not found */
-		string = object_new_string(buf, len, hash);
+		string = object_new_string(buffer, length, hash);
 		entry = table_entry_new(string);
 
 		table->entries[index] = entry;
@@ -92,7 +92,7 @@ struct string_object *string_table_intern(struct string_table *table, char *buf,
 			 * compare the hash, length and content
 			 * of the string to find a matching interned string
 			 */
-			if (entry->item->hash == hash && entry->item->len == len && memcmp(entry->item->buf, buf, len) == 0) {
+			if (entry->item->hash == hash && entry->item->length == length && memcmp(entry->item->buffer, buffer, length) == 0) {
 				string = entry->item;
 				return string;
 			}
@@ -106,7 +106,7 @@ struct string_object *string_table_intern(struct string_table *table, char *buf,
 		}
 
 		/* string not found in chain, create a new one and extend chain */
-		string = object_new_string(buf, len, hash);
+		string = object_new_string(buffer, length, hash);
 		entry = table_entry_new(string);
 
 		/* insert at the start of the chain/list */

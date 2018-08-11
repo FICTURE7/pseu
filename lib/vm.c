@@ -75,7 +75,7 @@ static void output(struct value *value) {
 				/* TODO: handle arrays as well */
 				if (value->as_object->type == &string_type) {
 					struct string_object *string = (struct string_object *)value->as_object;
-					printf("%s\n", string->buf);
+					printf("%s\n", string->buffer);
 				} else {
 					printf("object<%p>\n", value->as_object);
 				}
@@ -99,22 +99,22 @@ static int string_to_number(struct value *a, struct value *result) {
 	struct string_object *str;
 
 	str = (struct string_object *)a->as_object;
-	lexer_init(&lexer, str->buf);
+	lexer_init(&lexer, str->buffer);
 	lexer_lex(&lexer, &token);
 
 	/* convert to the appropriate type */
 	switch (token.type) {
 		case TOK_LIT_INTEGER:
 			result->type = VALUE_TYPE_INTEGER;
-			result->as_int = strtol(str->buf, NULL, 10);
+			result->as_int = strtol(str->buffer, NULL, 10);
 			break;
 		case TOK_LIT_INTEGERHEX:
 			result->type = VALUE_TYPE_INTEGER;
-			result->as_int = strtol(str->buf, NULL, 16);
+			result->as_int = strtol(str->buffer, NULL, 16);
 			break;
 		case TOK_LIT_REAL:
 			result->type = VALUE_TYPE_REAL;
-			result->as_float = strtof(str->buf, NULL);
+			result->as_float = strtof(str->buffer, NULL);
 			break;
 
 		default:
