@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include "func.h"
 #include "lexer.h"
@@ -26,7 +27,7 @@ static inline void emit_halt(struct emitter *emitter) {
 	emit(emitter, VM_OP_HALT);
 }
 
-static inline void emit_push(struct emitter *emitter, unsigned int index) {
+static inline void emit_push(struct emitter *emitter, uint8_t index) {
 	emit(emitter, VM_OP_PUSH);
 	emit(emitter, index);
 }

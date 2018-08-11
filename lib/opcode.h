@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* represents an instruction */
-typedef int8_t instr_t;
+typedef uint8_t instr_t;
 
 /* 
  * X Macro of vm operations

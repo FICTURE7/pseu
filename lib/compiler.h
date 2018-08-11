@@ -22,10 +22,10 @@ struct compiler {
 
 	struct emitter emitter; /* emitter to emit byte code */
 
-	int8_t nconsts; /* number of constants in the fn */
+	uint8_t nconsts; /* number of constants in the fn */
 	struct value consts[256]; /* array of constants in the fn */
 
-	int8_t nlocals; /* number of locals in the fn */
+	uint8_t nlocals; /* number of locals in the fn */
 	struct variable locals[256]; /* array of locals in the fn */
 };
 
