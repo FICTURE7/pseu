@@ -139,7 +139,7 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	/* initialize the code emitter */
 	emitter_init(&compiler->emitter);
 
-	visitor.data = &compiler;
+	visitor.data = compiler;
 	visitor.visit_block = gen_block;
 	visitor.visit_integer = gen_integer;
 	visitor.visit_string = gen_string;
