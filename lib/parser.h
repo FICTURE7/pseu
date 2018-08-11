@@ -15,7 +15,6 @@ struct parser {
     struct lexer *lexer;
 	/* current token we're processing */
 	struct token token;
-	struct diagnostic *errors;
 };
 
 void parser_init(struct parser *parser, struct lexer *lexer, struct state *state);

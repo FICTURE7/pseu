@@ -20,7 +20,7 @@ struct state {
 	struct value stack[256]; /* stack */
 };
 
-void state_init(struct state *state);
+void state_init(struct state *state, struct pseu *pseu);
 void state_deinit(struct state *state);
 
 #endif /* STATE_H */

@@ -43,7 +43,7 @@ pseu_t *pseu_new(pseu_config_t *config) {
 	}
 
 	/* initialize the global state */
-	state_init(&pseu->state);
+	state_init(&pseu->state, pseu);
 	return pseu;
 }
 
@@ -60,8 +60,8 @@ void pseu_free(pseu_t *pseu) {
 
 enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 	struct compiler compiler;
-	struct func *fn;
 	enum vm_result result;
+	struct func *fn;
 
 	/* exit early if arguments null */
 	if (pseu == NULL || src == NULL) {
@@ -71,8 +71,9 @@ enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 	/* initialize the compiler */
 	compiler_init(&compiler, &pseu->state);
 
-	/* compile the source and check if failed */
+	/* compile the source to vm bytecode (instr_t) */
 	fn = compiler_compile(&compiler, src);
+	/* check if compilation process failed */
 	if (fn == NULL) {
 		return PSEU_RESULT_ERROR;
 	}

@@ -110,10 +110,10 @@ void compiler_init(struct compiler *compiler, struct state *state) {
 }
 
 struct func *compiler_compile(struct compiler *compiler, char *src) {
-	struct visitor visitor;
-	struct proto *proto;
-	struct node *root;
-	struct func *fn;
+	struct visitor visitor; /* visitor which will transverse syntax tree */
+	struct proto *proto; /* prototype of the function its compiling */
+	struct node *root; /* root node/syntax tree */
+	struct func *fn; /* function its compiling */
 
 	proto = malloc(sizeof(struct proto));
 	fn = malloc(sizeof(struct func));
@@ -129,14 +129,13 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 
 	/* parse the src into a syntax tree */
 	parser_parse(&compiler->parser, &root);
-	/* failed to parse the code */
-	if (compiler->parser.errors != NULL) {
+	/* check if parser failed to parse the code */
+	if (root == NULL) {
 		/* TODO: pass errors to pseu->config.onerror*/
-		//return PSEU_RESULT_ERROR;
 		return NULL;
 	}
 
-	/* initialize the code emitter*/
+	/* initialize the code emitter */
 	emitter_init(&compiler->emitter);
 
 	visitor.data = &compiler;
@@ -148,9 +147,11 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	visitor.visit_stmt_output = gen_stmt_output;
 	visitor_visit(&visitor, root);
 
-	/* indicate end of func */
+	/* emit end of func */
 	emit_halt(&compiler->emitter);
 
+	/* set the fn's prototype */
+	fn->proto = proto;
 	/* set the function's consts */
 	fn->nconsts = compiler->nconsts;
 	fn->consts = malloc(sizeof(struct value) * compiler->nconsts);
@@ -158,6 +159,6 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 
 	/* set the function's code */
 	fn->ncode = compiler->emitter.count;
-	fn->code = realloc(compiler->emitter.code, fn->ncode);
+	fn->code = realloc(compiler->emitter.code, sizeof(instr_t) * fn->ncode); /* trim excess */
 	return fn;
 }

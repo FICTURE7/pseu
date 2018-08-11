@@ -380,7 +380,7 @@ static struct node *declare_statement(struct parser *parser) {
 	eat(parser);
 
 	decl->type = identifier(parser);
-	/* todo: register declaration in a symbol table. */
+	/* TODO: register declaration in a symbol table. */
 	return (struct node *)decl;
 }
 
@@ -451,7 +451,6 @@ static struct node *block(struct parser *parser) {
 }
 
 void parser_init(struct parser *parser, struct lexer *lexer, struct state *state) {
-	parser->errors = NULL;
 	parser->state = state;
 	parser->lexer = lexer;
 	/* scan first token */

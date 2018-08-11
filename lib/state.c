@@ -3,7 +3,8 @@
 #include "string.h"
 #include "diagnostic.h"
 
-void state_init(struct state *state) {
+void state_init(struct state *state, struct pseu *pseu) {
+	state->pseu = pseu;
 	state->strings = malloc(sizeof(struct string_table));
 	state->ip = NULL;
 	state->sp = state->stack;
@@ -14,16 +15,14 @@ void state_init(struct state *state) {
 
 void state_deinit(struct state *state) {
 	/* free the linked list of chains */
-	/*
 	struct diagnostic *current;
 	struct diagnostic *next;
 
-	current = state->diagnostics;
+	current = state->errors;
 	for (; current != NULL; current = next) {
 		next = current->next;
 		free(current);
 	}
-	*/
 
 	string_table_deinit(state->strings);
 	free(state->strings);
