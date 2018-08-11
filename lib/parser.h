@@ -18,6 +18,6 @@ struct parser {
 };
 
 void parser_init(struct parser *parser, struct lexer *lexer, struct state *state);
-void parser_parse(struct parser *parser, struct node **root);
+struct node *parser_parse(struct parser *parser);
 
 #endif /* PARSER_H */

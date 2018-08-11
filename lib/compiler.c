@@ -128,7 +128,7 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	parser_init(&compiler->parser, &compiler->lexer, compiler->state);
 
 	/* parse the src into a syntax tree */
-	parser_parse(&compiler->parser, &root);
+	root = parser_parse(&compiler->parser);
 	/* check if parser failed to parse the code */
 	if (root == NULL) {
 		/* TODO: pass errors to pseu->config.onerror*/

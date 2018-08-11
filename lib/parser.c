@@ -458,7 +458,7 @@ void parser_init(struct parser *parser, struct lexer *lexer, struct state *state
 
 #ifdef PARSER_DEBUG
 	struct node *root;
-	parser_parse(parser, &root);
+	root = parser_parse(parser);
 	prettyprint_node(root);
 	/* reset */
 	lexer->loc.pos = lexer->src;
@@ -468,11 +468,15 @@ void parser_init(struct parser *parser, struct lexer *lexer, struct state *state
 #endif
 }
 
-void parser_parse(struct parser *parser, struct node **root) {
-	(*root) = block(parser);
+struct node *parser_parse(struct parser *parser) {
+	struct node *root;
+
+	root = block(parser);
+	/* next token should be end of file */
 	if (parser->token.type != TOK_EOF) {
 		error(parser, parser->token.loc, "expected eof");
 	}
-
 	eat(parser);
+
+	return root;
 }
