@@ -161,5 +161,7 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	/* set the function's code */
 	fn->ncode = compiler->emitter.count;
 	fn->code = realloc(compiler->emitter.code, sizeof(instr_t) * fn->ncode); /* trim excess */
+
+	/* TODO: free `root` node */
 	return fn;
 }

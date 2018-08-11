@@ -94,6 +94,7 @@ static char *identifier(struct parser *parser) {
 }
 
 static struct node *string(struct parser *parser) {
+	/* TODO: consider stack alloc here */
 	char *buf = malloc(parser->token.len);
 
 	/* unescape string */
