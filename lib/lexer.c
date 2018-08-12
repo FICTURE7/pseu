@@ -360,6 +360,9 @@ again:
 			/* scan identifiers starting with '_' */
 			scan_identifier(lexer, token);
 			return;
+		case '=':
+			token_init(token, TOK_EQUAL, lexer->loc, 1);
+			goto advance_exit;
 
 		case '(':
 			token_init(token, TOK_LPAREN, lexer->loc, 1);

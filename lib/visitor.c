@@ -6,6 +6,9 @@ void visitor_visit(struct visitor *visitor, struct node *node) {
 		case NODE_BLOCK:
 			visitor->visit_block(visitor, (struct node_block *)node);
 			break;
+		case NODE_IDENT:
+			visitor->visit_ident(visitor, (struct node_ident *)node);
+			break;
 
 		case NODE_LIT_REAL:
 			visitor->visit_real(visitor, (struct node_real *)node);
@@ -29,6 +32,9 @@ void visitor_visit(struct visitor *visitor, struct node *node) {
 
 		case NODE_STMT_DECLARE:
 			visitor->visit_stmt_decl(visitor, (struct node_stmt_decl *)node);
+			break;
+		case NODE_STMT_ASSIGN:
+			visitor->visit_stmt_assign(visitor, (struct node_stmt_assign *)node);
 			break;
 		case NODE_STMT_OUTPUT:
 			visitor->visit_stmt_output(visitor, (struct node_stmt_output *)node);

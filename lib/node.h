@@ -2,9 +2,9 @@
 #define NODE_H
 
 #include <stdbool.h>
-#include "vector.h"
-#include "value.h"
 #include "token.h"
+#include "value.h"
+#include "vector.h"
 
 /* types of operations */
 enum op_type {
@@ -20,6 +20,7 @@ enum op_type {
 /* types of nodes */
 enum node_type {
 	NODE_BLOCK,
+	NODE_IDENT,
 
 	/* literals */
 	NODE_LIT_INTEGER,
@@ -33,6 +34,7 @@ enum node_type {
 
 	/* statements */
 	NODE_STMT_DECLARE,
+	NODE_STMT_ASSIGN,
 	NODE_STMT_OUTPUT,
 	NODE_STMT_IF,
 	NODE_STMT_WHILE
@@ -47,6 +49,11 @@ struct node {
 struct node_block {
 	struct node base;
 	struct vector stmts;
+};
+
+struct node_ident {
+	struct node base;
+	char *val;
 };
 
 /* === LITERALS === */
@@ -89,6 +96,12 @@ struct node_stmt_decl {
 	struct node base;
 	char *ident;
 	char *type;
+};
+
+struct node_stmt_assign {
+	struct node base;
+	char *ident;
+	struct node *right;
 };
 
 struct node_stmt_output {

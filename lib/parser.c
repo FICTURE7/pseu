@@ -236,6 +236,7 @@ static struct node *number(struct parser *parser) {
 		case TOK_LIT_REAL:
 			return real(parser);
 		default:
+			/* unexpected token type */
 			return NULL;
 	}
 }
@@ -312,8 +313,15 @@ static struct node *primary(struct parser *parser) {
 		case TOK_LIT_REAL:
 			return number(parser);
 
+		case TOK_IDENT: {
+			struct node_ident *ident = malloc(sizeof(struct node_ident));
+			ident->base.type = NODE_IDENT;
+			ident->val = identifier(parser);
+			return (struct node *)ident;
+		}
+
 		default:
-			/* err */
+			/* unexpected token type */
 			return NULL;
 	}
 }
@@ -385,6 +393,23 @@ static struct node *declare_statement(struct parser *parser) {
 	return (struct node *)decl;
 }
 
+static struct node *assign_statement(struct parser *parser) {
+	char *ident = identifier(parser);
+
+	struct node_stmt_assign *assign = malloc(sizeof(struct node_stmt_assign));
+	assign->base.type = NODE_STMT_ASSIGN;
+	assign->ident = ident;
+
+	if (parser->token.type != TOK_EQUAL) {
+		error(parser, parser->token.loc, "expected a '='");
+	}
+
+	eat(parser);
+
+	assign->right = expression(parser);
+	return (struct node *)assign;
+}
+
 /*
  *	output-statement = "OUTPUT" expression
  */
@@ -407,6 +432,8 @@ static struct node *statement(struct parser *parser) {
 	switch (parser->token.type) {
 		case TOK_KW_DECLARE:
 			return declare_statement(parser);
+		case TOK_IDENT:
+			return assign_statement(parser);
 		case TOK_KW_OUTPUT:
 			return output_statement(parser);
 		default:
