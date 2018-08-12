@@ -262,7 +262,7 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 	/* TODO: optionally implement direct threading dispatching */
 
 	/* reset the pc */
-	state->ip = fn->code;;
+	state->ip = fn->code;
 
 	/* vm dispatch loop */
 	while (true) {

@@ -75,7 +75,7 @@ static int precedence(enum token_type type) {
 
 static struct node *expression(struct parser *parser);
 
-static char *identifier(struct parser *parser) {
+static struct node *identifier(struct parser *parser) {
 	struct token token = parser->token;
 
 	if (parser->token.type != TOK_IDENT) {
@@ -87,10 +87,14 @@ static char *identifier(struct parser *parser) {
 	/* eat identifier */
 	eat(parser);
 
-	char *ident = malloc(token.len + 1);
-	ident[token.len] = '\0';
-	memcpy(ident, token.loc.pos, token.len);
-	return ident;
+	char *val = malloc(token.len + 1);
+	val[token.len] = '\0';
+	memcpy(val, token.loc.pos, token.len);
+
+	struct node_ident *ident = malloc(sizeof(struct node_ident));
+	ident->base.type = NODE_IDENT;
+	ident->val = val;
+	return (struct node *)ident;
 }
 
 static struct node *string(struct parser *parser) {
@@ -313,12 +317,8 @@ static struct node *primary(struct parser *parser) {
 		case TOK_LIT_REAL:
 			return number(parser);
 
-		case TOK_IDENT: {
-			struct node_ident *ident = malloc(sizeof(struct node_ident));
-			ident->base.type = NODE_IDENT;
-			ident->val = identifier(parser);
-			return (struct node *)ident;
-		}
+		case TOK_IDENT:
+			return identifier(parser);
 
 		default:
 			/* unexpected token type */
@@ -379,7 +379,7 @@ static struct node *declare_statement(struct parser *parser) {
 
 	struct node_stmt_decl *decl = malloc(sizeof(struct node_stmt_decl));
 	decl->base.type = NODE_STMT_DECLARE;
-	decl->ident = identifier(parser);
+	decl->ident = (struct node_ident *)identifier(parser);
 
 	if (parser->token.type != TOK_COLON) {
 		error(parser, parser->token.loc, "expected a ':'");
@@ -388,17 +388,15 @@ static struct node *declare_statement(struct parser *parser) {
 	/* eat colon */
 	eat(parser);
 
-	decl->type = identifier(parser);
+	decl->type = (struct node_ident *)identifier(parser);
 	/* TODO: register declaration in a symbol table. */
 	return (struct node *)decl;
 }
 
 static struct node *assign_statement(struct parser *parser) {
-	char *ident = identifier(parser);
-
 	struct node_stmt_assign *assign = malloc(sizeof(struct node_stmt_assign));
 	assign->base.type = NODE_STMT_ASSIGN;
-	assign->ident = ident;
+	assign->ident = (struct node_ident *)identifier(parser);
 
 	if (parser->token.type != TOK_EQUAL) {
 		error(parser, parser->token.loc, "expected a '='");

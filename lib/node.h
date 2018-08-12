@@ -94,13 +94,13 @@ struct node_op_binary {
 /* === STATEMENTS === */
 struct node_stmt_decl {
 	struct node base;
-	char *ident;
-	char *type;
+	struct node_ident *ident;
+	struct node_ident *type;
 };
 
 struct node_stmt_assign {
 	struct node base;
-	char *ident;
+	struct node_ident *ident;
 	struct node *right;
 };
 

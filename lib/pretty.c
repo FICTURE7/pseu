@@ -126,12 +126,12 @@ static void print_op_binary(struct visitor *visitor, struct node_op_binary *op_b
 
 static void print_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
 	indent();
-	printf("decl(%s, %s)\n", decl->ident, decl->type);
+	printf("decl(%s, %s)\n", decl->ident->val, decl->type->val);
 }
 
 static void print_stmt_assign(struct visitor *visitor, struct node_stmt_assign *assign) {
 	indent();
-	printf("assign(%s):\n", assign->ident);
+	printf("assign(%s):\n", assign->ident->val);
 	depth++;
 	print_node(visitor, assign->right);
 	depth--;

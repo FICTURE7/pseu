@@ -20,7 +20,8 @@ struct pseu {
 	pseu_config_t config;
 };
 
-void pseu_config_init(pseu_config_t *config) {
+/* default config, if non specified when pseu_new(NULL) */
+static inline void pseu_config_init(pseu_config_t *config) {
 	config->init_stack_size = 512;
 	config->max_stack_size = 1024;
 }
