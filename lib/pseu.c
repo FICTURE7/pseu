@@ -44,7 +44,7 @@ pseu_t *pseu_new(pseu_config_t *config) {
 	}
 
 	/* initialize the global state */
-	state_init(&pseu->state, pseu);
+	state_init(&pseu->state);
 	return pseu;
 }
 

@@ -3,8 +3,7 @@
 #include "string.h"
 #include "diagnostic.h"
 
-void state_init(struct state *state, struct pseu *pseu) {
-	state->pseu = pseu;
+void state_init(struct state *state) {
 	state->strings = malloc(sizeof(struct string_table));
 	state->ip = NULL;
 	state->sp = state->stack;

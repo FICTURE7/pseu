@@ -17,8 +17,9 @@
 #endif
 
 struct location {
-	int col;
-	int row;
+	char *pos;
+	unsigned int col;
+	unsigned int row;
 };
 
 struct error {
