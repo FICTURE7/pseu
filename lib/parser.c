@@ -393,6 +393,9 @@ static struct node *declare_statement(struct parser *parser) {
 	return (struct node *)decl;
 }
 
+/*
+ *	assign-statement = identifier "=" expression
+ */
 static struct node *assign_statement(struct parser *parser) {
 	struct node_stmt_assign *assign = malloc(sizeof(struct node_stmt_assign));
 	assign->base.type = NODE_STMT_ASSIGN;
@@ -424,7 +427,7 @@ static struct node *output_statement(struct parser *parser) {
 }
 
 /*
- *	statement = declare-statement | output-statement
+ *	statement = declare-statement | assign-statement | output-statement
  */
 static struct node *statement(struct parser *parser) {
 	switch (parser->token.type) {
