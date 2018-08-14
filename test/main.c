@@ -3,8 +3,14 @@
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
+	/* configuration */
+	pseu_config_t config = {
+		.init_stack_size = 1,
+		.max_stack_size = 1024
+	};
+
 	/* create the pseu instance */
-	pseu_t *pseu = pseu_new(NULL);
+	pseu_t *pseu = pseu_new(&config);
 
 	/* check if we managed to allocate the pseu instance */
 	if (pseu == NULL) {
@@ -13,7 +19,8 @@ int main(int argc, char **argv) {
 	}
 
 	/* interpret some pseu code */
-	int result = pseu_interpret(pseu, "DECLARE x : STRING\nx = \"5\"\nOUTPUT 1+x");
+	//int result = pseu_interpret(pseu, "DECLARE x : STRING\nx = \"5\"\nOUTPUT 1+x");
+	int result = pseu_interpret(pseu, "OUTPUT 1+\"5\"");
 	if (result != PSEU_RESULT_SUCCESS) {
 		fprintf(stderr, "error: failed to interpret code\n");
 	}

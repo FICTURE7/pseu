@@ -17,6 +17,7 @@ struct emitter {
 /* represents a compiler */
 struct compiler {
 	struct state *state; /* state which owns this compiler instance */
+
 	struct lexer lexer; /* lexer of the compiler, used by the parser */
 	struct parser parser; /* parser of the compiler */
 

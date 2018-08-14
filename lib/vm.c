@@ -29,23 +29,58 @@
 		(_o)->as_int = (_a)->as_int _op (_b)->as_int;		\
 
 /*
+ * grows the stack by twice if possible
+ * otherwise grow up to max_stack_size
+ */
+static inline void stack_grow(struct state *state) {
+	/* check if reached max stack size */
+	if (state->cstack == state->config->max_stack_size) {
+		return;
+	}
+
+	/* calculate the new size */
+	size_t size = state->cstack * 2;
+	if (size > state->config->max_stack_size) { 
+		size = state->config->max_stack_size;
+	}
+
+	/* try to grow the stack */
+	struct value *stack = realloc(state->stack, sizeof(struct value) * size);
+	if (stack != NULL) {
+		state->cstack = size;
+		state->stack = stack;
+	}
+}
+
+/*
  * pops a value from the top of the
  * stack of the virtual machine
- * 
- * TODO: check underflow
  */
 static inline struct value *stack_pop(struct state *state) {
-	return --state->sp;
+	struct value *val;
+
+	/* check underflow */
+	if (state->nstack == 0) {
+		return NULL;
+	}
+
+	val = --state->sp;
+	state->nstack--;
+	return val;
 }
 
 /*
  * pushes a value on top of the
  * stack of the virtual machine
- *
- * TODO: check overflow
  */
 static inline void stack_push(struct state *state, struct value *val) {
+	/* check if overflow and try to grow stack */
+	if (state->nstack >= state->cstack) {
+		stack_grow(state);
+	}
+
 	*state->sp++ = *val;
+	state->nstack++;
 }
 
 /* adds an error the list of errors in the specified state */
@@ -268,6 +303,7 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 	while (true) {
 		/* fetch instruction at pc */
 		enum vm_op op = (enum vm_op)*state->ip++;
+		printf("vm: %d\n", op);
 		switch (op) {
 			case VM_OP_HALT: {
 				/* graceful exit */
