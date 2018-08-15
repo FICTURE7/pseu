@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "func.h"
+#include "value.h"
 #include "lexer.h"
 #include "parser.h"
 #include "visitor.h"
@@ -132,6 +133,7 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	root = parser_parse(&compiler->parser);
 	/* check if parser failed to parse the code */
 	if (root == NULL) {
+		/* TODO: clean up resources */
 		/* TODO: pass errors to pseu->config.onerror*/
 		return NULL;
 	}
@@ -150,6 +152,11 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 
 	/* emit end of func */
 	emit_halt(&compiler->emitter);
+
+	/* set proto's data */
+	proto->nparams = 0;
+	proto->params = NULL;
+	proto->rett = &void_type;
 
 	/* set the fn's prototype */
 	fn->proto = proto;

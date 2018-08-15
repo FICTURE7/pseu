@@ -29,26 +29,15 @@
 		(_o)->as_int = (_a)->as_int _op (_b)->as_int;		\
 
 /*
- * grows the stack by twice if possible
- * otherwise grow up to max_stack_size
+ * ensures that there is enough space on
+ * the stack
  */
-static inline void stack_grow(struct state *state) {
-	/* check if reached max stack size */
-	if (state->cstack == state->config->max_stack_size) {
-		return;
-	}
-
-	/* calculate the new size */
-	size_t size = state->cstack * 2;
-	if (size > state->config->max_stack_size) { 
-		size = state->config->max_stack_size;
-	}
-
-	/* try to grow the stack */
-	struct value *stack = realloc(state->stack, sizeof(struct value) * size);
-	if (stack != NULL) {
-		state->cstack = size;
-		state->stack = stack;
+static inline void stack_ensure(struct state *state, size_t size) {
+	size_t cur_size = (size_t)(state->stack_top - state->sp);
+	if (size > cur_size) {
+		state->stack = realloc(state->stack, sizeof(struct value) * size);
+		state->stack_top = state->stack + size;
+		printf("growing stack: %d - %d\n", size, cur_size);
 	}
 }
 
@@ -58,14 +47,7 @@ static inline void stack_grow(struct state *state) {
  */
 static inline struct value *stack_pop(struct state *state) {
 	struct value *val;
-
-	/* check underflow */
-	if (state->nstack == 0) {
-		return NULL;
-	}
-
 	val = --state->sp;
-	state->nstack--;
 	return val;
 }
 
@@ -75,17 +57,16 @@ static inline struct value *stack_pop(struct state *state) {
  */
 static inline void stack_push(struct state *state, struct value *val) {
 	/* check if overflow and try to grow stack */
-	if (state->nstack >= state->cstack) {
-		stack_grow(state);
+	if (state->sp >= state->stack_top) {
+		/* space */
 	}
 
 	*state->sp++ = *val;
-	state->nstack++;
 }
 
 /* adds an error the list of errors in the specified state */
 static inline void error(struct state *state, struct diagnostic *err) {
-	//state->error = err;
+	/* space */
 }
 
 /* outputs the specified value */
@@ -296,14 +277,21 @@ static int arith(struct state *state, enum vm_op op, struct value *a, struct val
 enum vm_result vm_call(struct state *state, struct func *fn) {
 	/* TODO: optionally implement direct threading dispatching */
 
-	/* reset the pc */
+	/* check if we've got enough parameters on the stack */
+	size_t stack_count = (size_t)(state->sp - state->stack);
+	if (fn->proto->nparams > stack_count) {
+		return VM_RESULT_ERROR;
+	}
+
+	/* ensure stack size */
+	stack_ensure(state, fn->nconsts);
+	/* reset the instruction pointer */
 	state->ip = fn->code;
 
 	/* vm dispatch loop */
 	while (true) {
 		/* fetch instruction at pc */
 		enum vm_op op = (enum vm_op)*state->ip++;
-		printf("vm: %d\n", op);
 		switch (op) {
 			case VM_OP_HALT: {
 				/* graceful exit */
@@ -314,7 +302,7 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 				 * pushses the constant at `index` in 
 				 * the current `fn` on the stack
 				 */
-				unsigned int index = (int)*state->ip++;
+				unsigned int index = (unsigned int)*state->ip++;
 				struct value *val = &fn->consts[index];
 				stack_push(state, val);
 				break;

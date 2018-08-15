@@ -16,9 +16,8 @@ struct state {
 
 	instr_t *ip; /* instruction pointer */
 	struct value *sp;	/* stack pointer (points to top of stack) */
-	struct value *stack;
-	size_t nstack; /* number of values on the stack */
-	size_t cstack;  /* capacity/size of the stack */
+	struct value *stack; /* points to the bottom of the stack */
+	struct value *stack_top; /* points to the top of the stack */
 
 	pseu_config_t *config; /* config of the state */
 };
