@@ -29,16 +29,40 @@
 		(_o)->as_int = (_a)->as_int _op (_b)->as_int;		\
 
 /*
- * ensures that there is enough space on
- * the stack
+ * ensures that there is enough
+ * stack space for the specified amount
+ * of stack values
  */
-static inline void stack_ensure(struct state *state, size_t size) {
-	size_t cur_size = (size_t)(state->stack_top - state->sp);
-	if (size > cur_size) {
-		state->stack = realloc(state->stack, sizeof(struct value) * size);
-		state->stack_top = state->stack + size;
-		printf("growing stack: %d - %d\n", size, cur_size);
+static inline bool stack_ensure(struct state *state, size_t size) {
+	/* check if we exceed the max stack size */
+	if (size >= state->config->max_stack_size) {
+		return false ;
 	}
+
+	/* calculate index of sp */
+	size_t cur = state->sp - state->stack;
+	/* calculate the current size of the stack */
+	size_t cur_size = (size_t)(state->stack_top - state->stack);
+
+	/* check if we need to grow the stack */
+	if (size > cur_size) {
+		struct value *stack;
+
+		stack = state->stack;
+		stack = realloc(state->stack, sizeof(struct value) * size);
+
+		/* check if realloc failed */
+		if (stack == NULL) { 
+			return false;
+		}
+
+		state->stack = stack;
+		state->stack_top = state->stack + size;
+		state->sp = state->stack + cur;
+		return true;
+	}
+
+	return true;
 }
 
 /*
@@ -46,9 +70,7 @@ static inline void stack_ensure(struct state *state, size_t size) {
  * stack of the virtual machine
  */
 static inline struct value *stack_pop(struct state *state) {
-	struct value *val;
-	val = --state->sp;
-	return val;
+	return --state->sp;
 }
 
 /*
@@ -56,11 +78,6 @@ static inline struct value *stack_pop(struct state *state) {
  * stack of the virtual machine
  */
 static inline void stack_push(struct state *state, struct value *val) {
-	/* check if overflow and try to grow stack */
-	if (state->sp >= state->stack_top) {
-		/* space */
-	}
-
 	*state->sp++ = *val;
 }
 
@@ -278,13 +295,16 @@ enum vm_result vm_call(struct state *state, struct func *fn) {
 	/* TODO: optionally implement direct threading dispatching */
 
 	/* check if we've got enough parameters on the stack */
-	size_t stack_count = (size_t)(state->sp - state->stack);
-	if (fn->proto->nparams > stack_count) {
+	size_t space = (size_t)(state->sp - state->stack);
+	if (fn->proto->nparams > space) {
 		return VM_RESULT_ERROR;
 	}
 
 	/* ensure stack size */
-	stack_ensure(state, fn->nconsts);
+	if (!stack_ensure(state, fn->nconsts)) {
+		return VM_RESULT_ERROR;
+	}
+
 	/* reset the instruction pointer */
 	state->ip = fn->code;
 

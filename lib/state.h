@@ -8,7 +8,8 @@
 #include "opcode.h"
 
 /*
- * represents a state
+ * represents the global state
+ * of a pseu instance
  */
 struct state {
 	struct diagnostic *errors; /* linked list of errors of this state instance */

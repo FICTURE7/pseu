@@ -12,10 +12,7 @@
 
 struct pseu {
 	/* global state instance */
-	struct state state;
-	/* global variables */
-	struct symbol_table *symbols;
-	
+	struct state state;	
 	/* configuration of the pseu instance */
 	pseu_config_t config;
 };
