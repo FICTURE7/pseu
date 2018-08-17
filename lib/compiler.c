@@ -51,6 +51,18 @@ static void gen_block(struct visitor *visitor, struct node_block *block) {
 	}
 }
 
+static void gen_boolean(struct visitor *visitor, struct node_boolean *boolean) {	
+	struct compiler *compiler = visitor->data;
+
+	/* add boolean to list of constants */
+	compiler->consts[compiler->nconsts] = (struct value) {
+		.type = VALUE_TYPE_BOOLEAN,
+		.as_bool = boolean->val
+	};
+
+	emit_push(&compiler->emitter, compiler->nconsts++);
+}
+
 static void gen_integer(struct visitor *visitor, struct node_integer *integer) {	
 	struct compiler *compiler = visitor->data;
 
@@ -58,6 +70,18 @@ static void gen_integer(struct visitor *visitor, struct node_integer *integer) {
 	compiler->consts[compiler->nconsts] = (struct value) {
 		.type = VALUE_TYPE_INTEGER,
 		.as_int = integer->val
+	};
+
+	emit_push(&compiler->emitter, compiler->nconsts++);
+}
+
+static void gen_real(struct visitor *visitor, struct node_real *real) {
+	struct compiler *compiler = visitor->data;
+
+	/* add real to list of constants */
+	compiler->consts[compiler->nconsts] = (struct value) {
+		.type = VALUE_TYPE_REAL,
+		.as_float = real->val
 	};
 
 	emit_push(&compiler->emitter, compiler->nconsts++);
@@ -143,7 +167,9 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	/* initialize the visitor */
 	visitor.data = compiler;
 	visitor.visit_block = gen_block;
+	visitor.visit_boolean = gen_boolean;
 	visitor.visit_integer = gen_integer;
+	visitor.visit_real = gen_real;
 	visitor.visit_string = gen_string;
 	visitor.visit_op_unary = gen_op_unary;
 	visitor.visit_op_binary = gen_op_binary;
