@@ -28,6 +28,9 @@ struct compiler {
 
 	uint8_t nlocals; /* number of locals in the fn */
 	struct variable locals[256]; /* array of locals in the fn */
+
+	struct func *fn; /* function we're compiling */
+	struct proto *proto; /* proto of the function we're compiling */
 };
 
 void compiler_init(struct compiler *compiler, struct state *state);

@@ -109,19 +109,18 @@ static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *ou
 
 void compiler_init(struct compiler *compiler, struct state *state) {
 	compiler->state = state;
+	compiler->proto = calloc(sizeof(struct proto), 1);
+	compiler->proto->rett = (struct type *)&void_type;
+	compiler->fn = calloc(sizeof(struct func), 1);
+	compiler->fn->proto = compiler->proto;
 }
 
 struct func *compiler_compile(struct compiler *compiler, char *src) {
-	struct visitor visitor; /* visitor which will transverse syntax tree */
-	struct proto *proto; /* prototype of the function its compiling */
-	struct node *root; /* root node/syntax tree */
-	struct func *fn; /* function its compiling */
-
-	proto = malloc(sizeof(struct proto));
-	fn = malloc(sizeof(struct func));
+	struct visitor visitor; /* visitor which will transverse the root syntax tree */
+	struct node *root; /* root syntax tree */
 
 	/* make sure we got stuff allocated */
-	if (proto == NULL || fn == NULL) {
+	if (compiler->proto == NULL || compiler->fn == NULL) {
 		return NULL;
 	}
 
@@ -141,6 +140,7 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	/* initialize the code emitter */
 	emitter_init(&compiler->emitter);
 
+	/* initialize the visitor */
 	visitor.data = compiler;
 	visitor.visit_block = gen_block;
 	visitor.visit_integer = gen_integer;
@@ -153,22 +153,15 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	/* emit end of func */
 	emit_halt(&compiler->emitter);
 
-	/* set proto's data */
-	proto->nparams = 0;
-	proto->params = NULL;
-	proto->rett = &void_type;
-
-	/* set the fn's prototype */
-	fn->proto = proto;
 	/* set the function's consts */
-	fn->nconsts = compiler->nconsts;
-	fn->consts = malloc(sizeof(struct value) * compiler->nconsts);
-	memcpy(fn->consts, compiler->consts, sizeof(struct value) * compiler->nconsts);
+	compiler->fn->nconsts = compiler->nconsts;
+	compiler->fn->consts = malloc(sizeof(struct value) * compiler->nconsts);
+	memcpy(compiler->fn->consts, compiler->consts, sizeof(struct value) * compiler->nconsts);
 
 	/* set the function's code */
-	fn->ncode = compiler->emitter.count;
-	fn->code = realloc(compiler->emitter.code, sizeof(instr_t) * fn->ncode); /* trim excess */
+	compiler->fn->ncode = compiler->emitter.count;
+	compiler->fn->code = realloc(compiler->emitter.code, sizeof(instr_t) * compiler->fn->ncode); /* trim excess */
 
 	/* TODO: free `root` node */
-	return fn;
+	return compiler->fn;
 }
