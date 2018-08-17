@@ -16,6 +16,7 @@ set(LIBPSEU_SRC
 	visitor.h
 	value.h  
 	string.h
+	symbol.h
 	state.h
 
 	pseu.c
@@ -30,6 +31,7 @@ set(LIBPSEU_SRC
 	visitor.c
 	value.c
 	string.c
+	symbol.c
 	state.c
 )
 

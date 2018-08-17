@@ -6,6 +6,7 @@
 #include "value.h"
 #include "string.h"
 #include "opcode.h"
+#include "symbol.h"
 
 /*
  * represents the global state
@@ -13,7 +14,8 @@
  */
 struct state {
 	struct diagnostic *errors; /* linked list of errors of this state instance */
-	struct string_table *strings; /* string table in the state */
+	struct string_table *strings; /* string table for interning strings */
+	struct symbol_table *symbols; /* symbols in the state */
 
 	instr_t *ip; /* instruction pointer */
 	struct value *sp;	/* stack pointer (points to top of stack) */

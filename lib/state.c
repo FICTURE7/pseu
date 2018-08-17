@@ -15,8 +15,11 @@ void state_init(struct state *state, pseu_config_t *config) {
 	state->errors = NULL;
 
 	state->strings = malloc(sizeof(struct string_table));	
-	/* intialize the state' string table */
+	state->symbols = malloc(sizeof(struct symbol_table));
+
+	/* intialize the state' string & symbol tables */
 	string_table_init(state->strings);
+	symbol_table_init(state->symbols);
 }
 
 void state_deinit(struct state *state) {
@@ -30,6 +33,7 @@ void state_deinit(struct state *state) {
 		free(current);
 	}
 
+	/* TODO: fix free issues */
 	string_table_deinit(state->strings);
 	//free(state->strings);
 	free(state->stack);
