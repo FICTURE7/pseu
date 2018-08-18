@@ -19,6 +19,10 @@ void symbol_table_init(struct symbol_table *table) {
 	table->items = malloc(sizeof(struct symbol) * table->capacity);
 }
 
+void symbol_table_deinit(struct symbol_table *table) {
+	free(table->items);
+}
+
 unsigned int symbol_table_add(struct symbol_table *table, struct symbol symbol) {
 	if (table->count >= table->capacity) {
 		table_grow(table);

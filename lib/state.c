@@ -35,6 +35,7 @@ void state_deinit(struct state *state) {
 
 	/* TODO: fix free issues */
 	string_table_deinit(state->strings);
+	symbol_table_deinit(state->symbols);
 	//free(state->strings);
 	free(state->stack);
 }
