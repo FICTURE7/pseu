@@ -291,7 +291,7 @@ static int arith(struct state *state, enum vm_op op, struct value *a, struct val
 	return arith_coerce(state, op, a, b, result);
 }
 
-enum vm_result vm_call(struct state *state, struct func *fn) {
+enum vm_result vm_execute(struct state *state, struct func *fn) {
 	/* TODO: optionally implement direct threading dispatching */
 
 	/* check if we've got enough parameters on the stack */

@@ -15,6 +15,6 @@ enum vm_result {
 	VM_RESULT_ERROR
 };
 
-enum vm_result vm_call(struct state *state, struct func *fn);
+enum vm_result vm_execute(struct state *state, struct func *fn);
 
 #endif /* VM_H */

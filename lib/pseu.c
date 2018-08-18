@@ -77,7 +77,7 @@ enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 	}
 
 	/* execute the code */
-	result = vm_call(&pseu->state, fn);
+	result = vm_execute(&pseu->state, fn);
 	/* check if an error occured when running the code */
 	if (result != VM_RESULT_SUCCESS) { 
 		return PSEU_RESULT_ERROR;
