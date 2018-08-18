@@ -123,6 +123,12 @@ static void gen_op_binary(struct visitor *visitor, struct node_op_binary *op_bin
 	emit_op(&compiler->emitter, op_binary->op);
 }
 
+static void gen_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
+	struct compiler *compiler = visitor->data;
+	
+	
+}
+
 static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
 	struct compiler *compiler = visitor->data;
 
@@ -173,6 +179,7 @@ struct func *compiler_compile(struct compiler *compiler, char *src) {
 	visitor.visit_string = gen_string;
 	visitor.visit_op_unary = gen_op_unary;
 	visitor.visit_op_binary = gen_op_binary;
+	visitor.visit_stmt_decl = gen_stmt_decl;
 	visitor.visit_stmt_output = gen_stmt_output;
 	visitor_visit(&visitor, root);
 

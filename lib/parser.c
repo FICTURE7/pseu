@@ -2,9 +2,11 @@
 
 #include <string.h>
 #include "node.h"
+#include "value.h"
 #include "lexer.h"
 #include "string.h"
 #include "parser.h"
+#include "symbol.h"
 #include "diagnostic.h"
 
 #ifdef PARSER_DEBUG
@@ -384,11 +386,21 @@ static struct node *declare_statement(struct parser *parser) {
 	if (parser->token.type != TOK_COLON) {
 		error(parser, parser->token.loc, "expected a ':'");
 	}
-
+	
 	/* eat colon */
 	eat(parser);
 
 	decl->type = (struct node_ident *)identifier(parser);
+
+	struct symbol sym = { 
+		.type = SYMBOL_TYPE_VAR,
+		.as_var = (struct variable) {
+			.ident = decl->ident->val
+		}
+	};
+
+	symbol_table_add(parser->state->symbols, sym);
+
 	/* TODO: register declaration in a symbol table. */
 	return (struct node *)decl;
 }
