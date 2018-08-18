@@ -1,3 +1,4 @@
+#include <string.h>
 #include "symbol.h"
 
 #define SYMBOL_TABLE_INIT_CAPACITY 16
@@ -25,4 +26,29 @@ unsigned int symbol_table_add(struct symbol_table *table, struct symbol symbol) 
 
 	table->items[table->count] = symbol;
 	return (unsigned int)table->count++;
+}
+
+struct symbol *symbol_table_find(struct symbol_table *table, char *name) {
+	for (size_t i = 0; i < table->count; i++) {
+		struct symbol *symbol = &table->items[i];
+		switch (symbol->type) {
+			case SYMBOL_TYPE_FN:
+				if (!strcmp(symbol->as_fn.proto->ident, name)) {
+					return symbol;
+				}
+				break;
+			case SYMBOL_TYPE_VAR:
+				if (!strcmp(symbol->as_var.ident, name)) {
+					return symbol;
+				}
+				break;
+			case SYMBOL_TYPE_TYPE:
+				if (!strcmp(symbol->as_type.ident, name)) {
+					return symbol;
+				}
+				break;
+		}
+	}
+
+	return NULL;
 }
