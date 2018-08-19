@@ -22,6 +22,11 @@ struct state {
 	struct value *stack; /* points to the bottom of the stack */
 	struct value *stack_top; /* points to the top of the stack */
 
+	/* primitive built-in types */
+	struct type *void_type;
+	struct type *string_type;
+	struct type *array_type;
+
 	pseu_config_t *config; /* config of the state */
 };
 

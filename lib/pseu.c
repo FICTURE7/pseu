@@ -13,6 +13,7 @@
 struct pseu {
 	/* global state instance */
 	struct state state;	
+
 	/* configuration of the pseu instance */
 	pseu_config_t config;
 };
@@ -40,6 +41,11 @@ pseu_t *pseu_new(pseu_config_t *config) {
 		memcpy(&pseu->config, config, sizeof(pseu_config_t));
 	}
 
+	/* set the primitive types */
+	pseu->state.void_type = &void_type;
+	pseu->state.string_type = &string_type;
+	pseu->state.array_type = &array_type;
+
 	/* initialize the global state */
 	state_init(&pseu->state, &pseu->config);
 	return pseu;
@@ -59,7 +65,6 @@ void pseu_free(pseu_t *pseu) {
 enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 	struct compiler compiler;
 	enum vm_result result;
-	struct func *fn;
 
 	/* exit early if arguments null */
 	if (pseu == NULL || src == NULL) {
@@ -68,16 +73,15 @@ enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
 
 	/* initialize the compiler */
 	compiler_init(&compiler, &pseu->state);
-
 	/* compile the source to vm bytecode (instr_t) */
-	fn = compiler_compile(&compiler, src);
+	compiler_compile(&compiler, src);
 	/* check if compilation process failed */
-	if (fn == NULL) {
+	if (compiler.fn == NULL) {
 		return PSEU_RESULT_ERROR;
 	}
 
 	/* execute the code */
-	result = vm_execute(&pseu->state, fn);
+	result = vm_execute(&pseu->state, compiler.fn);
 	/* check if an error occured when running the code */
 	if (result != VM_RESULT_SUCCESS) { 
 		return PSEU_RESULT_ERROR;
