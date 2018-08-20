@@ -273,16 +273,16 @@ again:
 	advance(lexer);
 }
 
-void lexer_init(struct lexer *lexer, char *src) {
+void lexer_init(struct lexer *lexer, const char *src) {
 	lexer->src = src;
 	lexer->end = src + strlen(src);
-	lexer->loc.pos = src;
+	lexer->loc.pos = (char *)src;
 	lexer->loc.ln = 1;
 	lexer->loc.col = 1;
 
 #ifdef LEXER_DEBUG
 	struct token token;
-	printf("\nlex(%s)\n", src);
+	printf("\nlex('%s')\n", src);
 
 	lexer_lex(lexer, &token);
 	while (token.type != TOK_EOF) {
@@ -290,7 +290,7 @@ void lexer_init(struct lexer *lexer, char *src) {
 		lexer_lex(lexer, &token);
 	}
 	/* reset */
-	lexer->loc.pos = src;
+	lexer->loc.pos = (char *)src;
 	lexer->loc.ln = 1;
 	lexer->loc.col = 1;
 #endif

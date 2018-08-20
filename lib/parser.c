@@ -502,7 +502,7 @@ void parser_init(struct parser *parser, struct lexer *lexer, struct state *state
 	root = parser_parse(parser);
 	prettyprint_node(root);
 	/* reset */
-	lexer->loc.pos = lexer->src;
+	lexer->loc.pos = (char *)lexer->src;
 	lexer->loc.ln = 1;
 	lexer->loc.col = 1;
 	lexer_lex(lexer, &parser->token);

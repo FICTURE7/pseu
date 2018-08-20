@@ -34,6 +34,6 @@ struct compiler {
 };
 
 void compiler_init(struct compiler *compiler, struct state *state);
-struct func *compiler_compile(struct compiler *compiler, char *src);
+struct func *compiler_compile(struct compiler *compiler, const char *src);
 
 #endif /* COMPILER_H */

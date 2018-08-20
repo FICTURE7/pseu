@@ -73,6 +73,6 @@ void pseu_free(pseu_t *pseu);
  * interprets the specified source using
  * the specified pseu instance
  */
-enum pseu_result pseu_interpret(pseu_t *pseu, char *src);
+enum pseu_result pseu_interpret(pseu_t *pseu, const char *src);
 
 #endif /* PSEU_H */

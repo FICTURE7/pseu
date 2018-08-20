@@ -41,13 +41,14 @@ pseu_t *pseu_new(pseu_config_t *config) {
 		memcpy(&pseu->config, config, sizeof(pseu_config_t));
 	}
 
-	/* set the primitive types */
-	pseu->state.void_type = &void_type;
-	pseu->state.string_type = &string_type;
-	pseu->state.array_type = &array_type;
-
 	/* initialize the global state */
 	state_init(&pseu->state, &pseu->config);
+
+	/* set the primitive types */
+	pseu->state.void_type = (struct type *)&void_type;
+	pseu->state.string_type = (struct type *)&string_type;
+	pseu->state.array_type = (struct type *)&array_type;
+
 	return pseu;
 }
 
@@ -62,14 +63,16 @@ void pseu_free(pseu_t *pseu) {
 	free(pseu);
 }
 
-enum pseu_result pseu_interpret(pseu_t *pseu, char *src) {
-	struct compiler compiler;
-	enum vm_result result;
-
+enum pseu_result pseu_interpret(pseu_t *pseu, const char *src) {
 	/* exit early if arguments null */
 	if (pseu == NULL || src == NULL) {
 		return PSEU_RESULT_ERROR;
 	}
+
+	/* compiler which will compile the source */
+	struct compiler compiler;
+	/* result of the execution of the compiled source */
+	enum vm_result result;
 
 	/* initialize the compiler */
 	compiler_init(&compiler, &pseu->state);

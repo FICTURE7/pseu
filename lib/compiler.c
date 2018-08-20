@@ -145,7 +145,7 @@ void compiler_init(struct compiler *compiler, struct state *state) {
 	compiler->fn->proto = compiler->proto;
 }
 
-struct func *compiler_compile(struct compiler *compiler, char *src) {
+struct func *compiler_compile(struct compiler *compiler, const char *src) {
 	struct visitor visitor; /* visitor which will transverse the root syntax tree */
 	struct node *root; /* root syntax tree */
 
