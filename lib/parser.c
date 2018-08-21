@@ -272,7 +272,7 @@ static struct node *boolean(struct parser *parser) {
 }
 
 /*
- *	primary = string / number / boolean / ("+"/"-"/"NOT") primary / "(" expression ")"
+ *	primary = string / number / boolean / identifier / ("+"/"-"/"NOT") primary / "(" expression ")"
  */
 static struct node *primary(struct parser *parser) {
 	switch (parser->token.type) {
@@ -313,12 +313,13 @@ static struct node *primary(struct parser *parser) {
 		case TOK_LIT_BOOLEAN_FALSE:
 			return boolean(parser);
 
-		/* integer literals */
+		/* number literals */
 		case TOK_LIT_INTEGERHEX:
 		case TOK_LIT_INTEGER:
 		case TOK_LIT_REAL:
 			return number(parser);
 
+		/* variables & stuff */
 		case TOK_IDENT:
 			return identifier(parser);
 
@@ -392,15 +393,6 @@ static struct node *declare_statement(struct parser *parser) {
 
 	decl->type = (struct node_ident *)identifier(parser);
 
-	struct symbol sym = { 
-		.type = SYMBOL_TYPE_VAR,
-		.as_var = (struct variable) {
-			.ident = decl->ident->val
-		}
-	};
-
-	symbol_table_add(parser->state->symbols, sym);
-
 	/* TODO: register declaration in a symbol table. */
 	return (struct node *)decl;
 }
@@ -459,11 +451,13 @@ static struct node *statement(struct parser *parser) {
  *	block = statement | 1*(statement LF)
  */
 static struct node *block(struct parser *parser) {
+	struct node *stmt;
 	struct node_block *block = malloc(sizeof(struct node_block));
 	block->base.type = NODE_BLOCK;
+
 	vector_init(&block->stmts);
 
-	struct node *stmt = statement(parser);
+	stmt = statement(parser);
 	if (stmt) {
 		vector_add(&block->stmts, stmt);
 	}

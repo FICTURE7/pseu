@@ -18,10 +18,10 @@ struct emitter {
 struct compiler {
 	struct state *state; /* state which owns this compiler instance */
 
+	uint8_t depth; /* depth of the compiler, used for scoping */
+
 	struct lexer lexer; /* lexer of the compiler, used by the parser */
 	struct parser parser; /* parser of the compiler */
-
-	struct emitter emitter; /* emitter to emit byte code */
 
 	uint8_t nconsts; /* number of constants in the fn */
 	struct value consts[256]; /* array of constants in the fn */
@@ -29,6 +29,7 @@ struct compiler {
 	uint8_t nlocals; /* number of locals in the fn */
 	struct variable locals[256]; /* array of locals in the fn */
 
+	struct emitter emitter; /* emitter to emit byte code */
 	struct func *fn; /* function we're compiling */
 	struct proto *proto; /* proto of the function we're compiling */
 };

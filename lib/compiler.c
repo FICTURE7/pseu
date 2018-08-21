@@ -51,6 +51,10 @@ static void gen_block(struct visitor *visitor, struct node_block *block) {
 	}
 }
 
+static void gen_ident(struct visitor *visitor, struct node_ident *ident) {
+	/* TODO: look up in table or something */
+}
+
 static void gen_boolean(struct visitor *visitor, struct node_boolean *boolean) {	
 	struct compiler *compiler = visitor->data;
 
@@ -124,9 +128,7 @@ static void gen_op_binary(struct visitor *visitor, struct node_op_binary *op_bin
 }
 
 static void gen_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
-	struct compiler *compiler = visitor->data;
-	
-	
+	/* space */
 }
 
 static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
@@ -139,15 +141,18 @@ static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *ou
 
 void compiler_init(struct compiler *compiler, struct state *state) {
 	compiler->state = state;
+	compiler->depth = 0; /* top level */
+
 	compiler->proto = calloc(sizeof(struct proto), 1);
-	compiler->proto->rett = (struct type *)&void_type;
+	compiler->proto->rett = state->void_type;
+
 	compiler->fn = calloc(sizeof(struct func), 1);
 	compiler->fn->proto = compiler->proto;
 }
 
 struct func *compiler_compile(struct compiler *compiler, const char *src) {
-	struct visitor visitor; /* visitor which will transverse the root syntax tree */
 	struct node *root; /* root syntax tree */
+	struct visitor visitor; /* visitor to transverse the syntax tree */
 
 	/* make sure we got stuff allocated */
 	if (compiler->proto == NULL || compiler->fn == NULL) {
@@ -173,10 +178,11 @@ struct func *compiler_compile(struct compiler *compiler, const char *src) {
 	/* initialize the visitor */
 	visitor.data = compiler;
 	visitor.visit_block = gen_block;
-	visitor.visit_boolean = gen_boolean;
+	visitor.visit_ident = gen_ident;
 	visitor.visit_integer = gen_integer;
 	visitor.visit_real = gen_real;
 	visitor.visit_string = gen_string;
+	visitor.visit_boolean = gen_boolean;
 	visitor.visit_op_unary = gen_op_unary;
 	visitor.visit_op_binary = gen_op_binary;
 	visitor.visit_stmt_decl = gen_stmt_decl;

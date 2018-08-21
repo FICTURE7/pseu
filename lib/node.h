@@ -1,6 +1,7 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <stdint.h>
 #include <stdbool.h>
 #include "token.h"
 #include "value.h"
@@ -41,7 +42,7 @@ enum node_type {
 };
 
 /* === NODES === */
-/* represents a node */
+/* represents a base node */
 struct node {
 	enum node_type type; /* type of node */
 };

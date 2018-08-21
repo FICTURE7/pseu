@@ -73,13 +73,16 @@ enum pseu_result pseu_interpret(pseu_t *pseu, const char *src) {
 	struct compiler compiler;
 	/* result of the execution of the compiled source */
 	enum vm_result result;
+	/* function we've compiled */
+	struct func *fn;
 
 	/* initialize the compiler */
 	compiler_init(&compiler, &pseu->state);
+
 	/* compile the source to vm bytecode (instr_t) */
-	compiler_compile(&compiler, src);
+	fn = compiler_compile(&compiler, src);
 	/* check if compilation process failed */
-	if (compiler.fn == NULL) {
+	if (fn == NULL) {
 		return PSEU_RESULT_ERROR;
 	}
 
