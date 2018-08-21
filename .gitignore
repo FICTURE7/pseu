@@ -2,4 +2,5 @@
 build/
 
 # vim
+.lvimrc
 *.sw[a-p]
