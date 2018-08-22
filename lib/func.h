@@ -11,8 +11,13 @@
  */
 struct func {
 	struct proto *proto; /* prototype of the function */
+
 	size_t nconsts; /* constant count */
 	struct value *consts; /* array of constants */
+
+	size_t nlocals; /* locals count */
+	struct variable *locals; /* array of locals */
+
 	size_t ncode; /* number of instructions in the function */
 	instr_t *code; /* instructions in the function */
 };

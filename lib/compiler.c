@@ -1,9 +1,11 @@
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include "func.h"
 #include "value.h"
 #include "lexer.h"
+#include "utils.h"
 #include "parser.h"
 #include "visitor.h"
 #include "compiler.h"
@@ -14,7 +16,7 @@ static inline void emitter_init(struct emitter *emitter) {
 	emitter->code = malloc(sizeof(instr_t) * emitter->capacity);
 }
 
-static inline void emit(struct emitter *emitter, instr_t instr) {
+static void emit(struct emitter *emitter, instr_t instr) {
 	/* grow emitter if needed */
 	if (emitter->count >= emitter->capacity) {
 		emitter->capacity += 32;
@@ -42,7 +44,35 @@ static inline void emit_output(struct emitter *emitter) {
 }
 
 static inline void emit_op(struct emitter *emitter, enum op_type op) {
-	emit(emitter, op - OP_ADD + 1);
+	emit(emitter, op - OP_ADD + 1); /* TODO: fix this stuff */
+}
+
+static inline int define_const(struct compiler *compiler, struct value val) {
+	if (compiler->nconsts >= MAX_CONSTS) {
+		/* TODO: error */
+		return -1;
+	}
+	
+	compiler->consts[compiler->nconsts] = val;
+	return ++compiler->nconsts;
+}
+
+static inline int declare_local(struct compiler *compiler, struct variable *var) {
+	if (compiler->nlocals >= MAX_LOCALS) {
+		/* TODO: error */
+		return -1;
+	}
+	
+	compiler->locals[compiler->nlocals] = *var;
+	return ++compiler->nlocals;
+}
+
+static inline int declare_global(struct compiler *compiler, struct variable *var) {
+	return symbol_table_add(compiler->state->symbols, NULL);
+}
+
+static inline int declare_func(struct compiler *compiler, struct func *fn) {
+	return -1;
 }
 
 static void gen_block(struct visitor *visitor, struct node_block *block) {
@@ -53,6 +83,19 @@ static void gen_block(struct visitor *visitor, struct node_block *block) {
 
 static void gen_ident(struct visitor *visitor, struct node_ident *ident) {
 	/* TODO: look up in table or something */
+	struct compiler *compiler = visitor->data;
+	bool found = false;
+
+	for (size_t i = 0; i < compiler->nlocals; i++) {
+		if (!strcmp(compiler->locals[i].ident, ident->val)) {
+			found = true;
+			break;
+		}
+	}
+
+	if (!found) {
+		
+	}
 }
 
 static void gen_boolean(struct visitor *visitor, struct node_boolean *boolean) {	
@@ -115,7 +158,7 @@ static void gen_op_unary(struct visitor *visitor, struct node_op_unary *op_unary
 			break;
 
 		default:
-			/* error */
+			ASSERT(false, "expected either OP_ADD or OP_SUB");
 			break;
 	}
 }
@@ -128,7 +171,24 @@ static void gen_op_binary(struct visitor *visitor, struct node_op_binary *op_bin
 }
 
 static void gen_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
-	/* space */
+	struct compiler *compiler = visitor->data;
+	struct variable var = {
+		.ident = decl->ident->val
+	};
+
+	/* look for the type of the variable */
+	if (!strcmp(decl->type->val, "INTEGER")) {
+		
+	} else {
+		/* look up in type table */
+	}
+
+	/* add new variable to array of locals */
+	declare_local(compiler, &var);
+	/* add new variable to symbol table if top level compiler */
+	if (compiler->top == NULL) {
+		declare_global(compiler, &var);
+	}
 }
 
 static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *output) {
@@ -141,8 +201,10 @@ static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *ou
 
 void compiler_init(struct compiler *compiler, struct state *state) {
 	compiler->state = state;
-	compiler->depth = 0; /* top level */
+	compiler->top = NULL; /* set NULL to indicate top level compiler */
 
+	compiler->nlocals = 0;
+	compiler->nconsts = 0;
 	compiler->proto = calloc(sizeof(struct proto), 1);
 	compiler->proto->rett = state->void_type;
 

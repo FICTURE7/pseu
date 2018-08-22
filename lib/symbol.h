@@ -31,7 +31,7 @@ struct symbol_table {
 
 void symbol_table_init(struct symbol_table *table);
 void symbol_table_deinit(struct symbol_table *table);
-unsigned int symbol_table_add(struct symbol_table *table, struct symbol symbol);
+unsigned int symbol_table_add(struct symbol_table *table, struct symbol *symbol);
 struct symbol *symbol_table_find(struct symbol_table *table, char *name);
 
 #endif /* SYMBOL_H */

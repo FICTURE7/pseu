@@ -16,11 +16,13 @@
 	#define ASSERT(cond, msg) do {} while(0)
 #endif
 
+/*
 struct location {
 	char *pos;
 	unsigned int col;
 	unsigned int row;
 };
+*/
 
 struct error {
 	int code;

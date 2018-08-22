@@ -5,7 +5,8 @@
 #include "value.h"
 
 struct visitor {
-	void *data;
+	void *data; /* pointer to user data */
+
 	void (*visit_block)(struct visitor *visitor, struct node_block *block);
 	void (*visit_ident)(struct visitor *visitor, struct node_ident *ident);
 	void (*visit_real)(struct visitor *visitor, struct node_real *real);

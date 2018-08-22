@@ -23,12 +23,12 @@ void symbol_table_deinit(struct symbol_table *table) {
 	free(table->items);
 }
 
-unsigned int symbol_table_add(struct symbol_table *table, struct symbol symbol) {
+unsigned int symbol_table_add(struct symbol_table *table, struct symbol *symbol) {
 	if (table->count >= table->capacity) {
 		table_grow(table);
 	}
 
-	table->items[table->count] = symbol;
+	table->items[table->count] = *symbol;
 	return (unsigned int)table->count++;
 }
 
