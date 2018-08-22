@@ -1,4 +1,4 @@
-#define PARSER_DEBUG
+// #define PARSER_DEBUG
 
 #include <string.h>
 #include "node.h"
@@ -391,7 +391,7 @@ static struct node *declare_statement(struct parser *parser) {
 	/* eat colon */
 	eat(parser);
 
-	decl->type = (struct node_ident *)identifier(parser);
+	decl->type_ident = (struct node_ident *)identifier(parser);
 
 	/* TODO: register declaration in a symbol table. */
 	return (struct node *)decl;

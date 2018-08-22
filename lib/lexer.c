@@ -1,4 +1,4 @@
-#define LEXER_DEBUG
+// #define LEXER_DEBUG
 
 #include <ctype.h>
 #include <stdbool.h>
