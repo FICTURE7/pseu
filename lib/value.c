@@ -3,6 +3,21 @@
 #include <stdbool.h>
 #include "value.h"
 
+const struct type boolean_type = {
+	.ident = "BOOLEAN",
+	.nfields = -1 /* -1 since they are hardcoded fields */
+};
+
+const struct type integer_type = {
+	.ident = "INTEGER",
+	.nfields = -1 /* -1 since they are hardcoded fields */
+};
+
+const struct type real_type = {
+	.ident = "REAL",
+	.nfields = -1 /* -1 since they are hardcoded fields */
+};
+
 const struct type void_type = {
 	.ident = "VOID",
 	.nfields = -1 /* -1 since they are hardcoded fields */

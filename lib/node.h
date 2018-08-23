@@ -96,7 +96,7 @@ struct node_op_binary {
 struct node_stmt_decl {
 	struct node base;
 	struct node_ident *ident;
-	struct node_ident *type;
+	struct node_ident *type_ident;
 };
 
 struct node_stmt_assign {

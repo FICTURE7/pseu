@@ -43,12 +43,6 @@ pseu_t *pseu_new(pseu_config_t *config) {
 
 	/* initialize the global state */
 	state_init(&pseu->state, &pseu->config);
-
-	/* set the primitive types */
-	pseu->state.void_type = (struct type *)&void_type;
-	pseu->state.string_type = (struct type *)&string_type;
-	pseu->state.array_type = (struct type *)&array_type;
-
 	return pseu;
 }
 
@@ -71,10 +65,10 @@ enum pseu_result pseu_interpret(pseu_t *pseu, const char *src) {
 
 	/* compiler which will compile the source */
 	struct compiler compiler;
-	/* result of the execution of the compiled source */
-	enum vm_result result;
 	/* function we've compiled */
 	struct func *fn;
+	/* result of the execution of the compiled source */
+	int result;
 
 	/* initialize the compiler */
 	compiler_init(&compiler, &pseu->state);
@@ -89,7 +83,7 @@ enum pseu_result pseu_interpret(pseu_t *pseu, const char *src) {
 	/* execute the code */
 	result = vm_execute(&pseu->state, fn);
 	/* check if an error occured when running the code */
-	if (result != VM_RESULT_SUCCESS) { 
+	if (result != 0) { 
 		return PSEU_RESULT_ERROR;
 	}
 

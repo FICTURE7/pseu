@@ -2,7 +2,9 @@
 #define VALUE_H
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
+#include "opcode.h"
 #include "location.h"
 
 /* types of values */
@@ -43,12 +45,65 @@ struct variable {
  */
 struct proto {
 	char *ident; /* identifier of the function */
-	size_t nparams; /* parameter count or arity */
+
+	uint8_t nparams; /* parameter count or arity */
 	struct type *params; /* array of parameter types */
+
 	struct type *rett; /* return type */
 	struct location location; /* where in the source code the proto was definied */
 };
 
+/*
+ * represents a function
+ */
+struct func {
+	/* prototype of the function */
+	struct proto *proto; 
+
+	/*
+	 * constant values used by the function
+	 *
+	 * `nconsts` indicates the number of variables
+	 * in `consts`
+	 */
+	uint8_t nconsts; 
+	struct value *consts; 
+
+	/*
+	 * local variables of the functions
+	 *
+	 * `nlocals` indicates the number of variables
+	 * in `locals`
+	 */
+	uint8_t nlocals; 
+	struct variable *locals;
+
+	/*
+	 * instr_t representation of the function, which
+	 * will be interpreted by the vm
+	 *
+	 * `ncode` indicates the number of instructions
+	 * in `code`
+	 */
+	size_t ncode;
+	instr_t *code;
+
+	/* 
+	 * number of slots the function occupies on the stack,
+	 * including locals and stack pushes 
+	 *
+	 * this is used to ensure the vm allocates enough space
+	 * when the function is called
+	 */
+	size_t nslots; 
+};
+
+/* type for boolean values */
+extern const struct type boolean_type;
+/* type for integer values */
+extern const struct type integer_type;
+/* type for real values */
+extern const struct type real_type;
 /* type for void objects */
 extern const struct type void_type;
 /* type for array_object */
@@ -68,7 +123,6 @@ struct object {
 /* represents an array which is within a range */
 struct array_object {
 	struct object base; /* to be an object */
-
 	unsigned int from; /* start index of the array */
 	unsigned int to; /* end index of the array */
 	struct value items[]; /* elements in the array */
@@ -77,7 +131,6 @@ struct array_object {
 /* represents a string object */
 struct string_object {
 	struct object base; /* to be an object */
-
 	unsigned int hash; /* hash of the string */
 	size_t length; /* length of the string */
 	char buffer[]; /* pointer to the NULL terminated string */
@@ -86,7 +139,6 @@ struct string_object {
 /* represents a user defined object */
 struct user_object {
 	struct object base; /* to be an object */
-
 	struct value fields[]; /* fields in the object */
 };
 

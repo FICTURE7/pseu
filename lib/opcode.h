@@ -11,14 +11,18 @@ typedef uint8_t instr_t;
  * check https://en.wikipedia.org/wiki/X_Macro
  * for more information
  */
-#define VM_OP 	\
-	OP(HALT) 	\
-	OP(ADD) 	\
-	OP(SUB) 	\
-	OP(MUL) 	\
-	OP(DIV) 	\
-	OP(PUSH) 	\
-	OP(POP) 	\
+#define VM_OP 		\
+	OP(HALT) 		\
+	OP(ADD) 		\
+	OP(SUB) 		\
+	OP(MUL) 		\
+	OP(DIV) 		\
+	OP(PUSH) 		\
+	OP(POP) 		\
+	OP(GETLOCAL)	\
+	OP(GETGLOBAL)	\
+	OP(SETLOCAL) 	\
+	OP(SETGLOBAL)	\
 	OP(OUTPUT) 
 
 /*

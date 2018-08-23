@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "func.h"
 #include "value.h"
 #include "lexer.h"
 #include "utils.h"
@@ -16,7 +15,9 @@ static inline void emitter_init(struct emitter *emitter) {
 	emitter->code = malloc(sizeof(instr_t) * emitter->capacity);
 }
 
-static void emit(struct emitter *emitter, instr_t instr) {
+static void emit(struct compiler *compiler, instr_t instr) {
+	struct emitter *emitter = &compiler->emitter;
+	
 	/* grow emitter if needed */
 	if (emitter->count >= emitter->capacity) {
 		emitter->capacity += 32;
@@ -26,25 +27,26 @@ static void emit(struct emitter *emitter, instr_t instr) {
 	emitter->code[emitter->count++] = instr;
 }
 
-static inline void emit_halt(struct emitter *emitter) {
-	emit(emitter, VM_OP_HALT);
-}
+static inline void emit_push(struct compiler *compiler, uint8_t index) {
+	struct emitter *emitter = &compiler->emitter;
 
-static inline void emit_push(struct emitter *emitter, uint8_t index) {
 	emit(emitter, VM_OP_PUSH);
 	emit(emitter, index);
+
+	compiler->nslots++;
 }
 
-static inline void emit_pop(struct emitter *emitter) {
-	emit(emitter, VM_OP_POP);
+static inline void emit_getlocal(struct compiler *compiler, uint8_t index) {
+	struct emitter *emitter = &compiler->emitter;
+
+	emit(emitter, VM_OP_GETLOCAL);
+	emit(emitter, index);
+
+	compiler->nslots++;
 }
 
-static inline void emit_output(struct emitter *emitter) {
-	emit(emitter, VM_OP_OUTPUT);
-}
-
-static inline void emit_op(struct emitter *emitter, enum op_type op) {
-	emit(emitter, op - OP_ADD + 1); /* TODO: fix this stuff */
+static inline void emit_op(struct compiler *compiler, enum op_type op) {
+	emit(&compiler->emitter, op - OP_ADD + 1); /* TODO: fix this stuff */
 }
 
 static inline int define_const(struct compiler *compiler, struct value val) {
@@ -68,7 +70,7 @@ static inline int declare_local(struct compiler *compiler, struct variable *var)
 }
 
 static inline int declare_global(struct compiler *compiler, struct variable *var) {
-	return symbol_table_add(compiler->state->symbols, NULL);
+	return 0;
 }
 
 static inline int declare_func(struct compiler *compiler, struct func *fn) {
@@ -82,19 +84,24 @@ static void gen_block(struct visitor *visitor, struct node_block *block) {
 }
 
 static void gen_ident(struct visitor *visitor, struct node_ident *ident) {
-	/* TODO: look up in table or something */
 	struct compiler *compiler = visitor->data;
-	bool found = false;
+	struct variable *var = NULL;
+	uint8_t index;
 
-	for (size_t i = 0; i < compiler->nlocals; i++) {
-		if (!strcmp(compiler->locals[i].ident, ident->val)) {
-			found = true;
+	/* look for variable in the locals of the function */
+	for (index = 0; index < compiler->nlocals; index++) {
+		struct variable *tmp = &compiler->locals[index];
+		if (!strcmp(tmp->ident, ident->val)) {
+			var = tmp;
 			break;
 		}
 	}
 
-	if (!found) {
-		
+	/* not found in local scope, look in global scope/symbol table */
+	if (var == NULL) {
+		/* TODO: emit global n stuff */
+	} else {
+		emit_getlocal(compiler, index);
 	}
 }
 
@@ -107,7 +114,7 @@ static void gen_boolean(struct visitor *visitor, struct node_boolean *boolean) {
 		.as_bool = boolean->val
 	};
 
-	emit_push(&compiler->emitter, compiler->nconsts++);
+	emit_push(compiler, compiler->nconsts++);
 }
 
 static void gen_integer(struct visitor *visitor, struct node_integer *integer) {	
@@ -119,7 +126,7 @@ static void gen_integer(struct visitor *visitor, struct node_integer *integer) {
 		.as_int = integer->val
 	};
 
-	emit_push(&compiler->emitter, compiler->nconsts++);
+	emit_push(compiler, compiler->nconsts++);
 }
 
 static void gen_real(struct visitor *visitor, struct node_real *real) {
@@ -131,7 +138,7 @@ static void gen_real(struct visitor *visitor, struct node_real *real) {
 		.as_float = real->val
 	};
 
-	emit_push(&compiler->emitter, compiler->nconsts++);
+	emit_push(compiler, compiler->nconsts++);
 }
 
 static void gen_string(struct visitor *visitor, struct node_string *string) {
@@ -143,7 +150,7 @@ static void gen_string(struct visitor *visitor, struct node_string *string) {
 		.as_object = (struct object *)string->val
 	};
 
-	emit_push(&compiler->emitter, compiler->nconsts++);
+	emit_push(compiler, compiler->nconsts++);
 }
 
 static void gen_op_unary(struct visitor *visitor, struct node_op_unary *op_unary) {
@@ -154,7 +161,7 @@ static void gen_op_unary(struct visitor *visitor, struct node_op_unary *op_unary
 			break;
 		case OP_SUB:
 			visitor_visit(visitor, op_unary->expr);
-			emit_op(&compiler->emitter, OP_SUB);
+			emit_op(compiler, OP_SUB);
 			break;
 
 		default:
@@ -167,7 +174,7 @@ static void gen_op_binary(struct visitor *visitor, struct node_op_binary *op_bin
 	struct compiler *compiler = visitor->data;
 	visitor_visit(visitor, op_binary->left);
 	visitor_visit(visitor, op_binary->right);
-	emit_op(&compiler->emitter, op_binary->op);
+	emit_op(compiler, op_binary->op);
 }
 
 static void gen_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) {
@@ -176,11 +183,15 @@ static void gen_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) 
 		.ident = decl->ident->val
 	};
 
-	/* look for the type of the variable */
-	if (!strcmp(decl->type->val, "INTEGER")) {
-		
+	/* identifier of the type of the variable */
+	char *type_ident = decl->type_ident->val;
+	struct type *type = symbol_table_get_type(compiler->state->symbols, type_ident);
+
+	/* type not resolved yet */
+	if (type == NULL) {
+
 	} else {
-		/* look up in type table */
+		var.type = type;
 	}
 
 	/* add new variable to array of locals */
@@ -196,7 +207,7 @@ static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *ou
 
 	/* emit the expression first */
 	visitor_visit(visitor, output->expr);
-	emit_output(&compiler->emitter);
+	emit(compiler, VM_OP_OUTPUT);
 }
 
 void compiler_init(struct compiler *compiler, struct state *state) {
@@ -205,6 +216,7 @@ void compiler_init(struct compiler *compiler, struct state *state) {
 
 	compiler->nlocals = 0;
 	compiler->nconsts = 0;
+
 	compiler->proto = calloc(sizeof(struct proto), 1);
 	compiler->proto->rett = state->void_type;
 
@@ -252,12 +264,17 @@ struct func *compiler_compile(struct compiler *compiler, const char *src) {
 	visitor_visit(&visitor, root);
 
 	/* emit end of func */
-	emit_halt(&compiler->emitter);
+	emit(compiler, VM_OP_HALT);
 
 	/* set the function's consts */
 	compiler->fn->nconsts = compiler->nconsts;
 	compiler->fn->consts = malloc(sizeof(struct value) * compiler->nconsts);
 	memcpy(compiler->fn->consts, compiler->consts, sizeof(struct value) * compiler->nconsts);
+
+	/* set the function's locals */
+	compiler->fn->nlocals = compiler->nlocals;
+	compiler->fn->locals = malloc(sizeof(struct value) * compiler->nlocals);
+	memcpy(compiler->fn->locals, compiler->locals, sizeof(struct value) * compiler->nlocals);
 
 	/* set the function's code */
 	compiler->fn->ncode = compiler->emitter.count;

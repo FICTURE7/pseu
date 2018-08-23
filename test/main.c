@@ -20,12 +20,12 @@ int main(int argc, char **argv) {
 
 	/* interpret some pseu code */
 	//int result = pseu_interpret(pseu, "DECLARE x : STRING\nx = \"5\"\nOUTPUT 1+x");
-	int result = pseu_interpret(pseu, "OUTPUT 1+\"5\"");
+	int result = pseu_interpret(pseu, "DECLARE x : INTEGER\nOUTPUT x\n");
 	if (result != PSEU_RESULT_SUCCESS) {
 		fprintf(stderr, "error: failed to interpret code\n");
 	}
 
 	/* free the pseu instance */
-	pseu_free(pseu);
+	//pseu_free(pseu);
 	return result;
 }

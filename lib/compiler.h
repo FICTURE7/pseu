@@ -2,7 +2,6 @@
 #define COMPILER_H
 
 #include <stdbool.h>
-#include "func.h"
 #include "value.h"
 #include "lexer.h"
 #include "parser.h"
@@ -28,6 +27,8 @@ struct compiler {
 	struct parser parser; /* parser of the compiler */
 	struct emitter emitter; /* emitter to emit byte code */
 	struct compiler *top; /* top level compiler, NULL if already top */
+
+	size_t nslots; /* number of slots the function could possibly occupy on the stack */
 
 	uint8_t nconsts; /* number of constants in the fn */
 	struct value consts[MAX_CONSTS]; /* array of constants in the fn */

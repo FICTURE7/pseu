@@ -10,15 +10,12 @@ struct vector {
 };
 
 void vector_init(struct vector *vec);
-
 void vector_deinit(struct vector *vec);
 
 void vector_add(struct vector *vec, void *item);
-
 void vector_remove(struct vector *vec, unsigned int index);
 
 void *vector_get(struct vector *vec, unsigned int index);
-
 void vector_set(struct vector *vec, unsigned int index, void *item);
 
-#endif
+#endif /* VECTOR_H */

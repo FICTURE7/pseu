@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "vm.h"
-#include "func.h"
 #include "state.h"
 #include "value.h"
 #include "lexer.h"
@@ -36,11 +35,11 @@
 static inline bool stack_ensure(struct state *state, size_t size) {
 	/* check if we exceed the max stack size */
 	if (size >= state->config->max_stack_size) {
-		return false ;
+		return false;
 	}
 
 	/* calculate index of sp */
-	size_t cur = state->sp - state->stack;
+	size_t cur = (size_t)(state->sp - state->stack);
 	/* calculate the current size of the stack */
 	size_t cur_size = (size_t)(state->stack_top - state->stack);
 
@@ -291,22 +290,45 @@ static int arith(struct state *state, enum vm_op op, struct value *a, struct val
 	return arith_coerce(state, op, a, b, result);
 }
 
-enum vm_result vm_execute(struct state *state, struct func *fn) {
+int vm_execute(struct state *state, struct func *fn) {
 	/* TODO: optionally implement direct threading dispatching */
 
 	/* check if we've got enough parameters on the stack */
 	size_t space = (size_t)(state->sp - state->stack);
 	if (fn->proto->nparams > space) {
-		return VM_RESULT_ERROR;
+		return 1;
 	}
 
-	/* ensure stack size */
-	if (!stack_ensure(state, fn->nconsts)) {
-		return VM_RESULT_ERROR;
+	/*
+	 * ensure the stack for all the locals in the function
+	 * as well as for the worst case senario, we push all
+	 * constants on the stack
+	 */
+	if (!stack_ensure(state, fn->nlocals + fn->nconsts)) {
+		return 1;
 	}
+
+	struct value *stack_base = state->sp;
 
 	/* reset the instruction pointer */
 	state->ip = fn->code;
+	state->sp = stack_base + fn->nlocals;
+	memset(state->stack, 0, sizeof(struct value) * fn->nlocals);
+
+	for (uint8_t i = 0; i < fn->nlocals; i++) {
+		struct value *val = stack_base + i;
+		struct variable *var = &fn->locals[i];
+
+		if (var->type == state->boolean_type) {
+			val->type = VALUE_TYPE_BOOLEAN;
+		} else if (var->type == state->integer_type) {
+			val->type = VALUE_TYPE_INTEGER;
+		} else if (var->type == state->real_type) {
+			val->type = VALUE_TYPE_REAL;
+		} else {
+			val->type = VALUE_TYPE_OBJECT;
+		}
+	}
 
 	/* vm dispatch loop */
 	while (true) {
@@ -315,7 +337,7 @@ enum vm_result vm_execute(struct state *state, struct func *fn) {
 		switch (op) {
 			case VM_OP_HALT: {
 				/* graceful exit */
-				return VM_RESULT_SUCCESS;
+				return 0;
 			}
 			case VM_OP_PUSH: {
 				/*
@@ -325,6 +347,13 @@ enum vm_result vm_execute(struct state *state, struct func *fn) {
 				unsigned int index = (unsigned int)*state->ip++;
 				struct value *val = &fn->consts[index];
 				stack_push(state, val);
+				break;
+			}
+			case VM_OP_GETLOCAL: {
+				uint8_t index = *state->ip++;
+				//struct variable *var = &fn->locals[index];
+				struct value *val = stack_base + index;
+				stack_push(state, val);	
 				break;
 			}
 			case VM_OP_ADD:
@@ -342,7 +371,7 @@ enum vm_result vm_execute(struct state *state, struct func *fn) {
 
 				/* carry out the arithmetic operation */
 				if (arith(state, op, a, b, &result)) {
-					return VM_RESULT_ERROR;
+					return 1;
 				}
 
 				stack_push(state, &result);
@@ -359,9 +388,9 @@ enum vm_result vm_execute(struct state *state, struct func *fn) {
 			}
 			default: {
 				/* unknown/unhandled instruction */
-				return VM_RESULT_ERROR;
+				return 1;
 			}
 		}
 	}
-	return VM_RESULT_SUCCESS;
+	return 0;
 }
