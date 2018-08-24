@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include "vm.h"
 #include "state.h"
 #include "value.h"
@@ -300,11 +301,10 @@ int vm_execute(struct state *state, struct func *fn) {
 	}
 
 	/*
-	 * ensure the stack for all the locals in the function
-	 * as well as for the worst case senario, we push all
-	 * constants on the stack
+	 * ensure that the stack has enough space for the
+	 * worst case senario
 	 */
-	if (!stack_ensure(state, fn->nlocals + fn->nconsts)) {
+	if (!stack_ensure(state, fn->nslots)) {
 		return 1;
 	}
 
@@ -351,10 +351,16 @@ int vm_execute(struct state *state, struct func *fn) {
 			}
 			case VM_OP_GETLOCAL: {
 				uint8_t index = *state->ip++;
-				//struct variable *var = &fn->locals[index];
 				struct value *val = stack_base + index;
 				stack_push(state, val);	
 				break;
+			}
+			case VM_OP_SETLOCAL: {
+				uint8_t index = *state->ip++;
+				struct value *val = stack_pop(state);
+
+				/* TODO: check type */
+				*(stack_base + index) = *val;
 			}
 			case VM_OP_ADD:
 			case VM_OP_SUB: 

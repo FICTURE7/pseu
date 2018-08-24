@@ -25,6 +25,8 @@ enum token_type {
 	TOK_DOT,
 	TOK_COLON,
 	TOK_EQUAL,
+	TOK_LESS,
+	TOK_ASSIGN,
 	TOK_IDENT,
 
 	TOK_LPAREN,

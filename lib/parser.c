@@ -398,7 +398,7 @@ static struct node *declare_statement(struct parser *parser) {
 }
 
 /*
- *	assign-statement = identifier "=" expression
+ *	assign-statement = identifier "<-" expression
  */
 static struct node *assign_statement(struct parser *parser) {
 	struct node_stmt_assign *assign = malloc(sizeof(struct node_stmt_assign));

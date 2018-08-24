@@ -1,4 +1,4 @@
-// #define LEXER_DEBUG
+#define LEXER_DEBUG
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -363,6 +363,19 @@ again:
 		case '=':
 			token_init(token, TOK_EQUAL, lexer->loc, 1);
 			goto advance_exit;
+		case '<':
+			/* if no character after then it must be a less */
+			if (lexer->loc.pos + 1 >= lexer->end) {
+				token_init(token, TOK_LESS, lexer->loc, 1);
+				goto advance_exit;
+			}
+			
+			p = *(lexer->loc.pos + 1);
+			if (p == '-') {
+				token_init(token, TOK_ASSIGN, lexer->loc, 2);
+				advance(lexer);
+				goto advance_exit;
+			}
 
 		case '(':
 			token_init(token, TOK_LPAREN, lexer->loc, 1);

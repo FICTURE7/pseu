@@ -28,25 +28,21 @@ static void emit(struct compiler *compiler, instr_t instr) {
 }
 
 static inline void emit_push(struct compiler *compiler, uint8_t index) {
-	struct emitter *emitter = &compiler->emitter;
-
-	emit(emitter, VM_OP_PUSH);
-	emit(emitter, index);
+	emit(compiler, VM_OP_PUSH);
+	emit(compiler, index);
 
 	compiler->nslots++;
 }
 
 static inline void emit_getlocal(struct compiler *compiler, uint8_t index) {
-	struct emitter *emitter = &compiler->emitter;
-
-	emit(emitter, VM_OP_GETLOCAL);
-	emit(emitter, index);
+	emit(compiler, VM_OP_GETLOCAL);
+	emit(compiler, index);
 
 	compiler->nslots++;
 }
 
 static inline void emit_op(struct compiler *compiler, enum op_type op) {
-	emit(&compiler->emitter, op - OP_ADD + 1); /* TODO: fix this stuff */
+	emit(compiler, op - OP_ADD + 1); /* TODO: fix this stuff */
 }
 
 static inline int define_const(struct compiler *compiler, struct value val) {
@@ -265,6 +261,11 @@ struct func *compiler_compile(struct compiler *compiler, const char *src) {
 
 	/* emit end of func */
 	emit(compiler, VM_OP_HALT);
+
+	/* set max slots used by the fn */
+	if (compiler->nslots > compiler->fn->nslots) {
+		compiler->fn->nslots = compiler->nslots;
+	}
 
 	/* set the function's consts */
 	compiler->fn->nconsts = compiler->nconsts;
