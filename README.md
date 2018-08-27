@@ -32,8 +32,8 @@ because who would do anything compute-intensive with this. So compromising perfo
 slightly fancier/simpler code should be OK, I think.
 
 #### ETA
-I will try to get this 'done' before the start of the third trimester which should be around
-August, so I can actually start studying/revising to get decent grades XD.
+~~I will try to get this 'done' before the start of the third trimester which should be around
+August~~, so I can actually start studying/revising to get decent grades XD.
 
 #### Maybes?
 Ideas & features which may be implemented, but likely not. ¯\\\_(ツ)\_/¯
@@ -41,6 +41,7 @@ Ideas & features which may be implemented, but likely not. ¯\\\_(ツ)\_/¯
 * Transpiling to Python, Visual Basic, Pascal/Delphi
 * LLVM backend
 * Debugging
+* Getting it to work
 
 ### License
 MIT License
