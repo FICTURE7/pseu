@@ -12,7 +12,7 @@
 /* maximum number of locals in a function */
 #define MAX_LOCALS 256
 
-/* represents an emitter to emit bytecode */
+/* represents an emitter to emit bytecode/instr_t */
 struct emitter {
 	size_t count; /* number of instr in `code` */
 	size_t capacity; /* size of `code` */
@@ -28,7 +28,7 @@ struct compiler {
 	struct emitter emitter; /* emitter to emit byte code */
 	struct compiler *top; /* top level compiler, NULL if already top */
 
-	size_t nslots; /* number of slots the function could possibly occupy on the stack */
+	size_t stack_size; /* size the function could possibly occupy on the stack */
 
 	uint8_t nconsts; /* number of constants in the fn */
 	struct value consts[MAX_CONSTS]; /* array of constants in the fn */
@@ -37,7 +37,7 @@ struct compiler {
 	struct variable locals[MAX_LOCALS]; /* array of locals in the fn */
 
 	struct func *fn; /* function we're compiling */
-	struct proto *proto; /* proto of the function we're compiling */
+	struct proto *proto; /* prototype of the function we're compiling */
 };
 
 void compiler_init(struct compiler *compiler, struct state *state);

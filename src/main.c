@@ -3,9 +3,9 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-	struct pseu *pseu = pseu_new(NULL);
+	pseu_vm_t *vm = pseu_vm_new(NULL);
 
-	pseu_interpret(pseu, "OUTPUT \"xD\"");
-	pseu_free(pseu);
+	pseu_interpret(vm, "OUTPUT \"xD\"");
+	pseu_free(vm);
 	return 0;
 }

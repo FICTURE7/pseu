@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "vm.h"
 #include "value.h"
 #include "lexer.h"
 #include "utils.h"
@@ -28,17 +29,18 @@ static void emit(struct compiler *compiler, instr_t instr) {
 }
 
 static inline void emit_push(struct compiler *compiler, uint8_t index) {
+	/* TODO: improve encoding with pus0 and stuff */
 	emit(compiler, VM_OP_PUSH);
 	emit(compiler, index);
 
-	compiler->nslots++;
+	compiler->stack_size++;
 }
 
 static inline void emit_getlocal(struct compiler *compiler, uint8_t index) {
-	emit(compiler, VM_OP_GETLOCAL);
+	emit(compiler, VM_OP_LD_LOCAL);
 	emit(compiler, index);
 
-	compiler->nslots++;
+	compiler->stack_size++;
 }
 
 static inline void emit_op(struct compiler *compiler, enum op_type op) {
@@ -181,7 +183,7 @@ static void gen_stmt_decl(struct visitor *visitor, struct node_stmt_decl *decl) 
 
 	/* identifier of the type of the variable */
 	char *type_ident = decl->type_ident->val;
-	struct type *type = symbol_table_get_type(compiler->state->symbols, type_ident);
+	struct type *type = symbol_table_get_type(compiler->state->vm->symbols, type_ident);
 
 	/* type not resolved yet */
 	if (type == NULL) {
@@ -214,7 +216,7 @@ void compiler_init(struct compiler *compiler, struct state *state) {
 	compiler->nconsts = 0;
 
 	compiler->proto = calloc(sizeof(struct proto), 1);
-	compiler->proto->rett = state->void_type;
+	compiler->proto->return_type = &state->vm->void_type;
 
 	compiler->fn = calloc(sizeof(struct func), 1);
 	compiler->fn->proto = compiler->proto;
@@ -263,8 +265,8 @@ struct func *compiler_compile(struct compiler *compiler, const char *src) {
 	emit(compiler, VM_OP_HALT);
 
 	/* set max slots used by the fn */
-	if (compiler->nslots > compiler->fn->nslots) {
-		compiler->fn->nslots = compiler->nslots;
+	if (compiler->stack_size > compiler->fn->stack_size) {
+		compiler->fn->stack_size = compiler->stack_size;
 	}
 
 	/* set the function's consts */

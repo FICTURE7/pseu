@@ -6,7 +6,7 @@
 /*
  * represents a pseu instance
  */
-typedef struct pseu pseu_t;
+typedef struct vm pseu_vm_t;
 
 /*
  * represents the type of errors
@@ -30,7 +30,7 @@ enum pseu_warn_type {
 
 /*
  * represents the configuration of a
- * pseu instance
+ * virtual machine
  */
 typedef struct pseu_config {
 	/* max stack size can grow before returning an error */
@@ -39,11 +39,18 @@ typedef struct pseu_config {
 	size_t init_stack_size;
 
 	/* callback whenever pseu wants to print something to the stdout */
-	void (*onprint)(pseu_t *pseu, char *text); 	
+	void (*onprint)(pseu_vm_t *pseu, char *text); 	
 	/* callback whenever pseu has encoutered an error */
-	void (*onerror)(pseu_t *pseu, enum pseu_error_type type, int row, int col, const char *message); 
+	void (*onerror)(pseu_vm_t *pseu, enum pseu_error_type type, int row, int col, const char *message); 
 	/* callback whenever pseu has encoutered a warning  */
-	void (*onwarn)(pseu_t *pseu, enum pseu_warn_type type, int row, int col, const char *message); 
+	void (*onwarn)(pseu_vm_t *pseu, enum pseu_warn_type type, int row, int col, const char *message); 
+
+	/* allocates a block of memory */
+	void *(*alloc)(size_t size);
+	/* reallocates a block of memory */
+	void *(*realloc)(void *ptr, size_t size);
+	/* frees a block of memory */
+	void (*free)(void *ptr);
 } pseu_config_t;
 
 /*
@@ -58,21 +65,23 @@ enum pseu_result {
 };
 
 /*
- * allocates a new pseu instance with the
- * specified configuration
+ * creates a new virtual machine with the specified
+ * `config`.
+ *
+ * returns a pointer to a heap allocated pseu_vm_t
  */
-pseu_t *pseu_new(pseu_config_t *config);
+pseu_vm_t *pseu_vm_new(pseu_config_t *config);
 
 /*
  * frees the specified pseu instance along
  * with its resources
  */
-void pseu_free(pseu_t *pseu);
+void pseu_free(pseu_vm_t *pseu);
 
 /*
  * interprets the specified source using
  * the specified pseu instance
  */
-enum pseu_result pseu_interpret(pseu_t *pseu, const char *src);
+enum pseu_result pseu_interpret(pseu_vm_t *pseu, const char *src);
 
 #endif /* PSEU_H */

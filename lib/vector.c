@@ -1,5 +1,6 @@
 #include <string.h>
 #include "vector.h"
+#include "state.h"
 
 #define VECTOR_INIT_CAPACITY 16
 

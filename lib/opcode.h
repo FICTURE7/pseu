@@ -3,9 +3,6 @@
 
 #include <stdint.h>
 
-/* represents an instruction */
-typedef uint8_t instr_t;
-
 /* 
  * X Macro of vm operations
  * check https://en.wikipedia.org/wiki/X_Macro
@@ -19,19 +16,23 @@ typedef uint8_t instr_t;
 	OP(DIV) 		\
 	OP(PUSH) 		\
 	OP(POP) 		\
-	OP(GETLOCAL)	\
-	OP(GETGLOBAL)	\
-	OP(SETLOCAL) 	\
-	OP(SETGLOBAL)	\
+	OP(LD_GLOBAL)	\
+	OP(ST_GLOBAL)	\
+	OP(LD_LOCAL) 	\
+	OP(ST_LOCAL)	\
 	OP(OUTPUT) 
 
 /*
- * operations the virtual machine is capabale of executing
+ * represents a code
+ * which the virtual machine 
+ * can execute
  */
-enum vm_op {
-	#define OP(_name) VM_OP_##_name,
+enum code {
+	#define OP(x) VM_OP_##x,
 	VM_OP
 	#undef OP
 };
+
+typedef enum code code_t;
 
 #endif /* OPCODE_H */

@@ -18,7 +18,7 @@ enum value_type {
 
 /* represents a value */
 struct value {
-	enum value_type type; /* type of of the value */
+	enum value_type type; /* type of the value */
 	union {
 		bool as_bool; /* value as a boolean */
 		int as_int; /* value as an integer */
@@ -49,7 +49,7 @@ struct proto {
 	uint8_t nparams; /* parameter count or arity */
 	struct type *params; /* array of parameter types */
 
-	struct type *rett; /* return type */
+	struct type *return_type; /* return type */
 	struct location location; /* where in the source code the proto was definied */
 };
 
@@ -80,7 +80,7 @@ struct func {
 
 	/*
 	 * instr_t representation of the function, which
-	 * will be interpreted by the vm
+	 * will be interpreted by the vm/bytecode interpreter
 	 *
 	 * `ncode` indicates the number of instructions
 	 * in `code`
@@ -93,23 +93,10 @@ struct func {
 	 * including locals and stack pushes 
 	 *
 	 * this is used to ensure the vm allocates enough space
-	 * when the function is called
+	 * on the stack when the function is called
 	 */
-	size_t nslots; 
+	size_t stack_size; 
 };
-
-/* type for boolean values */
-extern const struct type boolean_type;
-/* type for integer values */
-extern const struct type integer_type;
-/* type for real values */
-extern const struct type real_type;
-/* type for void objects */
-extern const struct type void_type;
-/* type for array_object */
-extern const struct type array_type;
-/* type for string_object */
-extern const struct type string_type;
 
 /* 
  * represents an instance object

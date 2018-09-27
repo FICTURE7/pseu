@@ -1,10 +1,41 @@
 #ifndef VM_H
 #define VM_H
 
+#include <pseu.h>
 #include "node.h"
 #include "state.h"
 #include "value.h"
 
-int vm_execute(struct state *state, struct func *fn);
+struct vm {
+	/*
+	 * NOTE:
+	 *
+	 * pseu does not provide any synchronizing
+	 * mechanisms for the access of string_table
+	 * and symbol_table by different threads
+	 */
+
+	/* global/main machine state */
+	struct state state;	
+	
+	/* string table for interning strings */
+	struct string_table *strings; 
+	/* symbols in the state */
+	struct symbol_table *symbols; 
+
+	/* primitive built-in types */
+	struct type void_type;
+	struct type boolean_type;
+	struct type integer_type;
+	struct type real_type;
+	struct type string_type;
+	struct type array_type;
+
+	/* configuration of the pseu instance */
+	pseu_config_t config;
+};
+
+struct func *vm_compile(struct state *state, const char *src);
+int vm_call(struct state *state, struct func *fn);
 
 #endif /* VM_H */

@@ -2,37 +2,56 @@
 #define STATE_H
 
 #include <pseu.h>
+#include "error.h"
 #include "value.h"
-#include "string.h"
 #include "opcode.h"
-#include "symbol.h"
 
 /*
  * represents the global state
  * of a pseu instance
  */
 struct state {
-	struct diagnostic *errors; /* linked list of errors of this state instance */
-	struct string_table *strings; /* string table for interning strings */
-	struct symbol_table *symbols; /* symbols in the state */
+	/*
+	 * current error of the state
+	 * NULL when no error
+	 */
+	struct error *error;
 
-	/* primitive built-in types */
-	struct type *boolean_type;
-	struct type *integer_type;
-	struct type *real_type;
-	struct type *void_type;
-	struct type *string_type;
-	struct type *array_type;
+	/* 
+	 * instruction pointer
+	 *
+	 * address of the instruction
+	 * we're executing
+	 */
+	code_t *ip; 
 
-	instr_t *ip; /* instruction pointer */
-	struct value *sp;	/* stack pointer (points to top of stack) */
+	/* 
+	 * stack pointer
+	 *
+	 * address at which the next PUSH
+	 * instruction if going to write
+	 * to
+	 */
+	struct value *sp; 
+
 	struct value *stack; /* points to the bottom of the stack */
-	struct value *stack_top; /* points to the top of the stack */
+	size_t cstack; /* size of the stack */
 
-	pseu_config_t *config; /* config of the state */
+	struct frame *frames; /* call frames */
+	size_t nframes; /* number of call frames */
+
+	pseu_vm_t *vm; /* vm which owns this state */
 };
 
-void state_init(struct state *state, pseu_config_t *config);
+/*
+ * represents a call frame
+ */
+struct frame {
+	struct func *fn; /* function of called in the frame */
+	struct value *base; /* stack base pointer of the frame */
+};
+
+void state_init(struct state *state, pseu_vm_t *vm);
 void state_deinit(struct state *state);
 
 #endif /* STATE_H */

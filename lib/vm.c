@@ -8,6 +8,7 @@
 #include "lexer.h"
 #include "token.h"
 #include "opcode.h"
+#include "compiler.h"
 #include "diagnostic.h"
 
 /* 
@@ -31,35 +32,45 @@
 /*
  * ensures that there is enough
  * stack space for the specified amount
- * of stack values
+ * of stack value slots
+ *
+ * returns true if success; otherwise false
  */
-static inline bool stack_ensure(struct state *state, size_t size) {
-	/* check if we exceed the max stack size */
-	if (size >= state->config->max_stack_size) {
+static inline bool stack_ensure(struct state *state, size_t needed) {
+	/* TODO: rework this */
+	size_t used_slots = (size_t)(state->sp - state->stack);
+	size_t needed_stack_size = used_slots + needed;
+	size_t cur_stack_size = (size_t)(state->stack_top - state->stack);
+
+	/* already have eough stack size */
+	if (cur_stack_size >= needed_stack_size) {
+		return true;
+	}
+
+	/*
+	 * new stack size exceeding the max_stack_size configuration,
+	 * return false
+	 */
+	if (needed_stack_size >= state->vm->config.max_stack_size) {
+		return false;
+	}
+	
+	struct value *old_stack = state->stack;
+	
+	state->stack = realloc(state->stack, needed_stack_size * sizeof(struct value));
+	/* check if realloc failed */
+	if (state->stack == NULL) {
 		return false;
 	}
 
-	/* calculate index of sp */
-	size_t cur = (size_t)(state->sp - state->stack);
-	/* calculate the current size of the stack */
-	size_t cur_size = (size_t)(state->stack_top - state->stack);
-
-	/* check if we need to grow the stack */
-	if (size > cur_size) {
-		struct value *stack;
-
-		stack = state->stack;
-		stack = realloc(state->stack, sizeof(struct value) * size);
-
-		/* check if realloc failed */
-		if (stack == NULL) { 
-			return false;
-		}
-
-		state->stack = stack;
-		state->stack_top = state->stack + size;
-		state->sp = state->stack + cur;
-		return true;
+	/*
+	 * realloc call moved the stack to a new
+	 * location in memory
+	 */
+	if (state->stack != old_stack) {
+		state->sp = state->stack + used_slots;
+		
+		/* update call frame pointers as well */
 	}
 
 	return true;
@@ -69,7 +80,7 @@ static inline bool stack_ensure(struct state *state, size_t size) {
  * pops a value from the top of the
  * stack of the virtual machine
  */
-static inline struct value *stack_pop(struct state *state) {
+static inline struct value *stack_pop(struct state *state) {	
 	return --state->sp;
 }
 
@@ -106,14 +117,17 @@ static void output(struct value *value) {
 				printf("object<NULL>\n");
 			} else {
 				/* TODO: handle arrays as well */
+				/*
 				if (value->as_object->type == &string_type) {
 					struct string_object *string = (struct string_object *)value->as_object;
 					printf("%s\n", string->buffer);
 				} else {
 					printf("object<%p>\n", value->as_object);
 				}
+				*/
 			}
 			break;
+
 		default:
 			printf("unknown(%d)<%p>\n", value->type, value->as_object);
 			break;
@@ -191,6 +205,7 @@ static int arith_real(struct state *state, enum vm_op op, struct value *a, struc
 		case VM_OP_DIV:
 			/* prevent divided by 0s */
 			if (b->as_float == 0) {
+				/* TODO: set proper error message */
 				error(state, NULL);
 				return 1;
 			}
@@ -292,19 +307,24 @@ static int arith(struct state *state, enum vm_op op, struct value *a, struct val
 }
 
 int vm_execute(struct state *state, struct func *fn) {
-	/* TODO: optionally implement direct threading dispatching */
+	#if PSEU_COMPUTED_GOTO
+		/* TODO: implement computed gotos */
+		#error "Pseu does not support computed gotos yet."
+	#else
+		#define INTERPRET() 	\
+			enum vm_op op;		\
+			loop: 				\
+				switch ((op = (enum vm_op)*state->ip++)) 	\
 
-	/* check if we've got enough parameters on the stack */
-	size_t space = (size_t)(state->sp - state->stack);
-	if (fn->proto->nparams > space) {
-		return 1;
-	}
+		#define DISPATCH() goto loop
+		#define CASE(op) case VM_OP_##op
+	#endif
 
 	/*
-	 * ensure that the stack has enough space for the
-	 * worst case senario
+	 * ensure that the stack has enough space to
+	 * execute the function
 	 */
-	if (!stack_ensure(state, fn->nslots)) {
+	if (!stack_ensure(state, fn->stack_size)) {
 		return 1;
 	}
 
@@ -315,10 +335,11 @@ int vm_execute(struct state *state, struct func *fn) {
 	state->sp = stack_base + fn->nlocals;
 	memset(state->stack, 0, sizeof(struct value) * fn->nlocals);
 
-	for (uint8_t i = 0; i < fn->nlocals; i++) {
+	for (unsigned int i = 0; i < fn->nlocals; i++) {
 		struct value *val = stack_base + i;
 		struct variable *var = &fn->locals[i];
 
+		/*
 		if (var->type == state->boolean_type) {
 			val->type = VALUE_TYPE_BOOLEAN;
 		} else if (var->type == state->integer_type) {
@@ -328,75 +349,103 @@ int vm_execute(struct state *state, struct func *fn) {
 		} else {
 			val->type = VALUE_TYPE_OBJECT;
 		}
+		*/
 	}
 
 	/* vm dispatch loop */
-	while (true) {
-		/* fetch instruction at pc */
-		enum vm_op op = (enum vm_op)*state->ip++;
-		switch (op) {
-			case VM_OP_HALT: {
-				/* graceful exit */
-				return 0;
-			}
-			case VM_OP_PUSH: {
-				/*
-				 * pushses the constant at `index` in 
-				 * the current `fn` on the stack
-				 */
-				unsigned int index = (unsigned int)*state->ip++;
-				struct value *val = &fn->consts[index];
-				stack_push(state, val);
-				break;
-			}
-			case VM_OP_GETLOCAL: {
-				uint8_t index = *state->ip++;
-				struct value *val = stack_base + index;
-				stack_push(state, val);	
-				break;
-			}
-			case VM_OP_SETLOCAL: {
-				uint8_t index = *state->ip++;
-				struct value *val = stack_pop(state);
+	INTERPRET() {
+		CASE(PUSH): {
+			/*
+			 * pushses the constant at `index` in 
+			 * the current `fn` on the stack
+			 */
+			unsigned int index = (unsigned int)*state->ip++;
+			struct value *val = &fn->consts[index];
+			stack_push(state, val);
 
-				/* TODO: check type */
-				*(stack_base + index) = *val;
-			}
-			case VM_OP_ADD:
-			case VM_OP_SUB: 
-			case VM_OP_MUL:
-			case VM_OP_DIV: {
-				/*
-				 * pops the last 2 values from the stack
-				 * and carry out the operation on them, 
-				 * then push the result back on the stack
-				 */
-				struct value *a = stack_pop(state);
-				struct value *b = stack_pop(state);	
-				struct value result;
+			DISPATCH();
+		}
+		CASE(LD_LOCAL): {
+			uint8_t index = *state->ip++;
+			struct value *val = stack_base + index;
+			stack_push(state, val);	
 
-				/* carry out the arithmetic operation */
-				if (arith(state, op, a, b, &result)) {
-					return 1;
-				}
+			DISPATCH();
+		}
+		CASE(ST_LOCAL): {
+			uint8_t index = *state->ip++;
+			struct value *val = stack_pop(state);
 
-				stack_push(state, &result);
-				break;
-			}
-			case VM_OP_OUTPUT: {
-				/*
-				 * pop the top value on the stack and 
-				 * print it.
-				 */
-				struct value *val = stack_pop(state);
-				output(val);
-				break;
-			}
-			default: {
-				/* unknown/unhandled instruction */
+			/* TODO: check type */
+			*(stack_base + index) = *val;
+
+			DISPATCH();
+		}
+		CASE(ADD):
+		CASE(SUB): 
+		CASE(MUL):
+		CASE(DIV): {
+			/*
+			 * pops the last 2 values from the stack
+			 * and carry out the operation on them, 
+			 * then push the result back on the stack
+			 */
+			struct value *a = stack_pop(state);
+			struct value *b = stack_pop(state);	
+			struct value result;
+
+			/* carry out the arithmetic operation */
+			if (arith(state, op, a, b, &result)) {
 				return 1;
 			}
+
+			stack_push(state, &result);
+
+			DISPATCH();
+		}
+		CASE(OUTPUT): {
+			/*
+			 * pop the top value on the stack and 
+			 * print it.
+			 */
+			struct value *val = stack_pop(state);
+			output(val);
+
+			DISPATCH();
+		}
+		CASE(HALT): {
+			/* graceful exit */
+			return 0;
 		}
 	}
+
+	/* clean up macros */
+	#undef INTERPRET
+	#undef DISPATCH
+	#undef CASE
+
 	return 0;
 }
+
+struct func *vm_compile(struct state *state, const char *src) {
+	/*
+	 * initialize a compiler
+	 * then compile the source code to an
+	 * anonymous function
+	 */
+	struct compiler compiler;
+	compiler_init(&compiler, state);
+
+	struct func *fn = compiler_compile(&compiler, src);
+	/* check if compilation failed */
+	if (fn == NULL) {
+		return NULL;
+	}
+
+	return fn;
+}
+
+int vm_call(struct state *state, struct func *fn) {
+	return 0;
+}
+

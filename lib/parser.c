@@ -1,6 +1,7 @@
 // #define PARSER_DEBUG
 
 #include <string.h>
+#include "vm.h"
 #include "node.h"
 #include "value.h"
 #include "lexer.h"
@@ -178,7 +179,7 @@ add:
 
 	struct node_string *node = malloc(sizeof(struct node_string));
 	node->base.type = NODE_LIT_STRING;
-	node->val = string_table_intern(parser->state->strings, buf, len);
+	node->val = string_table_intern(parser->state->vm->strings, buf, len);
 
 	/* 
 	 * free buffer, since string_table_intern has duplicated 
