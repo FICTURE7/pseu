@@ -9,15 +9,13 @@
  * for more information
  */
 #define VM_OP 		\
-	OP(HALT) 		\
+	OP(RET) 		\
 	OP(ADD) 		\
 	OP(SUB) 		\
 	OP(MUL) 		\
 	OP(DIV) 		\
 	OP(PUSH) 		\
 	OP(POP) 		\
-	OP(LD_GLOBAL)	\
-	OP(ST_GLOBAL)	\
 	OP(LD_LOCAL) 	\
 	OP(ST_LOCAL)	\
 	OP(OUTPUT) 

@@ -40,21 +40,24 @@ static inline bool stack_ensure(struct state *state, size_t needed) {
 	/* TODO: rework this */
 	size_t used_slots = (size_t)(state->sp - state->stack);
 	size_t needed_stack_size = used_slots + needed;
-	size_t cur_stack_size = (size_t)(state->stack_top - state->stack);
+	size_t cur_stack_size = state->cstack;
 
-	/* already have eough stack size */
+	/* already have enough stack size */
 	if (cur_stack_size >= needed_stack_size) {
 		return true;
 	}
 
 	/*
-	 * new stack size exceeding the max_stack_size configuration,
-	 * return false
+	 * needed stack size exceeding the max_stack_size
+	 * set in the configuration, return false
 	 */
 	if (needed_stack_size >= state->vm->config.max_stack_size) {
 		return false;
 	}
 	
+	/* 
+	 * keep track of old memory location
+	 */
 	struct value *old_stack = state->stack;
 	
 	state->stack = realloc(state->stack, needed_stack_size * sizeof(struct value));
@@ -191,7 +194,7 @@ static inline void integer_to_real(struct value *a) {
 }
 
 /* carries out arithmetic operations on real values */
-static int arith_real(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith_real(struct state *state, enum code op, struct value *a, struct value *b, struct value *result) {
 	switch (op) {
 		case VM_OP_ADD:
 			BINOP_REAL(+, a, b, result);
@@ -219,7 +222,7 @@ static int arith_real(struct state *state, enum vm_op op, struct value *a, struc
 }
 
 /* carries out arithmetic operations on integer values */
-static int arith_integer(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {	
+static int arith_integer(struct state *state, enum code op, struct value *a, struct value *b, struct value *result) {	
 	switch (op) {
 		case VM_OP_ADD:
 			BINOP_INTEGER(+, a, b, result);
@@ -245,7 +248,7 @@ static int arith_integer(struct state *state, enum vm_op op, struct value *a, st
 }
 
 /* coerce values and carries out arithemtic operations on them */
-static int arith_coerce(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith_coerce(struct state *state, enum code op, struct value *a, struct value *b, struct value *result) {
 	/* for when we convert types */
 	struct value na;
 	struct value nb;
@@ -287,7 +290,7 @@ static int arith_coerce(struct state *state, enum vm_op op, struct value *a, str
 }
 
 /* carries out an arithmetic operation */
-static int arith(struct state *state, enum vm_op op, struct value *a, struct value *b, struct value *result) {
+static int arith(struct state *state, enum code op, struct value *a, struct value *b, struct value *result) {
 	/*
 	 * if a & b is both of the same type and is either real or integer,
 	 * carry out the operation directly
@@ -306,15 +309,16 @@ static int arith(struct state *state, enum vm_op op, struct value *a, struct val
 	return arith_coerce(state, op, a, b, result);
 }
 
-int vm_execute(struct state *state, struct func *fn) {
+int vm_call(struct state *state, struct func *fn) {
+	/* define macros */
 	#if PSEU_COMPUTED_GOTO
 		/* TODO: implement computed gotos */
 		#error "Pseu does not support computed gotos yet."
 	#else
-		#define INTERPRET() 	\
-			enum vm_op op;		\
-			loop: 				\
-				switch ((op = (enum vm_op)*state->ip++)) 	\
+		#define DECODE() 									\
+			enum code op;									\
+			loop: 											\
+				switch ((op = (enum code)*state->ip++)) 	\
 
 		#define DISPATCH() goto loop
 		#define CASE(op) case VM_OP_##op
@@ -333,27 +337,9 @@ int vm_execute(struct state *state, struct func *fn) {
 	/* reset the instruction pointer */
 	state->ip = fn->code;
 	state->sp = stack_base + fn->nlocals;
-	memset(state->stack, 0, sizeof(struct value) * fn->nlocals);
-
-	for (unsigned int i = 0; i < fn->nlocals; i++) {
-		struct value *val = stack_base + i;
-		struct variable *var = &fn->locals[i];
-
-		/*
-		if (var->type == state->boolean_type) {
-			val->type = VALUE_TYPE_BOOLEAN;
-		} else if (var->type == state->integer_type) {
-			val->type = VALUE_TYPE_INTEGER;
-		} else if (var->type == state->real_type) {
-			val->type = VALUE_TYPE_REAL;
-		} else {
-			val->type = VALUE_TYPE_OBJECT;
-		}
-		*/
-	}
 
 	/* vm dispatch loop */
-	INTERPRET() {
+	DECODE() {
 		CASE(PUSH): {
 			/*
 			 * pushses the constant at `index` in 
@@ -362,6 +348,11 @@ int vm_execute(struct state *state, struct func *fn) {
 			unsigned int index = (unsigned int)*state->ip++;
 			struct value *val = &fn->consts[index];
 			stack_push(state, val);
+
+			DISPATCH();
+		}
+		CASE(POP): {
+			stack_pop(state);
 
 			DISPATCH();
 		}
@@ -413,14 +404,14 @@ int vm_execute(struct state *state, struct func *fn) {
 
 			DISPATCH();
 		}
-		CASE(HALT): {
+		CASE(RET): {
 			/* graceful exit */
 			return 0;
 		}
 	}
 
 	/* clean up macros */
-	#undef INTERPRET
+	#undef DECODE
 	#undef DISPATCH
 	#undef CASE
 
@@ -444,8 +435,3 @@ struct func *vm_compile(struct state *state, const char *src) {
 
 	return fn;
 }
-
-int vm_call(struct state *state, struct func *fn) {
-	return 0;
-}
-

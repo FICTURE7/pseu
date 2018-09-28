@@ -86,7 +86,7 @@ struct func {
 	 * in `code`
 	 */
 	size_t ncode;
-	instr_t *code;
+	code_t *code;
 
 	/* 
 	 * number of slots the function occupies on the stack,

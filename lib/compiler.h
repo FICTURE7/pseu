@@ -16,7 +16,7 @@
 struct emitter {
 	size_t count; /* number of instr in `code` */
 	size_t capacity; /* size of `code` */
-	instr_t *code; /* buffer containing the instr */
+	code_t *code; /* buffer containing the instr */
 };
 
 /* represents a compiler */

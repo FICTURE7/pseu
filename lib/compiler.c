@@ -13,10 +13,10 @@
 static inline void emitter_init(struct emitter *emitter) {
 	emitter->count = 0;
 	emitter->capacity = 32;
-	emitter->code = malloc(sizeof(instr_t) * emitter->capacity);
+	emitter->code = malloc(sizeof(code_t) * emitter->capacity);
 }
 
-static void emit(struct compiler *compiler, instr_t instr) {
+static void emit(struct compiler *compiler, code_t code) {
 	struct emitter *emitter = &compiler->emitter;
 	
 	/* grow emitter if needed */
@@ -25,7 +25,7 @@ static void emit(struct compiler *compiler, instr_t instr) {
 		emitter->code = realloc(emitter->code, emitter->capacity);
 	}
 
-	emitter->code[emitter->count++] = instr;
+	emitter->code[emitter->count++] = code;
 }
 
 static inline void emit_push(struct compiler *compiler, uint8_t index) {
@@ -262,7 +262,7 @@ struct func *compiler_compile(struct compiler *compiler, const char *src) {
 	visitor_visit(&visitor, root);
 
 	/* emit end of func */
-	emit(compiler, VM_OP_HALT);
+	emit(compiler, VM_OP_RET);
 
 	/* set max slots used by the fn */
 	if (compiler->stack_size > compiler->fn->stack_size) {
@@ -281,7 +281,7 @@ struct func *compiler_compile(struct compiler *compiler, const char *src) {
 
 	/* set the function's code */
 	compiler->fn->ncode = compiler->emitter.count;
-	compiler->fn->code = realloc(compiler->emitter.code, sizeof(instr_t) * compiler->fn->ncode); /* trim excess */
+	compiler->fn->code = realloc(compiler->emitter.code, sizeof(code_t) * compiler->fn->ncode); /* trim excess */
 
 	/* TODO: free `root` node */
 	return compiler->fn;

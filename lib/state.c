@@ -8,10 +8,10 @@
 
 void state_init(struct state *state, pseu_vm_t *vm) {
 	state->vm = vm;
-	state->frames = malloc(sizeof(struct frame) * 8);
 	
-	state->stack = malloc(sizeof(struct value) * vm->config.init_stack_size);
-	state->stack_top = state->stack + vm->config.init_stack_size;
+	state->cstack = vm->config.init_stack_size;
+	state->stack = malloc(sizeof(struct value) * state->cstack);
+
 	state->sp = state->stack;
 
 	state->ip = NULL;

@@ -26,8 +26,10 @@ static void error(struct parser *parser, struct location loc, char *message) {
 	diagnostic->message = message;
 
 	/* add to front of link list */
+	/*
 	diagnostic->next = parser->state->errors;
 	parser->state->errors = diagnostic;
+	*/
 
 #ifdef PARSER_DEBUG
 	printf("error(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
@@ -41,8 +43,10 @@ static void warning(struct parser *parser, struct location loc, char *message) {
 	diagnostic->message = message;
 	
 	/* add to front of link list */
+	/*
 	diagnostic->next = parser->state->errors;
 	parser->state->errors = diagnostic;
+	*/
 
 #ifdef PARSER_DEBUG
 	printf("warning(ln: %d, col: %d): %s\n", loc.ln, loc.col, message);
