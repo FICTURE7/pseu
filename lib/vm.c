@@ -8,6 +8,7 @@
 #include "lexer.h"
 #include "token.h"
 #include "opcode.h"
+#include "symbol.h"
 #include "compiler.h"
 #include "diagnostic.h"
 
@@ -73,7 +74,7 @@ static inline bool stack_ensure(struct state *state, size_t needed) {
 	if (state->stack != old_stack) {
 		state->sp = state->stack + used_slots;
 		
-		/* update call frame pointers as well */
+		/* TODO: update call frame pointers as well */
 	}
 
 	return true;
@@ -101,7 +102,7 @@ static inline void error(struct state *state, struct diagnostic *err) {
 }
 
 /* outputs the specified value */
-static void output(struct value *value) {
+static void output(struct state *state, struct value *value) {
 	switch (value->type) {
 		case VALUE_TYPE_BOOLEAN:
 			printf(value->as_bool ? "TRUE\n" : "FALSE\n");
@@ -309,35 +310,65 @@ static int arith(struct state *state, enum code op, struct value *a, struct valu
 	return arith_coerce(state, op, a, b, result);
 }
 
+static inline void load_frame(struct state *state, struct func *fn) {
+	/*
+	 * ensure that the stack has enough space to
+	 * execute the function
+	 */
+	if (!stack_ensure(state, fn->proto->stack_size)) {
+		return 1;
+	}
+
+	struct frame frame = {
+		.fn = fn,
+		.ip = state->ip,
+		.base = state->sp
+	};
+
+	state->ip = fn->code;
+	state->bp = state->sp;
+	state->frames[state->nframes++] = frame;
+}
+
+static inline void unload_frame(struct state *state) {
+	struct frame *frame = &state->frames[--state->nframes];
+
+	if (frame->ip == NULL) {
+		return;
+	}
+
+	struct value *ret = stack_pop(state);
+
+	state->bp = frame->base;
+	state->sp = frame->base;
+	state->ip = frame->ip;
+
+	stack_push(state, ret);
+}
+
 int vm_call(struct state *state, struct func *fn) {
 	/* define macros */
 	#if PSEU_COMPUTED_GOTO
 		/* TODO: implement computed gotos */
 		#error "Pseu does not support computed gotos yet."
 	#else
-		#define DECODE() 									\
-			enum code op;									\
-			loop: 											\
-				switch ((op = (enum code)*state->ip++)) 	\
+		#define DECODE() 				\
+			code_t op;					\
+			loop: 						\
+				op = *state->ip++;		\
+				switch (op) 			\
 
 		#define DISPATCH() goto loop
 		#define CASE(op) case VM_OP_##op
 	#endif
 
-	/*
-	 * ensure that the stack has enough space to
-	 * execute the function
-	 */
-	if (!stack_ensure(state, fn->stack_size)) {
-		return 1;
-	}
-
-	struct value *stack_base = state->sp;
+	/* load the call frame */
+	load_frame(state, fn);
 
 	/* reset the instruction pointer */
-	state->ip = fn->code;
-	state->sp = stack_base + fn->nlocals;
-
+	//state->ip = fn->code;
+	//state->sp = stack_base + fn->nlocals;
+	
 	/* vm dispatch loop */
 	DECODE() {
 		CASE(PUSH): {
@@ -345,7 +376,7 @@ int vm_call(struct state *state, struct func *fn) {
 			 * pushses the constant at `index` in 
 			 * the current `fn` on the stack
 			 */
-			unsigned int index = (unsigned int)*state->ip++;
+			unsigned int index = *state->ip++;
 			struct value *val = &fn->consts[index];
 			stack_push(state, val);
 
@@ -357,8 +388,8 @@ int vm_call(struct state *state, struct func *fn) {
 			DISPATCH();
 		}
 		CASE(LD_LOCAL): {
-			uint8_t index = *state->ip++;
-			struct value *val = stack_base + index;
+			uint8_t index = (*state->ip++) + 1;
+			struct value *val = state->bp - index;
 			stack_push(state, val);	
 
 			DISPATCH();
@@ -368,7 +399,7 @@ int vm_call(struct state *state, struct func *fn) {
 			struct value *val = stack_pop(state);
 
 			/* TODO: check type */
-			*(stack_base + index) = *val;
+			*(state->bp - index) = *val;
 
 			DISPATCH();
 		}
@@ -400,13 +431,25 @@ int vm_call(struct state *state, struct func *fn) {
 			 * print it.
 			 */
 			struct value *val = stack_pop(state);
-			output(val);
+			output(state, val);
+
+			DISPATCH();
+		}
+		CASE(CALL): {
+			unsigned int index = *state->ip++;
+			struct func *nfn = state->vm->symbols->fns.items[index];
+			load_frame(state, nfn);
 
 			DISPATCH();
 		}
 		CASE(RET): {
-			/* graceful exit */
-			return 0;
+			unload_frame(state);
+			if (state->ip == NULL) {
+				/* graceful exit */
+				return 0;
+			}
+
+			DISPATCH();
 		}
 	}
 

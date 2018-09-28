@@ -11,12 +11,6 @@
  * of a pseu instance
  */
 struct state {
-	/*
-	 * current error of the state
-	 * NULL when no error
-	 */
-	struct error *error;
-
 	/* 
 	 * instruction pointer
 	 *
@@ -29,18 +23,43 @@ struct state {
 	 * stack pointer
 	 *
 	 * address at which the next PUSH
-	 * instruction if going to write
+	 * instruction is going to write
 	 * to
 	 */
 	struct value *sp; 
 
-	struct value *stack; /* points to the bottom of the stack */
-	size_t cstack; /* size of the stack */
+	/*
+	 * base pointer
+	 *
+	 * points to the base of current frame
+	 * in the stack
+	 */
+	struct value *bp;
 
-	struct frame *frames; /* call frames */
-	size_t nframes; /* number of call frames */
+	/*
+	 * stack
+	 *
+	 * points to the bottom of the stack
+	 */
+	struct value *stack; 
+	size_t cstack; 
 
-	pseu_vm_t *vm; /* vm which owns this state */
+	/* call frames */
+	struct frame *frames; 
+	size_t cframes;
+	size_t nframes; 
+
+	/*
+	 * current error of the state
+	 * NULL when no error
+	 */
+	struct error *error;
+
+	/*
+	 * pointer to  the virtual machine
+	 * which owns this state instance
+	 */
+	pseu_vm_t *vm; 
 };
 
 /*
@@ -48,10 +67,13 @@ struct state {
  */
 struct frame {
 	struct func *fn; /* function of called in the frame */
+
+	code_t *ip;
 	struct value *base; /* stack base pointer of the frame */
+	//struct value *bp; /* base pointer */
 };
 
-void state_init(struct state *state, pseu_vm_t *vm);
+void state_init(struct state *state, struct vm *vm);
 void state_deinit(struct state *state);
 
 #endif /* STATE_H */

@@ -265,23 +265,31 @@ struct func *compiler_compile(struct compiler *compiler, const char *src) {
 	emit(compiler, VM_OP_RET);
 
 	/* set max slots used by the fn */
+	/*
 	if (compiler->stack_size > compiler->fn->stack_size) {
 		compiler->fn->stack_size = compiler->stack_size;
 	}
+	*/
 
 	/* set the function's consts */
+	/*
 	compiler->fn->nconsts = compiler->nconsts;
 	compiler->fn->consts = malloc(sizeof(struct value) * compiler->nconsts);
 	memcpy(compiler->fn->consts, compiler->consts, sizeof(struct value) * compiler->nconsts);
+	*/
 
 	/* set the function's locals */
+	/*
 	compiler->fn->nlocals = compiler->nlocals;
 	compiler->fn->locals = malloc(sizeof(struct value) * compiler->nlocals);
 	memcpy(compiler->fn->locals, compiler->locals, sizeof(struct value) * compiler->nlocals);
+	*/
 
 	/* set the function's code */
+	/*
 	compiler->fn->ncode = compiler->emitter.count;
-	compiler->fn->code = realloc(compiler->emitter.code, sizeof(code_t) * compiler->fn->ncode); /* trim excess */
+	compiler->fn->code = realloc(compiler->emitter.code, sizeof(code_t) * compiler->fn->ncode); 
+	*/
 
 	/* TODO: free `root` node */
 	return compiler->fn;

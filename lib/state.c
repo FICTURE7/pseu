@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include "vm.h"
 #include "state.h"
-#include "value.h"
-#include "string.h"
-#include "diagnostic.h"
 
-void state_init(struct state *state, pseu_vm_t *vm) {
+void state_init(struct state *state, struct vm *vm) {
 	state->vm = vm;
 	
+	state->cframes = 8;
+	state->nframes = 0;
+	state->frames = malloc(sizeof(struct frame) * state->cframes);
+
 	state->cstack = vm->config.init_stack_size;
 	state->stack = malloc(sizeof(struct value) * state->cstack);
 

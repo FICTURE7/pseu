@@ -36,7 +36,7 @@ struct type {
 
 /* represents a variable */
 struct variable {
-	char *ident; /* identifier of the variable */
+	const char *ident; /* identifier of the variable */
 	struct type *type; /* type of the variable */
 };
 
@@ -44,13 +44,21 @@ struct variable {
  * represents a function prototype
  */
 struct proto {
-	char *ident; /* identifier of the function */
+	const char *ident; /* identifier of the function */
 
 	uint8_t nparams; /* parameter count or arity */
-	struct type *params; /* array of parameter types */
+	struct type **param_types; /* array of parameter types */
 
 	struct type *return_type; /* return type */
 	struct location location; /* where in the source code the proto was definied */
+
+	/* 
+	 * number of slots the function occupies on the stack
+	 *
+	 * this is used to ensure the vm allocates enough space
+	 * on the stack when the function is called
+	 */
+	size_t stack_size; 
 };
 
 /*
@@ -87,15 +95,6 @@ struct func {
 	 */
 	size_t ncode;
 	code_t *code;
-
-	/* 
-	 * number of slots the function occupies on the stack,
-	 * including locals and stack pushes 
-	 *
-	 * this is used to ensure the vm allocates enough space
-	 * on the stack when the function is called
-	 */
-	size_t stack_size; 
 };
 
 /* 

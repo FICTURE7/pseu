@@ -18,7 +18,8 @@
 	OP(POP) 		\
 	OP(LD_LOCAL) 	\
 	OP(ST_LOCAL)	\
-	OP(OUTPUT) 
+	OP(OUTPUT) 		\
+	OP(CALL)		\
 
 /*
  * represents a code
