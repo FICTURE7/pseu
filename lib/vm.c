@@ -80,27 +80,6 @@ static inline bool stack_ensure(struct state *state, size_t needed) {
 	return true;
 }
 
-/*
- * pops a value from the top of the
- * stack of the virtual machine
- */
-static inline struct value *stack_pop(struct state *state) {	
-	return --state->sp;
-}
-
-/*
- * pushes a value on top of the
- * stack of the virtual machine
- */
-static inline void stack_push(struct state *state, struct value *val) {
-	*state->sp++ = *val;
-}
-
-/* adds an error the list of errors in the specified state */
-static inline void error(struct state *state, struct diagnostic *err) {
-	/* space */
-}
-
 /* outputs the specified value */
 static void output(struct state *state, struct value *value) {
 	switch (value->type) {
@@ -210,7 +189,7 @@ static int arith_real(struct state *state, enum code op, struct value *a, struct
 			/* prevent divided by 0s */
 			if (b->as_float == 0) {
 				/* TODO: set proper error message */
-				error(state, NULL);
+				//error(state, NULL);
 				return 1;
 			}
 
@@ -310,65 +289,65 @@ static int arith(struct state *state, enum code op, struct value *a, struct valu
 	return arith_coerce(state, op, a, b, result);
 }
 
-static inline void load_frame(struct state *state, struct func *fn) {
-	/*
-	 * ensure that the stack has enough space to
-	 * execute the function
-	 */
-	if (!stack_ensure(state, fn->proto->stack_size)) {
-		return 1;
-	}
-
-	struct frame frame = {
-		.fn = fn,
-		.ip = state->ip,
-		.base = state->sp
-	};
-
-	state->ip = fn->code;
-	state->bp = state->sp;
-	state->frames[state->nframes++] = frame;
-}
-
-static inline void unload_frame(struct state *state) {
-	struct frame *frame = &state->frames[--state->nframes];
-
-	if (frame->ip == NULL) {
-		return;
-	}
-
-	struct value *ret = stack_pop(state);
-
-	state->bp = frame->base;
-	state->sp = frame->base;
-	state->ip = frame->ip;
-
-	stack_push(state, ret);
+/* adds an error the list of errors in the specified state */
+static inline void error(struct state *state, struct diagnostic *err) {
+	/* space */
 }
 
 int vm_call(struct state *state, struct func *fn) {
-	/* define macros */
+	/* 
+	 * define virtual machine
+	 * macros which are very similar
+	 * to those in wren
+	 *
+	 * TODO: implemented computed gotos
+	 */
+	#define VM_DEBUG
+
+	#if VM_DEBUG
+		#define VM_DEBUG_CODE()
+	else
+		#define VM_DEBUG_CODE()
+	#endif
+
 	#if PSEU_COMPUTED_GOTO
-		/* TODO: implement computed gotos */
 		#error "Pseu does not support computed gotos yet."
 	#else
 		#define DECODE() 				\
 			code_t op;					\
 			loop: 						\
-				op = *state->ip++;		\
+				op = READ_BYTE();		\
+				VM_DEBUG_CODE();		\
 				switch (op) 			\
 
 		#define DISPATCH() goto loop
-		#define CASE(op) case VM_OP_##op
+		#define CASE(x) case VM_OP_##x
 	#endif
 
-	/* load the call frame */
-	load_frame(state, fn);
+	#define POP() (*sp++)
+	#define PUSH(x) (*sp = (x))
+	#define DROP() (sp++)
 
-	/* reset the instruction pointer */
-	//state->ip = fn->code;
-	//state->sp = stack_base + fn->nlocals;
-	
+	#define READ_BYTE() (*ip++)
+	#define READ_SHORT() ((uint16_t)(READ_BYTE() << 8 | READ_BYTE()))
+
+	#define FRAME_PUSH(x)	\
+		do {				\
+		} while (false);	\
+
+	#define FRAME_POP()		\
+		do {				\
+		} while (false);	\
+
+	register code_t *ip;
+	register struct value *sp;
+
+	/*
+	 * store the current function
+	 * we're running as a frame
+	 */
+	FRAME_PUSH();
+
 	/* vm dispatch loop */
 	DECODE() {
 		CASE(PUSH): {
@@ -376,27 +355,26 @@ int vm_call(struct state *state, struct func *fn) {
 			 * pushses the constant at `index` in 
 			 * the current `fn` on the stack
 			 */
-			unsigned int index = *state->ip++;
+			uint8_t index = READ_BYTE();
 			struct value *val = &fn->consts[index];
-			stack_push(state, val);
 
+			PUSH(*val);
 			DISPATCH();
 		}
 		CASE(POP): {
-			stack_pop(state);
-
+			DROP();
 			DISPATCH();
 		}
 		CASE(LD_LOCAL): {
-			uint8_t index = (*state->ip++) + 1;
+			uint8_t index = READ_BYTE() + 1;
 			struct value *val = state->bp - index;
-			stack_push(state, val);	
 
+			PUSH(*val);
 			DISPATCH();
 		}
 		CASE(ST_LOCAL): {
-			uint8_t index = *state->ip++;
-			struct value *val = stack_pop(state);
+			uint8_t index = READ_BYTE(); 
+			struct value *val = &POP();
 
 			/* TODO: check type */
 			*(state->bp - index) = *val;
@@ -412,8 +390,8 @@ int vm_call(struct state *state, struct func *fn) {
 			 * and carry out the operation on them, 
 			 * then push the result back on the stack
 			 */
-			struct value *a = stack_pop(state);
-			struct value *b = stack_pop(state);	
+			struct value *a = &POP();
+			struct value *b = &POP();	
 			struct value result;
 
 			/* carry out the arithmetic operation */
@@ -421,8 +399,7 @@ int vm_call(struct state *state, struct func *fn) {
 				return 1;
 			}
 
-			stack_push(state, &result);
-
+			PUSH(result);
 			DISPATCH();
 		}
 		CASE(OUTPUT): {
@@ -430,20 +407,37 @@ int vm_call(struct state *state, struct func *fn) {
 			 * pop the top value on the stack and 
 			 * print it.
 			 */
-			struct value *val = stack_pop(state);
+			struct value *val = &POP();
 			output(state, val);
 
 			DISPATCH();
 		}
 		CASE(CALL): {
-			unsigned int index = *state->ip++;
+			/*
+			 * read the index of the function
+			 * in the global symbol table
+			 */
+			uint16_t index = READ_SHORT();
 			struct func *nfn = state->vm->symbols->fns.items[index];
-			load_frame(state, nfn);
 
+			/* 
+			 * push the frame to the
+			 * call frame stack
+			 */
+			FRAME_PUSH(nfn);
 			DISPATCH();
 		}
 		CASE(RET): {
-			unload_frame(state);
+			/*
+			 * pop a call frame from the
+			 * call frame stack
+			 */
+			FRAME_POP();
+
+			/*
+			 * reached end of frames,
+			 * exit and return 0
+			 */
 			if (state->ip == NULL) {
 				/* graceful exit */
 				return 0;
@@ -457,6 +451,16 @@ int vm_call(struct state *state, struct func *fn) {
 	#undef DECODE
 	#undef DISPATCH
 	#undef CASE
+
+	#undef POP
+	#undef PUSH
+	#undef DROP
+
+	#undef READ_BYTE
+	#undef READ_SHORT
+	
+	#undef FRAME_POP
+	#undef FRAME_PUSH
 
 	return 0;
 }
