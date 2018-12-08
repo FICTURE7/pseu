@@ -38,4 +38,8 @@ struct vm {
 struct func *vm_compile(struct state *state, const char *src);
 int vm_call(struct state *state, struct func *fn);
 
+void *vm_alloc(struct vm *vm, size_t size);
+void *vm_realloc(struct vm *vm, void *ptr, size_t size);
+void vm_free(struct vm *vm, void *ptr);
+
 #endif /* VM_H */

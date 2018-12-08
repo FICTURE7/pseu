@@ -482,3 +482,15 @@ struct func *vm_compile(struct state *state, const char *src) {
 
 	return fn;
 }
+
+void *vm_alloc(struct vm *vm, size_t size) {
+	return vm->config.alloc(size);
+}
+
+void *vm_realloc(struct vm *vm, void *ptr, size_t size) {
+	return vm->config.realloc(ptr, size);
+}
+
+void vm_free(struct vm *vm, void *ptr, size_t size) {
+	return vm->config.free(ptr);
+}
