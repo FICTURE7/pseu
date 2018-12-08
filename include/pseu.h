@@ -3,85 +3,136 @@
 
 #include <stdlib.h>
 
-/*
- * represents a pseu instance
+/**
+ * Represents a pseu virtual machine instance.
  */
 typedef struct vm pseu_vm_t;
 
-/*
- * represents the type of errors
+/**
+ * Type of errors.
  */
 enum pseu_error_type {
-	/* run time error */
+	/** Runtime error. */
 	PSEU_ERROR_RUNTIME,
-	/* compile time error */
+	/** Compile time error. */
 	PSEU_ERROR_COMPILE
 };
 
-/*
- * represents the type of warnings
+/**
+ * Type of warnings.
  */
 enum pseu_warn_type {
-	/* run time warning */
+	/** Runtime warning. */
 	PSEU_WARN_RUNTIME,
-	/* compile time warning */
+	/** Compile time warning. */
 	PSEU_WARN_COMPILE
 };
 
-/*
- * represents the configuration of a
- * virtual machine
+/**
+ * Represents the configuration of a pseu virtual machine.
  */
 typedef struct pseu_config {
-	/* max stack size can grow before returning an error */
+	/** Maximum stack size can grow before returning an error. */
 	size_t max_stack_size;
-	/* intial stack size */
+	/** Intial stack size. */
 	size_t init_stack_size;
 
-	/* callback whenever pseu wants to print something to the stdout */
-	void (*onprint)(pseu_vm_t *pseu, char *text); 	
-	/* callback whenever pseu has encoutered an error */
-	void (*onerror)(pseu_vm_t *pseu, enum pseu_error_type type, int row, int col, const char *message); 
-	/* callback whenever pseu has encoutered a warning  */
-	void (*onwarn)(pseu_vm_t *pseu, enum pseu_warn_type type, int row, int col, const char *message); 
+	/** 
+	 * Callback whenever pseu wants to write to the standard output.
+	 *
+	 * @param[in] pseu Pseu instance.
+	 * @param[in] text Text to write to the standard output.
+	 */
+	void (*onprint)(pseu_vm_t *pseu, const char *text); 	
 
-	/* allocates a block of memory */
+	/** 
+	 * Callback whenever pseu has encoutered an error.
+	 *
+	 * @param[in] pseu Pseu instance.
+	 * @param[in] type Type of error.
+	 * @param[in] row Row in source which caused the error.
+	 * @param[in] col Column in source which caused the error.
+	 * @param[in] message Message describing the error.
+	 */
+	void (*onerror)(pseu_vm_t *pseu, enum pseu_error_type type,
+			int row, int col, const char *message); 
+
+	/** 
+	 * Callback whenever pseu has encoutered a warning.
+	 *
+	 * @param[in] pseu Pseu instance.
+	 * @param[in] type Type of warning.
+	 * @param[in] row Row in source which caused the error.
+	 * @param[in] col Column in source which caused the error.
+	 * @param[in] message Message describing the error.
+	 */
+	void (*onwarn)(pseu_vm_t *pseu, enum pseu_warn_type type,
+			int row, int col, const char *message); 
+
+	/**
+	 * Fuction to allocate a block of memory of the specified size.
+	 *
+	 * @param[in] size Size of block to allocate.
+	 * @returns Pointer to block if success; otherwise NULL if failed.
+	 *
+	 * @note The returned block may not necessarily return 0'd (zerod) memory.
+	 */
 	void *(*alloc)(size_t size);
-	/* reallocates a block of memory */
+
+	/** 
+	 * Function to reallocates a block of memory to a new size.
+	 *
+	 * @param[in] ptr Pointer to block reallocate
+	 * @param[in] size New size of block.
+	 * @returns Pointer to block if success; otherwise NULL if failed.
+	 */
 	void *(*realloc)(void *ptr, size_t size);
-	/* frees a block of memory */
+
+	/** 
+	 * Function to free a block of memory.
+	 *
+	 * @param[in] Pointer to block to free.
+	 */
 	void (*free)(void *ptr);
 } pseu_config_t;
 
-/*
- * represents the type of results
- * when interpreting some pseu code
+/**
+ * Type of results after code interpretation.
  */
 enum pseu_result {
-	/* successfully interpreted code */
+	/** Successfully interpreted code. */
 	PSEU_RESULT_SUCCESS,
-	/* error when interpreting code */
+	/** Error when interpreting code. */
 	PSEU_RESULT_ERROR
 };
 
 /*
- * creates a new virtual machine with the specified
- * `config`.
+ * Creates a new instance of a pseu virtual machine with the specified 
+ * configuration.
  *
- * returns a pointer to a heap allocated pseu_vm_t
+ * @param[in] config Pseu virtual machine configuration.
+ *
+ * @return Pointer to pseu virtual machine instance if success; otherwise
+ * returns NULL.
  */
 pseu_vm_t *pseu_vm_new(pseu_config_t *config);
 
 /*
- * frees the specified pseu instance along
- * with its resources
+ * Frees the specified pseu virtual machine instance.
+ *
+ * @param[in] pseu Pseu instance to free.
  */
 void pseu_free(pseu_vm_t *pseu);
 
-/*
- * interprets the specified source using
- * the specified pseu instance
+/**
+ * Interprets the specified pseu source code.
+ * 
+ * @param[in] pseu Pseu instance.
+ * @param[in] src Source code to interpret.
+ *
+ * @retval PSEU_RESULT_SUCCESS When success.
+ * @retval PSEU_RESULT_ERROR When failed.
  */
-enum pseu_result pseu_interpret(pseu_vm_t *pseu, const char *src);
+int pseu_interpret(pseu_vm_t *pseu, const char *src);
 
 #endif /* PSEU_H */
