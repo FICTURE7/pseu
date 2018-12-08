@@ -1,46 +1,82 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+
 #include "value.h"
 #include "lexer.h"
 #include "parser.h"
 #include "opcode.h"
 
-/* maximum number of constant in a function */
+/* Maximum number of constant in a function. */
 #define MAX_CONSTS 256
-/* maximum number of locals in a function */
+/* Maximum number of locals in a function. */
 #define MAX_LOCALS 256
 
-/* represents an emitter to emit bytecode/instr_t */
+/* Represents an emitter to emit virtual machine bytecode/code_t. */
 struct emitter {
-	size_t count; /* number of instr in `code` */
-	size_t capacity; /* size of `code` */
-	code_t *code; /* buffer containing the instr */
+	/* Number of instr in `code` block. */
+	size_t count;
+	/* Capacity of `code` block. */
+	size_t capacity;
+	/* Block of memory containing the code. */
+	code_t *code; 
 };
 
-/* represents a compiler */
+/* 
+ * Represents a pseu source code compiler, which compiles source code to a
+ * function. 
+ */
 struct compiler {
-	struct state *state; /* state which owns this compiler instance */
+	/* State which owns this compiler instance. */
+	struct state *state;
 
-	struct lexer lexer; /* lexer of the compiler, used by the parser */
-	struct parser parser; /* parser of the compiler */
-	struct emitter emitter; /* emitter to emit byte code */
-	struct compiler *top; /* top level compiler, NULL if already top */
+	/* Lexer of the compiler, used by the parser. */
+	struct lexer lexer;
+	/* Parser of the compiler. */
+	struct parser parser;
+	/* Emitter to emit virtual machine bytecode. */
+	struct emitter emitter;
+	/* Top level compiler; NULL if already top. */
+	struct compiler *top;
 
-	size_t stack_size; /* size the function could possibly occupy on the stack */
+	/* Maximum size the function could occupy on the virtual machine stack. */
+	size_t stack_size;
 
-	uint8_t nconsts; /* number of constants in the fn */
-	struct value consts[MAX_CONSTS]; /* array of constants in the fn */
+	/* Number of constants in the function. */
+	uint8_t nconsts;
+	/* Array of constants in the function. */
+	struct value consts[MAX_CONSTS];
 
-	uint8_t nlocals; /* number of locals in the fn */
-	struct variable locals[MAX_LOCALS]; /* array of locals in the fn */
+	/* Number of locals in the function. */
+	uint8_t nlocals;
+	/* Array of locals in the function.*/
+	struct variable locals[MAX_LOCALS];
 
-	struct func *fn; /* function we're compiling */
-	struct proto *proto; /* prototype of the function we're compiling */
+	/* Function we're compiling. */
+	struct func *fn;
+	/* Prototype of the function we're compiling. */
+	struct proto *proto;
 };
 
+/**
+ * Initializes the specified compiler with the specified state which owns the
+ * compiler instance.
+ *
+ * @param[in] compiler Compiler instance.
+ * @param[in] state State instance.
+ */
 void compiler_init(struct compiler *compiler, struct state *state);
+
+/**
+ * Compiles the specified pseu source code to a function using the specified
+ * initialized compiler.
+ *
+ * @param[in] compiler Compiler instance.
+ * @param[in] src Pseu source code to initialize.
+ * @return Function compiled if success; otherwise returns NULL.
+ */
 struct func *compiler_compile(struct compiler *compiler, const char *src);
 
 #endif /* COMPILER_H */
