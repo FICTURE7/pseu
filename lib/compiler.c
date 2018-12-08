@@ -1,7 +1,9 @@
+#include <assert.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
 #include "vm.h"
 #include "value.h"
 #include "lexer.h"
@@ -29,7 +31,7 @@ static void emit(struct compiler *compiler, code_t code) {
 }
 
 static inline void emit_push(struct compiler *compiler, uint8_t index) {
-	/* TODO: improve encoding with pus0 and stuff */
+	/* TODO: improve encoding with push0 and stuff */
 	emit(compiler, VM_OP_PUSH);
 	emit(compiler, index);
 
@@ -37,6 +39,7 @@ static inline void emit_push(struct compiler *compiler, uint8_t index) {
 }
 
 static inline void emit_getlocal(struct compiler *compiler, uint8_t index) {
+	/* TODO: improve encoding with LD_LOCAL0 and stuff */
 	emit(compiler, VM_OP_LD_LOCAL);
 	emit(compiler, index);
 
@@ -44,7 +47,8 @@ static inline void emit_getlocal(struct compiler *compiler, uint8_t index) {
 }
 
 static inline void emit_op(struct compiler *compiler, enum op_type op) {
-	emit(compiler, op - OP_ADD + 1); /* TODO: fix this stuff */
+	/* TODO: fix this stuff */
+	emit(compiler, op - OP_ADD + 1);
 }
 
 static inline int define_const(struct compiler *compiler, struct value val) {
@@ -209,6 +213,8 @@ static void gen_stmt_output(struct visitor *visitor, struct node_stmt_output *ou
 }
 
 void compiler_init(struct compiler *compiler, struct state *state) {
+	assert(compiler && state);
+
 	compiler->state = state;
 	compiler->top = NULL; /* set NULL to indicate top level compiler */
 
@@ -223,6 +229,8 @@ void compiler_init(struct compiler *compiler, struct state *state) {
 }
 
 struct func *compiler_compile(struct compiler *compiler, const char *src) {
+	assert(compiler && src);
+
 	struct node *root; /* root syntax tree */
 	struct visitor visitor; /* visitor to transverse the syntax tree */
 
