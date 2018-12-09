@@ -64,8 +64,8 @@ pseu_vm_t *pseu_vm_new(pseu_config_t *config) {
 	 */
 
 	/* Allocate global string table and global symbols table. */
-	vm->strings = vm_alloc(vm, sizeof(struct string_table));
-	vm->symbols = vm_alloc(vm, sizeof(struct symbol_table));
+	vm->strings = malloc(sizeof(struct string_table));
+	vm->symbols = malloc(sizeof(struct symbol_table));
 
 	/* Initialize global state, global string table and global symbols table. */
 	state_init(&vm->state, vm);
