@@ -1,5 +1,7 @@
-#include "string.h"
+#include <assert.h>
 #include <string.h>
+
+#include "pseu_string.h"
 
 #define STRING_TABLE_INIT_CAPACITY 16
 
@@ -48,7 +50,10 @@ static void table_resize(struct string_table *table, size_t capacity) {
 	}
 }
 
-void string_table_init(struct string_table *table) {
+void string_table_init(pseu_vm_t *vm, struct string_table *table) {
+	assert(table && vm);
+
+	table->vm = vm;
 	table->capacity = STRING_TABLE_INIT_CAPACITY;
 	table->count = 0;
 	table->entries = calloc(1, sizeof(struct string_table_entry *) * STRING_TABLE_INIT_CAPACITY);
@@ -81,7 +86,7 @@ struct string_object *string_table_intern(struct string_table *table, char *buff
 
 	if (entry == NULL) {
 		/* create new entry if not found */
-		string = object_new_string(buffer, length, hash);
+		//string = object_new_string(buffer, length, hash);
 		entry = table_entry_new(string);
 
 		table->entries[index] = entry;
@@ -106,7 +111,7 @@ struct string_object *string_table_intern(struct string_table *table, char *buff
 		}
 
 		/* string not found in chain, create a new one and extend chain */
-		string = object_new_string(buffer, length, hash);
+		//string = object_new_string(buffer, length, hash);
 		entry = table_entry_new(string);
 
 		/* insert at the start of the chain/list */

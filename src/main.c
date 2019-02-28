@@ -4,8 +4,8 @@
 
 int main(int argc, char **argv) {
 	pseu_vm_t *vm = pseu_vm_new(NULL);
+	pseu_interpret(vm, "OUTPUT 1");
+	pseu_vm_free(vm);
 
-	pseu_interpret(vm, "OUTPUT \"xD\"");
-	pseu_free(vm);
 	return 0;
 }

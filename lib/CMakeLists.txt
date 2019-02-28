@@ -1,41 +1,47 @@
 set(LIBPSEU_INCLUDE_DIR "../include")
 set(LIBPSEU_SRC
 	${LIBPSEU_INCLUDE_DIR}/pseu.h
-	vm.h
-	compiler.h
-	diagnostic.h
-	location.h
-	opcode.h
-	vector.h
-	pretty.h
-	lexer.h
-	token.h
-	node.h
-	parser.h
-	visitor.h
-	value.h  
-	string.h
-	symbol.h
-	state.h
+	pseu_vm.h
+	pseu_core.h
+	pseu_node.h
+	pseu_state.h
+	pseu_value.h  
+	pseu_debug.h
+	pseu_lexer.h
+	pseu_token.h
+	pseu_string.h
+	pseu_symbol.h
+	pseu_parser.h
+	pseu_opcode.h
+	pseu_vector.h
+	pseu_visitor.h
+	pseu_compiler.h
+	pseu_location.h
 
 	pseu.c
-	vm.c
-	compiler.c
-	vector.c
-	pretty.c
-	lexer.c
-	token.c
-	parser.c
-	visitor.c
-	value.c
-	string.c
-	symbol.c
-	state.c
+	pseu_vm.c
+	pseu_core.c
+	pseu_node.c
+	pseu_state.c
+	pseu_value.c
+	pseu_debug.c
+	pseu_lexer.c
+	pseu_token.c
+	pseu_string.c
+	pseu_symbol.c
+	pseu_parser.c
+	pseu_vector.c
+	pseu_visitor.c
+	pseu_compiler.c
 )
 
 # objects
 add_library(libpseu OBJECT ${LIBPSEU_SRC})
 target_include_directories(libpseu PUBLIC ${LIBPSEU_INCLUDE_DIR})
+
+if (PSEU_USE_ASSERT)
+	target_compile_definitions(libpseu PRIVATE PSEU_USE_ASSERT)
+endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
 	target_compile_definitions(libpseu PRIVATE DEBUG)

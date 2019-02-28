@@ -1,25 +1,25 @@
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef PSEU_COMPILER_H
+#define PSEU_COMPILER_H
 
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "value.h"
-#include "lexer.h"
-#include "parser.h"
-#include "opcode.h"
+#include "pseu_value.h"
+#include "pseu_lexer.h"
+#include "pseu_parser.h"
+#include "pseu_opcode.h"
 
-/* Maximum number of constant in a function. */
-#define MAX_CONSTS 256
-/* Maximum number of locals in a function. */
-#define MAX_LOCALS 256
+/* Maximum number of constants in a function. */
+#define MAX_CONSTS (1 << 8)
+/* Maximum number of local variables in a function. */
+#define MAX_LOCALS (1 << 8)
 
 /* Represents an emitter to emit virtual machine bytecode/code_t. */
 struct emitter {
 	/* Number of instr in `code` block. */
 	size_t count;
 	/* Capacity of `code` block. */
-	size_t capacity;
+	size_t size;
 	/* Block of memory containing the code. */
 	code_t *code; 
 };
@@ -41,42 +41,41 @@ struct compiler {
 	/* Top level compiler; NULL if already top. */
 	struct compiler *top;
 
-	/* Maximum size the function could occupy on the virtual machine stack. */
+	/* 
+	 * Maximum size the function could occupy on the virtual machine evaluation
+	 * stack.
+	 */
 	size_t stack_size;
 
 	/* Number of constants in the function. */
-	uint8_t nconsts;
+	uint8_t consts_count;
 	/* Array of constants in the function. */
 	struct value consts[MAX_CONSTS];
 
 	/* Number of locals in the function. */
-	uint8_t nlocals;
+	uint8_t locals_count;
 	/* Array of locals in the function.*/
 	struct variable locals[MAX_LOCALS];
 
 	/* Function we're compiling. */
-	struct func *fn;
-	/* Prototype of the function we're compiling. */
-	struct proto *proto;
+	struct function *fn;
+
+	/* Number of errors during code gen process. */
+	unsigned int error_count;
 };
 
-/**
- * Initializes the specified compiler with the specified state which owns the
- * compiler instance.
- *
- * @param[in] compiler Compiler instance.
- * @param[in] state State instance.
- */
-void compiler_init(struct compiler *compiler, struct state *state);
-
-/**
+/*
  * Compiles the specified pseu source code to a function using the specified
- * initialized compiler.
+ * compiler.
  *
+ * @param[in] state State instance.
  * @param[in] compiler Compiler instance.
- * @param[in] src Pseu source code to initialize.
- * @return Function compiled if success; otherwise returns NULL.
+ * @param[in] fn Function which will be compiled.
+ * @param[in] src Pseu source code to compile.
+ *
+ * @return 0 if success; otherwise 1.
  */
-struct func *compiler_compile(struct compiler *compiler, const char *src);
+int compiler_compile(struct state *state, struct compiler *compiler,
+				struct function *fn, const char *src);
 
-#endif /* COMPILER_H */
+#endif /* PSEU_COMPILER_H */

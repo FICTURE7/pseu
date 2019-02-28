@@ -1,36 +1,54 @@
 #include <pseu.h>
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
-#include "vm.h"
-#include "state.h"
-#include "string.h"
-#include "symbol.h"
-#include "compiler.h"
+#include "pseu_vm.h"
+#include "pseu_core.h"
+#include "pseu_state.h"
+#include "pseu_string.h"
+#include "pseu_symbol.h"
+#include "pseu_compiler.h"
 
-/* 
- * Initializes the specified struct type * with the specified type identifier
- * as a primitive and register it to the global virtual machine symbol table.
- */
-static inline void add_primitive(pseu_vm_t *vm, struct type *type,
-		const char *ident) {
-	type->ident = ident;
-	type->nfields = 0;
-
-	symbol_table_add_type(vm->symbols, type);
+/* Default print function of the pseu virtual machine. */
+static void default_print(pseu_vm_t *vm, const char *text) {
+	printf("%s", text);
 }
 
-/* Initializes the default config, used when pseu_vm_new(NULL) is called.*/
-static inline void pseu_config_init_default(pseu_config_t *config) {
-	config->init_stack_size = 512;
-	config->max_stack_size = 1024;
+/* Default alloc function of the pseu virtual machine. */
+static void *default_alloc(pseu_vm_t *vm, size_t size) {
+	return malloc(size);
+}
 
-	/* Use stdlib's alloc function as defaults. */
-	config->alloc = malloc;
-	config->realloc = realloc;
-	config->free = free;
+/* Default realloc function of the pseu virtual machine. */
+static void *default_realloc(pseu_vm_t *vm, void *ptr, size_t size) {
+	return realloc(ptr, size);
+}
+
+/* Default free function of the pseu virtual machine. */
+static void default_free(pseu_vm_t *vm, void *ptr) {
+	free(ptr);
+}
+
+/* Default onerror handler. */
+static void default_onerror(pseu_vm_t *vm, enum pseu_error_type type,
+				unsigned int row, unsigned int col, const char *message) {
+	fprintf(stderr, "at %u:%u: error: %s.", row, col, message);
+}
+
+/* 
+ * Initializes the default configuration, used when pseu_vm_new(NULL) is called.
+ */
+static void config_init_default(pseu_config_t *config) {
+	config->print = default_print;
+	config->alloc = default_alloc;
+	config->realloc = default_realloc;
+	config->free = default_free;
+	config->onerror = default_onerror;
+
+	/* Swallow warnings. Might change in the future. */
+	config->onwarn = NULL;
 }
 
 pseu_vm_t *pseu_vm_new(pseu_config_t *config) {
@@ -40,97 +58,70 @@ pseu_vm_t *pseu_vm_new(pseu_config_t *config) {
 	 * If configuration was specified use its alloc function to allocate memory;
 	 * otherwise use stdlib's malloc.
 	 */
-	if (config) {
-		vm = config->alloc(sizeof(pseu_vm_t));	
-	} else {
-		vm = malloc(sizeof(pseu_vm_t));
-	}
+	vm = config ? config->alloc(NULL, sizeof(pseu_vm_t)) :
+			malloc(sizeof(pseu_vm_t));
 
-	/* Check if allocation failed. */
+	/* If allocation failed, exit early; return NULL. */
 	if (!vm) {
 		return NULL;
 	}
-
-	/* If configuration specified, use that; otherwise use default configuration. */
-	if (config) {
-		memcpy(&vm->config, config, sizeof(pseu_config_t));
-	} else {
-		pseu_config_init_default(&vm->config);
-	}
+	vm->data = NULL;
 
 	/* 
-	 * TODO: Make vm->strings & vm->symbols value types instead of pointer types 
-	 * in struct vm.
+	 * If configuration specified, use that; otherwise use default 
+	 * configuration. 
 	 */
-
-	/* Allocate global string table and global symbols table. */
-	vm->strings = malloc(sizeof(struct string_table));
-	vm->symbols = malloc(sizeof(struct symbol_table));
+	config ? memcpy(&vm->config, config, sizeof(pseu_config_t)) :
+			config_init_default(&vm->config);
 
 	/* Initialize global state, global string table and global symbols table. */
-	state_init(&vm->state, vm);
-	string_table_init(vm->strings);
-	symbol_table_init(vm->symbols);
+	state_init(vm, &vm->state);
+	string_table_init(vm, &vm->strings);
+	symbol_table_init(vm, &vm->symbols);
 
-	/* Initialize primitives and register them to the global symbol table. */
-	add_primitive(vm, &vm->void_type, "VOID");
-	add_primitive(vm, &vm->boolean_type, "BOOLEAN");
-	add_primitive(vm, &vm->integer_type, "INTEGER");
-	add_primitive(vm, &vm->real_type, "REAL");
-	add_primitive(vm, &vm->string_type, "STRING");
-	add_primitive(vm, &vm->array_type, "ARRAY");
-
+	/* Initialize primitives types and functions. */
+	core_primitives_init(vm);
 	return vm;
 }
 
-void pseu_free(pseu_vm_t *vm) {
-	if (vm == NULL) {
+void pseu_vm_free(pseu_vm_t *vm) {
+	if (!vm) {
 		return;
 	}
 	
-	/* Deinitialize global state, global string table and global symbol table. */
+	/* Clean up global state, global string table and global symbol table. */
 	state_deinit(&vm->state);
-	string_table_deinit(vm->strings);
-	symbol_table_deinit(vm->symbols);
+	string_table_deinit(&vm->strings);
+	symbol_table_deinit(&vm->symbols);
 
-	/* Free memory blocks. */
-	vm_free(vm, vm->strings);
-	vm_free(vm, vm->symbols);
-	vm_free(vm, vm);
+	/* 
+	 * Finally free the memory block containing the virtual machine structure
+	 * itself. 
+	 */
+	pseu_free(vm, vm);
+}
+
+void pseu_vm_set_data(pseu_vm_t *vm, void *data) {
+	vm->data = data;
+}
+
+void *pseu_vm_get_data(pseu_vm_t *vm) {
+	return vm->data;
 }
 
 int pseu_interpret(pseu_vm_t *vm, const char *src) {
 	assert(vm && src);
 
-	/* Compile the source into an anonymous procedure. */
-	struct func *fn = vm_compile(&vm->state, src);
-	if (fn == NULL) {
+	/* TODO: Report about runtime and compile error. */
+	/* Compile source to a function executable by the virtual machine. */
+	struct function fn;
+	struct compiler compiler;
+	if (compiler_compile(&vm->state, &compiler, &fn, src)) {
 		return PSEU_RESULT_ERROR;
 	}
 
-	/* Call & execute the function. */
-	int result = vm_call(&vm->state, fn);
-	if (result != 0) { 
-		return PSEU_RESULT_ERROR;
-	}
-
-	return PSEU_RESULT_SUCCESS;
-}
-
-int pseu_call(pseu_vm_t *vm, const char *name) {
-	assert(vm, name);
-
-	/* TODO: Figure out arguments. */
-
-	/* Look up function in global symbols table. */
-	struct func *fn = symbol_table_get_func(vm->symbols, name);
-	if (fn == NULL) {
-		return PSEU_RESULT_ERROR;
-	}
-
-	/* Call & execute the function. */
-	int result = vm_call(&vm->state, fn);
-	if (result != 0) {
+	/* Call and execute the function. */
+	if (vm_call(&vm->state, &fn)) {
 		return PSEU_RESULT_ERROR;
 	}
 

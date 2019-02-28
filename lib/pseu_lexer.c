@@ -1,13 +1,12 @@
-#define LEXER_DEBUG
-
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
-#include "lexer.h"
+
+#include "pseu_lexer.h"
 
 #ifdef LEXER_DEBUG
 #include <stdio.h>
-#include "pretty.h"
+#include "pseu_debug.h"
 #endif
 
 /* advances the lexer's position by the specified amount of character */
@@ -113,7 +112,8 @@ static void scan_number(struct lexer *lexer, struct token *token) {
 
 				/* scan rest of hex value */
 				c = *lexer->loc.pos;
-				while (isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+				while (isdigit(c) || (c >= 'a' && c <= 'f')
+								|| (c >= 'A' && c <= 'F')) {
 					token->len++;
 					/* reached eof */
 					if (advance(lexer) >= lexer->end) {
@@ -122,7 +122,8 @@ static void scan_number(struct lexer *lexer, struct token *token) {
 					c = *lexer->loc.pos;
 				}
 				/* todo: add support for the error message */
-				token->type = token->len > 2 ? TOK_LIT_INTEGERHEX : TOK_ERR_INVALID_HEX;
+				token->type = token->len > 2 ?
+						TOK_LIT_INTEGERHEX : TOK_ERR_INVALID_HEX;
 				return;
 
 			/* floating point starting with '0e' or '0E' */
@@ -286,7 +287,7 @@ void lexer_init(struct lexer *lexer, const char *src) {
 
 	lexer_lex(lexer, &token);
 	while (token.type != TOK_EOF) {
-		prettyprint_token(&token);
+		pseu_dump_token(stdout, &token);
 		lexer_lex(lexer, &token);
 	}
 	/* reset */

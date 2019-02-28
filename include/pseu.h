@@ -6,7 +6,7 @@
 /**
  * Represents a pseu virtual machine instance.
  */
-typedef struct vm pseu_vm_t;
+typedef struct pseu_vm pseu_vm_t;
 
 /**
  * Type of errors.
@@ -32,19 +32,6 @@ enum pseu_warn_type {
  * Represents the configuration of a pseu virtual machine.
  */
 typedef struct pseu_config {
-	/** Maximum stack size can grow before returning an error. */
-	size_t max_stack_size;
-	/** Intial stack size. */
-	size_t init_stack_size;
-
-	/** 
-	 * Callback whenever pseu wants to write to the standard output.
-	 *
-	 * @param[in] pseu Pseu instance.
-	 * @param[in] text Text to write to the standard output.
-	 */
-	void (*onprint)(pseu_vm_t *pseu, const char *text); 	
-
 	/** 
 	 * Callback whenever pseu has encoutered an error.
 	 *
@@ -55,7 +42,7 @@ typedef struct pseu_config {
 	 * @param[in] message Message describing the error.
 	 */
 	void (*onerror)(pseu_vm_t *pseu, enum pseu_error_type type,
-			int row, int col, const char *message); 
+			unsigned int row, unsigned int col, const char *message); 
 
 	/** 
 	 * Callback whenever pseu has encoutered a warning.
@@ -67,7 +54,15 @@ typedef struct pseu_config {
 	 * @param[in] message Message describing the error.
 	 */
 	void (*onwarn)(pseu_vm_t *pseu, enum pseu_warn_type type,
-			int row, int col, const char *message); 
+			unsigned int row, unsigned int col, const char *message); 
+
+	/** 
+	 * Callback whenever pseu wants to write to the standard output.
+	 *
+	 * @param[in] pseu Pseu instance.
+	 * @param[in] text Text to write to the standard output.
+	 */
+	void (*print)(pseu_vm_t *pseu, const char *text); 	
 
 	/**
 	 * Fuction to allocate a block of memory of the specified size.
@@ -75,25 +70,25 @@ typedef struct pseu_config {
 	 * @param[in] size Size of block to allocate.
 	 * @returns Pointer to block if success; otherwise NULL if failed.
 	 *
-	 * @note The returned block may not necessarily return 0'd (zerod) memory.
+	 * @note The returned block may not necessarily return 0'd (zeroed) memory.
 	 */
-	void *(*alloc)(size_t size);
+	void *(*alloc)(pseu_vm_t *vm, size_t size);
 
 	/** 
 	 * Function to reallocates a block of memory to a new size.
 	 *
-	 * @param[in] ptr Pointer to block reallocate
+	 * @param[in] ptr Pointer to block reallocate.
 	 * @param[in] size New size of block.
 	 * @returns Pointer to block if success; otherwise NULL if failed.
 	 */
-	void *(*realloc)(void *ptr, size_t size);
+	void *(*realloc)(pseu_vm_t *vm, void *ptr, size_t size);
 
 	/** 
 	 * Function to free a block of memory.
 	 *
 	 * @param[in] Pointer to block to free.
 	 */
-	void (*free)(void *ptr);
+	void (*free)(pseu_vm_t *vm, void *ptr);
 } pseu_config_t;
 
 /**
@@ -106,7 +101,7 @@ enum pseu_result {
 	PSEU_RESULT_ERROR
 };
 
-/*
+/**
  * Creates a new instance of a pseu virtual machine with the specified 
  * configuration.
  *
@@ -117,15 +112,33 @@ enum pseu_result {
  */
 pseu_vm_t *pseu_vm_new(pseu_config_t *config);
 
-/*
- * Frees the specified pseu virtual machine instance.
+/**
+ * Frees the specified pseu virtual machine instance. If `pseu` is null, nothing
+ * happens.
  *
  * @param[in] pseu Pseu instance to free.
  */
-void pseu_free(pseu_vm_t *pseu);
+void pseu_vm_free(pseu_vm_t *pseu);
 
 /**
- * Interprets the specified pseu source code.
+ * Sets the user data of the specified pseu virtual machine instance.
+ *
+ * @param[in] pseu Pseu instance.
+ * @param[in] data User data.
+ */
+void pseu_vm_set_data(pseu_vm_t *pseu, void *data);
+
+/**
+ * Gets the user data of the specified pseu virtual machine instance.
+ *
+ * @param[in] pseu Pseu instance.
+ * @return User data if set; otherwise returns NULL.
+ */
+void *pseu_vm_get_data(pseu_vm_t *pseu);
+
+/**
+ * Interprets the specified pseu source code using the specified pseu virtual
+ * machine instance.
  * 
  * @param[in] pseu Pseu instance.
  * @param[in] src Source code to interpret.

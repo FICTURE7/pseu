@@ -1,11 +1,11 @@
-#ifndef TOKEN_H
-#define TOKEN_H
+#ifndef PSEU_TOKEN_H
+#define PSEU_TOKEN_H
 
 #include <stdlib.h>
-#include "location.h"
+#include "pseu_location.h"
 
 enum token_type {
-	/* errors */
+	/* Errors. */
 	TOK_ERR_INVALID_HEX,
 	TOK_ERR_INVALID_EXP,
 	TOK_ERR_INVALID_STRING,
@@ -13,7 +13,7 @@ enum token_type {
 
 	TOK_EOF,
 
-	/* literals */
+	/* Literals. */
 	TOK_LIT_INTEGER,
 	TOK_LIT_INTEGERHEX,
 	TOK_LIT_REAL,
@@ -31,7 +31,7 @@ enum token_type {
 
 	TOK_LPAREN,
 	TOK_RPAREN,
-	/* operators */
+	/* Operators. */
 	TOK_OP_ADD,
 	TOK_OP_SUB,
 	TOK_OP_MUL,
@@ -40,7 +40,7 @@ enum token_type {
 	TOK_OP_LOGICAL_AND,
 	TOK_OP_LOGICAL_OR,
 
-	/* keywords */
+	/* Keywords. */
 	TOK_KW_DECLARE,
 	TOK_KW_OUTPUT,
 	TOK_KW_INTEGER,
@@ -49,9 +49,13 @@ enum token_type {
 	TOK_KW_BOOLEAN,
 };
 
+/* Represents a token. */
 struct token {
+	/* Token type. */
 	enum token_type type;
+	/* Location of the token in source. */
 	struct location loc;
+	/* Length of the token. */
 	size_t len;
 };
 
@@ -59,4 +63,4 @@ void token_init(struct token *token, enum token_type type, struct location loc, 
 void token_value(struct token *token, char *buffer);
 int token_value_cmp(struct token *token, char *buffer);
 
-#endif /* TOKEN_H */
+#endif /* PSEU_TOKEN_H */

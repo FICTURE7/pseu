@@ -1,7 +1,8 @@
 #include <string.h>
-#include "token.h"
+#include "pseu_token.h"
 
-void token_init(struct token *token, enum token_type type, struct location loc, size_t len) {
+void token_init(struct token *token, enum token_type type,
+				struct location loc, size_t len) {
 	token->type = type;
 	token->loc = loc;
 	token->len = len;
