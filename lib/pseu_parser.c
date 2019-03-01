@@ -46,6 +46,7 @@ static void error(struct parser *parser, struct location loc, char *message) {
 
 static void warn(struct parser *parser, struct location loc, char *message) {
 	pseu_vm_t *vm = parser->state->vm;
+
 	if (vm->config.onwarn) {
 		vm->config.onwarn(vm, PSEU_WARN_COMPILE, loc.ln, loc.col, message);
 	}
@@ -53,6 +54,7 @@ static void warn(struct parser *parser, struct location loc, char *message) {
 
 /* Tries to recover from a syntax error. */
 static void panic(struct parser *parser) {
+	/* TODO: Actual proper implementation and use. */
 	/* skip tokens until a line feed or eof */
 	error(parser, parser->token.loc, "expected '\\n' (linefeed)");
 	do {
@@ -66,7 +68,7 @@ static struct node *identifier(struct parser *parser) {
 	struct token token = parser->token;
 
 	if (parser->token.type != TOK_IDENT) {
-		error(parser, parser->token.loc, "expected an identifier");
+		error(parser, parser->token.loc, "Expected an identifier");
 		eat(parser);
 		return NULL;
 	}
@@ -386,7 +388,7 @@ static struct node *expression(struct parser *parser) {
 /*
  * declare-statement = "DECLARE" identifier ":" identifier
  *
- * TODO: Add assign expression to statement as well,
+ * TODO: Add assign expression to statement as well, giving this representation
  * assign = "<-" expression
  * declare-statement = "DECLARE" identifier ":" identifier [ assign ]
  */
@@ -460,8 +462,7 @@ static struct node *output_statement(struct parser *parser) {
 }
 
 /*
- * statement = empty-statement | declare-statement | assign-statement |
- * 			output-statement
+ * statement = declare-statement | assign-statement | output-statement
  */
 static struct node *statement(struct parser *parser) {
 	switch (parser->token.type) {
