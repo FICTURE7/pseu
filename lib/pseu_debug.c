@@ -233,7 +233,7 @@ void pseu_dump_value(FILE *stream, struct value *value) {
 			break;
 
 		default:
-			fprintf(stream, "Unknown value type");
+			fprintf(stream, "unknown(%d)<%p>", value->type, value);
 			break;
 	}
 }
