@@ -349,7 +349,7 @@ int compiler_compile(struct state *state, struct compiler *compiler,
 	fn->ident = NULL;
 	fn->params_count = 0;
 	fn->params_types = NULL;
-	fn->return_type = &state->vm->void_type;
+	fn->return_type = NULL;
 	fn->as_closure = closure;
 
 #ifdef PSEU_DEBUG_CODE
