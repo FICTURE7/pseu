@@ -1,6 +1,8 @@
 DECLARE x: INTEGER
+DECLARE y: INTEGER
 x <- 1 + 1
+y <- 2
 
-OUTPUT x
+OUTPUT x + y
 ---
-2
+4
