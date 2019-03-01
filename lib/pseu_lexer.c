@@ -45,14 +45,8 @@ static void scan_identifier(struct lexer *lexer, struct token *token) {
 	/* check if the identifier is a keyword */
 	if (token_value_cmp(token, "OUTPUT")) {
 		token->type = TOK_KW_OUTPUT;
-	} else if (token_value_cmp(token, "SINGLE")) {
-		token->type = TOK_KW_REAL;
-	} else if (token_value_cmp(token, "REAL")) {
-		token->type = TOK_KW_STRING;
 	} else if (token_value_cmp(token, "DECLARE")) {
 		token->type = TOK_KW_DECLARE;
-	} else if (token_value_cmp(token, "BOOLEAN")) {
-		token->type = TOK_KW_BOOLEAN;
 	} else if (token_value_cmp(token, "TRUE")) {
 		token->type = TOK_LIT_BOOLEAN_TRUE;
 	} else if (token_value_cmp(token, "FALSE")) {

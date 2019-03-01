@@ -43,10 +43,12 @@ enum token_type {
 	/* Keywords. */
 	TOK_KW_DECLARE,
 	TOK_KW_OUTPUT,
+	/*
 	TOK_KW_INTEGER,
 	TOK_KW_REAL,
 	TOK_KW_STRING,
 	TOK_KW_BOOLEAN,
+	*/
 };
 
 /* Represents a token. */
