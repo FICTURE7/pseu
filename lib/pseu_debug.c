@@ -243,7 +243,24 @@ void pseu_dump_variable(FILE *stream, struct variable *var) {
 }
 
 void pseu_dump_function_info(FILE *stream, struct function *fn) {
-	/* TODO: Implement. */
+	const char *ident = fn->ident == NULL ? "<anonymous>" : fn->ident;
+	
+	if (fn->type == FN_TYPE_PRIMITIVE) {
+		fprintf(stream, "--- def prim %s(", ident);
+	} else {
+		fprintf(stream, "--- def %s(", ident);
+	}
+
+	for (size_t i = 0; i < fn->params_count; i++) {
+		const char *format = i == fn->params_count - 1 ? "%s" : "%s,";
+		fprintf(stream, format, fn->params_types[i]->ident);
+	}
+
+	if (fn->return_type == NULL) {
+		fprintf(stream, ")\n");
+	} else {
+		fprintf(stream, ") ret %s\n", fn->return_type->ident);
+	}
 }
 
 void pseu_dump_function_code(FILE *stream, pseu_vm_t *vm, struct function *fn) {
