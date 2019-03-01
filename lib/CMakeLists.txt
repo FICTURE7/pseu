@@ -39,12 +39,17 @@ set(LIBPSEU_SRC
 add_library(libpseu OBJECT ${LIBPSEU_SRC})
 target_include_directories(libpseu PUBLIC ${LIBPSEU_INCLUDE_DIR})
 
+# c pre-processor definitions
 if (PSEU_USE_ASSERT)
 	target_compile_definitions(libpseu PRIVATE PSEU_USE_ASSERT)
 endif()
 
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-	target_compile_definitions(libpseu PRIVATE DEBUG)
+if (PSEU_DEBUG_AST)
+	target_compile_definitions(libpseu PRIVATE PSEU_DEBUG_AST)
+endif()
+
+if (PSEU_DEBUG_CODE)
+	target_compile_definitions(libpseu PRIVATE PSEU_DEBUG_CODE)
 endif()
 
 # static library
