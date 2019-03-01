@@ -7,7 +7,12 @@
 typedef void (*visit_fn_t)(struct visitor *visitor, struct node *node);
 
 void visitor_visit(struct visitor *visitor, struct node *node) {
-	assert(visitor && node);
+	assert(visitor);
+
+	/* If node is NULL exit early. */
+	if (!node) {
+		return;
+	}
 
 	/* Function to use. */
 	visit_fn_t visit_fn = NULL;

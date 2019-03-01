@@ -60,8 +60,8 @@ static void free_stmt_output(struct visitor *visitor,
 static void free_stmt_decl(struct visitor *visitor,
 				struct node_stmt_decl *stmt_decl) {
 	pseu_vm_t *vm = visitor->data;
-	free_ident(visitor, stmt_decl->ident);
-	free_ident(visitor, stmt_decl->type_ident);
+	visitor_visit(visitor, (struct node *)stmt_decl->ident);
+	visitor_visit(visitor, (struct ndoe *)stmt_decl->type_ident);
 	pseu_free(vm, stmt_decl);
 }
 
