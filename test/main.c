@@ -231,19 +231,24 @@ exit:
 	return test;
 }
 
-const char *test_state_tostr(struct pseu_test *test) {
+void test_print_state(struct pseu_test *test) {
 	switch (test->state) {
 		case TEST_FAILED:
-			return "\x1B[31mFailed\x1B[0m";
+			printf("\x1B[31mfailed\x1B[0m");
+			break;
 		case TEST_PASSED:
-			return "\x1B[32mPassed\x1B[0m";
+			printf("\x1B[32mpassed\x1B[0m");
+			break;
 		case TEST_ERR_PATH:
-			return "Unable to combine path";
+			printf("\x1B[31mfailed\x1B[0m: Unable to combine path");
+			break;
 		case TEST_ERR_ERRNO:
-			return strerror(errno);
+			printf("\x1B[31mfailed\x1B[0m: %s", strerror(errno));
+			break;
 
 		default:
-			return "Unknown";
+			printf("unknown");
+			break;
 	}
 }
 
@@ -315,7 +320,10 @@ void test(struct pseu_test_runner *runner, const char *path) {
 	}
 
 finalize:
-	printf(" - %s.\n", test_state_tostr(test));
+	printf(" - ");
+	test_print_state(test);
+	printf(".\n");
+
 	test_free(test);
 }
 
