@@ -10,7 +10,7 @@
 #include "pseu_visitor.h"
 #include "pseu_compiler.h"
 
-static int error(struct compiler *compiler, const char *format, ...) {
+static void error(struct compiler *compiler, const char *format, ...) {
 	compiler->error_count++;
 
 	/* TODO: Format error and pass to compiler->state->vm->config.onerror. */
@@ -217,8 +217,16 @@ static void gen_stmt_decl(struct visitor *visitor,
 		return;
 	}
 
+	/* 
+	 * Clone the node_stmt_decl's ident ident_node, so we can free the nodes
+	 * and still work the var->ident.
+	 */
+	size_t ident_len = strlen(decl->ident->val);
+	char *ident = pseu_alloc(compiler->state->vm, ident_len + 1);
+	strcpy(ident, decl->ident->val);
+
 	struct variable var = {
-		.ident = decl->ident->val,
+		.ident = ident,
 		.type = compiler->state->vm->symbols.types.data[type_id]
 	};
 
@@ -285,7 +293,9 @@ int compiler_compile(struct state *state, struct compiler *compiler,
 		return 1;
 	}
 
-	//pseu_dump_node(stdout, node);
+#ifdef PSEU_DEBUG_AST
+	pseu_dump_node(stdout, node);
+#endif
 
 	/* 
 	 * Initialize visitor that will do the code generation with the appropriate
@@ -342,6 +352,9 @@ int compiler_compile(struct state *state, struct compiler *compiler,
 	fn->return_type = &state->vm->void_type;
 	fn->as_closure = closure;
 
-	//pseu_dump_function(stdout, state->vm, fn);
+#ifdef PSEU_DEBUG_CODE
+	pseu_dump_function_info(stdout, fn);
+	pseu_dump_function_code(stdout, state->vm, fn);
+#endif
 	return 0;
 }
