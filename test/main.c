@@ -234,9 +234,9 @@ exit:
 const char *test_state_tostr(struct pseu_test *test) {
 	switch (test->state) {
 		case TEST_FAILED:
-			return "Failed";
+			return "\x1B[31mFailed\x1B[0m";
 		case TEST_PASSED:
-			return "Passed";
+			return "\x1B[32mPassed\x1B[0m";
 		case TEST_ERR_PATH:
 			return "Unable to combine path";
 		case TEST_ERR_ERRNO:
@@ -274,7 +274,7 @@ void test_free(struct pseu_test *test) {
 void test(struct pseu_test_runner *runner, const char *path) {
 	struct pseu_test *test = test_load(runner, path);
 	/* Print test name first & force a flush of the stdout. */
-	printf("%s: ", test->name);
+	printf("\x1B[33mtest\x1B[0m %s:\n", test->name);
 	fflush(stdout);
 
 	/* If test not in NOTRAN state, means that loading failed. */
@@ -315,11 +315,13 @@ void test(struct pseu_test_runner *runner, const char *path) {
 	}
 
 finalize:
-	printf("%s.\n", test_state_tostr(test));
+	printf(" - %s.\n", test_state_tostr(test));
 	test_free(test);
 }
 
 int main(int argc, const char **argv) {
+	/* TODO: Enable ANSI color codes when on Windows. */
+
 	if (argc < 2) {
 		fprintf(stderr, "error: no test directory provided\n");
 		fprintf(stderr, "usage: libpseu-test <test-directory>\n");
