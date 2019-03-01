@@ -1,4 +1,5 @@
 ﻿#include <stdio.h>
+#include <stdbool.h>
 
 #include "pseu_value.h"
 #include "pseu_token.h"
@@ -217,7 +218,8 @@ void pseu_dump_node(FILE *stream, struct node *node) {
 void pseu_dump_value(FILE *stream, struct value *value) {
 	switch (value->type) {
 		case VALUE_TYPE_BOOLEAN:
-			fprintf(stream, "boolean(%d)", value->as_bool);
+			fprintf(stream, "boolean(%s)", 
+						value->as_bool == true ? "true" : "false");
 			break;
 		case VALUE_TYPE_INTEGER:
 			fprintf(stream, "integer(%d)", value->as_int);
@@ -236,11 +238,15 @@ void pseu_dump_value(FILE *stream, struct value *value) {
 	}
 }
 
+void pseu_dump_variable(FILE *stream, struct variable *var) {
+	fprintf(stream, "'%s':%s", var->ident, var->type->ident);
+}
+
 void pseu_dump_function_info(FILE *stream, struct function *fn) {
 	/* TODO: Implement. */
 }
 
-void pseu_dump_function(FILE *stream, pseu_vm_t *vm, struct function *fn) {
+void pseu_dump_function_code(FILE *stream, pseu_vm_t *vm, struct function *fn) {
 	#define READ_UINT8() (*ip++)
 	#define READ_UINT16() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 	#define OP(x) VM_OP_##x
@@ -252,7 +258,7 @@ void pseu_dump_function(FILE *stream, pseu_vm_t *vm, struct function *fn) {
 	code_t *ip = closure->code;
 	code_t op = OP(END);
 	do {
-		fprintf(stream, "%u ", (unsigned int)(ip - closure->code));
+		fprintf(stream, "%03u ", (unsigned int)(ip - closure->code));
 		op = READ_UINT8();
 
 		switch (op) {
@@ -260,7 +266,8 @@ void pseu_dump_function(FILE *stream, pseu_vm_t *vm, struct function *fn) {
 				unsigned int call_fn_id = READ_UINT16();
 				struct function *call_fn = vm->symbols.fns.data[call_fn_id];
 
-				fprintf(stream, "call %s; -> [%u]\n", call_fn->ident, call_fn_id);
+				fprintf(stream, "call '%s'   ; -> [%u]\n",
+							call_fn->ident, call_fn_id);
 				break;
 			}
 			case OP(LD_CONST): {
@@ -268,12 +275,23 @@ void pseu_dump_function(FILE *stream, pseu_vm_t *vm, struct function *fn) {
 
 				fprintf(stream, "ld.const ");
 				pseu_dump_value(stream, &closure->consts[index]);
-				fprintf(stream, "; -> [%u]\n", index);
+				fprintf(stream, "  ; -> [%u]\n", index);
 				break;
 			}
 			case OP(LD_LOCAL): {
 				unsigned int index = READ_UINT8();
-				fprintf(stream, "ld.local %u\n", index);
+
+				fprintf(stream, "ld.local ");
+				pseu_dump_variable(stream, &closure->locals[index]);
+				fprintf(stream, "  ; -> [%u]\n", index);
+				break;
+			}
+			case OP(ST_LOCAL): {
+				unsigned int index = READ_UINT8();
+
+				fprintf(stream, "st.local ");
+				pseu_dump_variable(stream, &closure->locals[index]);
+				fprintf(stream, "  ; -> [%u]\n", index);
 				break;
 			}
 			case OP(END): {
