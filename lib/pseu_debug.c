@@ -58,7 +58,8 @@ static void dump_node(struct visitor *visitor, struct node *node) {
 	if (node) {
 		visitor_visit(visitor, node);
 	} else {
-		fprintf(info->stream, "NULL");
+		print_indent(info->stream, info->depth);
+		fprintf(info->stream, "NULL\n");
 	}
 }
 
