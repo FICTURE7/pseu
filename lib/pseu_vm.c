@@ -14,12 +14,12 @@ static int vm_stack_ensure_free(struct state *state, size_t num_slot) {
 	pseu_assert(state);
 
 	/* If there is more space than requested, return 0. */
-	if (state->sp - state->stack >= num_slot) {
+	if ((state->stack + state->stack_size) - state->sp >= num_slot) {
 		return 0;
 	}
 
 	/* TODO: Implement. */
-	return 0;
+	return 1;
 }
 
 /*
