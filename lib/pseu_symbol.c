@@ -23,10 +23,17 @@ void symbol_table_deinit(struct symbol_table *table) {
 	vector_deinit_items(table->vm, &table->fns);
 	vector_deinit(table->vm, &table->fns);
 
-	/*
-	vector_deinit_items(table->vm, &table->types);
+	for (size_t i = 0; i < table->types.count; i++) {
+		/* 
+		 * Free only non primitive types because primitive types are referenced
+		 * from the pseu_vm struct. 
+		 */
+		struct type *type = table->types.data[i];
+		if (type->fields_count > 0) {
+			pseu_free(table->vm, type);
+		}
+	}
 	vector_deinit(table->vm, &table->types);
-	*/
 }
 
 void symbol_table_add_type(struct symbol_table *table,
