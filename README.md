@@ -1,4 +1,4 @@
-# Pseu
+# pseu
 A wack programming language that resembles the pseudo code found in 
 the [Cambridge International A & AS Level Computer Science](https://www.amazon.com/Cambridge-International-Computer-Coursebook-Examinations/dp/1107546737/)
 book.
