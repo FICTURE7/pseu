@@ -131,7 +131,7 @@ static void runner_free(pseu_vm_t *vm, void *ptr) {
 
 static void runner_onerror(pseu_vm_t *vm, enum pseu_error_type type,
 				unsigned int row, unsigned int col, const char *message) {
-	fprintf(stderr, "at %u:%u: error: %s.", row, col, message);
+	fprintf(stderr, "at %u:%u: error: %s.\n", row, col, message);
 }
 
 /* Represents a test runner. */
@@ -319,6 +319,7 @@ void test(struct pseu_test_runner *runner, const char *path) {
 		runner->result = 1;
 	}
 
+
 finalize:
 	printf(" - ");
 	test_print_state(test);
@@ -346,5 +347,6 @@ int main(int argc, const char **argv) {
 	test(&runner, "core/output.pseut");
 	test(&runner, "core/declare.pseut");
 	test(&runner, "core/assign.pseut");
+	test(&runner, "core/function.pseut");
 	return runner.result;
 }

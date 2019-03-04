@@ -1,0 +1,10 @@
+FUNCTION Add(a: INTEGER, b: INTEGER): INTEGER
+	RETURN a + b
+ENDFUNCTION
+
+DECLARE sum: INTEGER
+
+sum <- Add(1+1, 5)
+OUTPUT sum
+---
+6
