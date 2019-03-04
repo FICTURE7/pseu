@@ -10,8 +10,13 @@ struct visitor {
 	/* Pointer to user data. */
 	void *data;
 
+	void (*visit_call)(struct visitor *visitor,
+			struct node_call *call);
 	void (*visit_ident)(struct visitor *visitor,
 			struct node_ident *ident);
+	void (*visit_param)(struct visitor *visitor,
+			struct node_param *param);
+
 	void (*visit_boolean)(struct visitor *visitor,
 			struct node_boolean *boolean);
 	void (*visit_integer)(struct visitor *visitor,
@@ -36,9 +41,13 @@ struct visitor {
 			struct node_stmt_if *stmt_if);
 	void (*visit_stmt_while)(struct visitor *visitor,
 			struct node_stmt_while *stmt_while);
+	void (*visit_stmt_return)(struct visitor *visitor,
+			struct node_stmt_return *stmt_return);
 
 	void (*visit_block)(struct visitor *visitor,
 			struct node_block *block);
+	void (*visit_function)(struct visitor *visitor,
+			struct node_function *fn);
 };
 
 /*

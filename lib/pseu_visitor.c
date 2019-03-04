@@ -20,8 +20,18 @@ void visitor_visit(struct visitor *visitor, struct node *node) {
 		case NODE_BLOCK:
 			visit_fn = (visit_fn_t)visitor->visit_block;
 			break;
+		case NODE_FUNCTION:
+			visit_fn = (visit_fn_t)visitor->visit_function;
+			break;
+
+		case NODE_CALL:
+			visit_fn = (visit_fn_t)visitor->visit_call;
+			break;
 		case NODE_IDENT:
 			visit_fn = (visit_fn_t)visitor->visit_ident;
+			break;
+		case NODE_PARAM:
+			visit_fn = (visit_fn_t)visitor->visit_param;
 			break;
 
 		case NODE_LIT_REAL:
@@ -58,6 +68,9 @@ void visitor_visit(struct visitor *visitor, struct node *node) {
 			break;
 		case NODE_STMT_WHILE:
 			visit_fn = (visit_fn_t)visitor->visit_stmt_while;
+			break;
+		case NODE_STMT_RETURN:
+			visit_fn = (visit_fn_t)visitor->visit_stmt_return;
 			break;
 	}
 

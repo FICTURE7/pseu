@@ -43,19 +43,25 @@ static void scan_identifier(struct lexer *lexer, struct token *token) {
 
 	/* todo: turn in a hashmap or something */
 	/* check if the identifier is a keyword */
-	if (token_value_cmp(token, "OUTPUT")) {
+	if (token_value_equals(token, "OUTPUT")) {
 		token->type = TOK_KW_OUTPUT;
-	} else if (token_value_cmp(token, "DECLARE")) {
+	} else if (token_value_equals(token, "DECLARE")) {
 		token->type = TOK_KW_DECLARE;
-	} else if (token_value_cmp(token, "TRUE")) {
+	} else if (token_value_equals(token, "FUNCTION")) {
+		token->type = TOK_KW_FUNCTION;
+	} else if (token_value_equals(token, "ENDFUNCTION")) {
+		token->type = TOK_KW_ENDFUNCTION;
+	} else if (token_value_equals(token, "RETURN")) {
+		token->type = TOK_KW_RETURN;
+	} else if (token_value_equals(token, "TRUE")) {
 		token->type = TOK_LIT_BOOLEAN_TRUE;
-	} else if (token_value_cmp(token, "FALSE")) {
+	} else if (token_value_equals(token, "FALSE")) {
 		token->type = TOK_LIT_BOOLEAN_FALSE;
-	} else if (token_value_cmp(token, "NOT")) {
+	} else if (token_value_equals(token, "NOT")) {
 		token->type = TOK_OP_LOGICAL_NOT;
-	} else if (token_value_cmp(token, "AND")) {
+	} else if (token_value_equals(token, "AND")) {
 		token->type = TOK_OP_LOGICAL_AND;
-	} else if (token_value_cmp(token, "OR")) {
+	} else if (token_value_equals(token, "OR")) {
 		token->type = TOK_OP_LOGICAL_OR;
 	} else {
 		/* must be an identifier */
@@ -350,6 +356,9 @@ again:
 			goto advance_exit;
 		case ':':
 			token_init(token, TOK_COLON, lexer->loc, 1);
+			goto advance_exit;
+		case ',':
+			token_init(token, TOK_COMMA, lexer->loc, 1);
 			goto advance_exit;
 		case '_':
 			/* scan identifiers starting with '_' */

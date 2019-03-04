@@ -13,6 +13,6 @@ void token_value(struct token *token, char *buffer) {
 	memcpy(buffer, token->loc.pos, token->len);
 }
 
-int token_value_cmp(struct token *token, char *buffer) {
+int token_value_equals(struct token *token, char *buffer) {
 	return memcmp(token->loc.pos, buffer, token->len) == 0;
 }

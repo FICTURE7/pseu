@@ -24,6 +24,7 @@ enum token_type {
 	TOK_LF,
 	TOK_DOT,
 	TOK_COLON,
+	TOK_COMMA,
 	TOK_EQUAL,
 	TOK_LESS,
 	TOK_ASSIGN,
@@ -43,6 +44,10 @@ enum token_type {
 	/* Keywords. */
 	TOK_KW_DECLARE,
 	TOK_KW_OUTPUT,
+
+	TOK_KW_FUNCTION,
+	TOK_KW_ENDFUNCTION,
+	TOK_KW_RETURN
 	/*
 	TOK_KW_INTEGER,
 	TOK_KW_REAL,
@@ -63,6 +68,6 @@ struct token {
 
 void token_init(struct token *token, enum token_type type, struct location loc, size_t len);
 void token_value(struct token *token, char *buffer);
-int token_value_cmp(struct token *token, char *buffer);
+int token_value_equals(struct token *token, char *buffer);
 
 #endif /* PSEU_TOKEN_H */

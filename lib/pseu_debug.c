@@ -43,12 +43,26 @@ static void print_op(FILE *stream, enum token_type type) {
 }
 
 static void print_indent(FILE *stream, unsigned int depth) {
-	for (int i = 0; i < depth; i++) {
+	for (unsigned int i = 0; i < depth; i++) {
 		fprintf(stream, " ");
 	}
 
 	if (depth > 0) {
 		fprintf(stream, "`---");
+	}
+}
+
+static void print_params(FILE *stream, unsigned int depth,
+				struct vector *params) {
+	print_indent(stream, depth);
+	fprintf(stream, "params(%zu)\n", params->count);
+
+	depth++;
+	for (size_t i = 0; i < params->count; i++) {
+		struct node_param *param = params->data[i];
+
+		print_indent(stream, depth);
+		fprintf(stream, "%s:%s\n", param->ident->val, param->type_ident->val);
 	}
 }
 
@@ -61,6 +75,30 @@ static void dump_node(struct visitor *visitor, struct node *node) {
 		print_indent(info->stream, info->depth);
 		fprintf(info->stream, "NULL\n");
 	}
+}
+
+static void dump_call(struct visitor *visitor,
+				struct node_call *call) {
+	struct node_dump_info *info = visitor->data;
+
+	print_indent(info->stream, info->depth);
+	fprintf(info->stream, "call(%s, %zu):\n", call->fn_ident->val,
+						call->args.count);
+
+	info->depth++;
+	for (size_t i = 0; i < call->args.count; i++) {
+		dump_node(visitor, call->args.data[i]);
+	}
+	info->depth--;
+}
+
+static void dump_param(struct visitor *visitor,
+				struct node_param *param) {
+	struct node_dump_info *info = visitor->data;
+
+	print_indent(info->stream, info->depth);
+	fprintf(info->stream, "param(%s:%s)\n", param->ident->val,
+					param->type_ident->val);
 }
 
 static void dump_ident(struct visitor *visitor,
@@ -173,17 +211,44 @@ static void dump_stmt_output(struct visitor *visitor,
 	info->depth--;
 }
 
+static void dump_stmt_return(struct visitor *visitor,
+				struct node_stmt_return *stmt_return) {
+	struct node_dump_info *info = visitor->data;
+
+	print_indent(info->stream, info->depth);
+	fprintf(info->stream, "return:\n");
+
+	info->depth++;
+	dump_node(visitor, stmt_return->expr);
+	info->depth--;
+}
+
 static void dump_block(struct visitor *visitor,
 			struct node_block *block) {
 	struct node_dump_info *info = visitor->data;
 
 	print_indent(info->stream, info->depth);
-	info->depth++;
-
 	fprintf(info->stream, "block(%zu):\n", block->stmts.count);
+
+	info->depth++;
 	for (int i = 0; i < block->stmts.count; i++) {
 		dump_node(visitor, block->stmts.data[i]);
 	}
+	info->depth--;
+}
+
+static void dump_function(struct visitor *visitor,
+			struct node_function *fn) {
+	struct node_dump_info *info = visitor->data;
+
+	print_indent(info->stream, info->depth);
+	fprintf(info->stream, "function(%s:%s):\n", fn->ident->val, 
+						fn->return_type_ident->val);
+
+	info->depth++;
+	print_params(info->stream, info->depth, &fn->params);
+	dump_node(visitor, (struct node *)fn->body);
+	info->depth--;
 }
 
 void pseu_dump_token(FILE *stream, struct token *token) {
@@ -202,6 +267,8 @@ void pseu_dump_node(FILE *stream, struct node *node) {
 
 	struct visitor visitor;
 	visitor.data = &info;
+	visitor.visit_call = dump_call;
+	visitor.visit_param = dump_param;
 	visitor.visit_ident = dump_ident;
 	visitor.visit_boolean = dump_boolean;
 	visitor.visit_integer = dump_integer;
@@ -212,7 +279,9 @@ void pseu_dump_node(FILE *stream, struct node *node) {
 	visitor.visit_stmt_decl = dump_stmt_decl;
 	visitor.visit_stmt_assign = dump_stmt_assign;
 	visitor.visit_stmt_output = dump_stmt_output;
+	visitor.visit_stmt_return = dump_stmt_return;
 	visitor.visit_block = dump_block;
+	visitor.visit_function = dump_function;
 	visitor_visit(&visitor, node);
 }
 

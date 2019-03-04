@@ -13,8 +13,13 @@
  * Types of nodes.
  */
 enum node_type {
+	/* Blocks. */
 	NODE_BLOCK,
+	NODE_FUNCTION,
+
+	NODE_CALL,
 	NODE_IDENT,
+	NODE_PARAM,
 
 	/* Constant literals. */
 	NODE_LIT_INTEGER,
@@ -31,7 +36,8 @@ enum node_type {
 	NODE_STMT_ASSIGN,
 	NODE_STMT_OUTPUT,
 	NODE_STMT_IF,
-	NODE_STMT_WHILE
+	NODE_STMT_WHILE,
+	NODE_STMT_RETURN
 };
 
 /*
@@ -47,9 +53,29 @@ struct node_block {
 	struct vector stmts;
 };
 
+struct node_function {
+	struct node base;
+	struct node_ident *ident;
+	struct node_ident *return_type_ident;
+	struct node_block *body;
+	struct vector params;
+};
+
+struct node_call {
+	struct node base;
+	struct node_ident *fn_ident;
+	struct vector args;
+};
+
 struct node_ident {
 	struct node base;
 	char *val;
+};
+
+struct node_param {
+	struct node base;
+	struct node_ident *ident;
+	struct node_ident *type_ident;
 };
 
 /*
@@ -125,6 +151,11 @@ struct node_stmt_while {
 	struct node base;
 	struct node *expr;
 	struct node_block *block;
+};
+
+struct node_stmt_return {
+	struct node base;
+	struct node *expr;
 };
 
 void node_free(pseu_vm_t *vm, struct node *node);
