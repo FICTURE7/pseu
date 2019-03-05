@@ -14,6 +14,8 @@ struct symbol_table {
 	pseu_vm_t *vm;
 	/* List of functions in the symbols table. */
 	struct vector fns;
+	/* List of variables in the symbols table. */
+	struct vector vars;
 	/* List of types in the symbols table. */
 	struct vector types;
 };
@@ -21,12 +23,13 @@ struct symbol_table {
 void symbol_table_init(pseu_vm_t *vm, struct symbol_table *table);
 void symbol_table_deinit(struct symbol_table *table);
 
-/* add stuff to the symbol table */
-void symbol_table_add_type(struct symbol_table *table, struct type *type);
-void symbol_table_add_function(struct symbol_table *table, struct function *fn);
-void symbol_table_add_variable(struct symbol_table *table, struct variable *var);
+int symbol_table_add_type(struct symbol_table *table,
+				struct type *type);
+int symbol_table_add_function(struct symbol_table *table,
+				struct function *fn);
+int symbol_table_add_variable(struct symbol_table *table,
+				struct variable *var);
 
-/* find stuff from the table */
 int symbol_table_get_type(struct symbol_table *table, const char *ident);
 int symbol_table_get_function(struct symbol_table *table, const char *ident);
 int symbol_table_get_variable(struct symbol_table *table, const char *ident);
