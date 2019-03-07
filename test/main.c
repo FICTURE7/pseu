@@ -307,8 +307,13 @@ void test(struct pseu_test_runner *runner, const char *path) {
 			test->state = TEST_PASSED;
 		}
 
-		if (!strncmp(test->output.data, test->expected_output, 
-						test->output.length)) {
+		const char *actual = test->output.data;
+		const char *expected = test->expected_output;
+		size_t actual_length = test->output.length;
+		size_t expected_length = strlen(test->expected_output);
+
+		if (actual_length == expected_length && 
+			!strncmp(actual, expected, actual_length)) {
 			test->state = TEST_PASSED;
 		} else {
 			test->state = TEST_FAILED;
@@ -318,7 +323,6 @@ void test(struct pseu_test_runner *runner, const char *path) {
 		test->state = TEST_FAILED;
 		runner->result = 1;
 	}
-
 
 finalize:
 	printf(" - ");
