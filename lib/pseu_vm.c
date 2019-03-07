@@ -196,10 +196,13 @@ static int vm_dispatch(struct state *state) {
 		}
 
 		CASE(RET): {
-			/* TODO: Perform return type checking. */
-
 			struct function *fn = closure->fn;
 			struct value *return_value;
+
+			/* 
+			 * If function, check if return value type matches function 
+			 * description.
+			 */
 			if (fn->return_type != NULL) {
 				return_value = &POP();
 
