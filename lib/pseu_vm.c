@@ -26,7 +26,7 @@ static int vm_stack_ensure_free(struct state *state, size_t num_slot) {
  * Appends a call frame to the call stack of the specified state for the 
  * specified function closure.
  */
-static void vm_append_call(struct state *state, struct closure *closure) {
+static void vm_append_call(struct state *state, struct closure *closure, bool init_stack) {
 	pseu_assert(state && closure);
 	
 	/* Check if need to grow call frame stack. */
@@ -45,19 +45,21 @@ static void vm_append_call(struct state *state, struct closure *closure) {
 		.bp = state->sp - closure->fn->params_count
 	};
 
-	/* Clean stack space containing closure locals. */
-	memset(frame.bp, 0, closure->locals_count * sizeof(struct value));
-	/* Initialize local variables types. */
-	for (size_t i = 0; i < closure->locals_count; i++) {
-		struct value *local = &frame.bp[i];
-		struct variable *var = &closure->locals[i];
+	if (init_stack) {
+		/* Clean stack space containing closure locals. */
+		memset(frame.bp, 0, closure->locals_count * sizeof(struct value));
+		/* Initialize local variables types. */
+		for (size_t i = 0; i < closure->locals_count; i++) {
+			struct value *local = &frame.bp[i];
+			struct variable *var = &closure->locals[i];
 
-		if (var->type == &state->vm->void_type) {
-			local->type = VALUE_TYPE_VOID;
-		} else if (var->type == &state->vm->integer_type) {
-			local->type = VALUE_TYPE_INTEGER;
-		} else {
-			/* TODO: Handle error. */
+			if (var->type == &state->vm->void_type) {
+				local->type = VALUE_TYPE_VOID;
+			} else if (var->type == &state->vm->integer_type) {
+				local->type = VALUE_TYPE_INTEGER;
+			} else {
+				/* TODO: Handle error. */
+			}
 		}
 	}
 
@@ -150,7 +152,7 @@ static int vm_dispatch(struct state *state) {
 					continue;
 				}
 
-				struct type *value_type = value_get_type(state->vm,	&args[i]);
+				struct type *value_type = value_get_type(state->vm, &args[i]);
 				pseu_assert(value_type);
 
 				/*
@@ -184,11 +186,45 @@ static int vm_dispatch(struct state *state) {
 					/* Store the instruction pointer into the current frame. */
 					STORE_FRAME();
 					/* Append the call to the function to the call stack. */
-					vm_append_call(state, fn->as_closure);
+					vm_append_call(state, fn->as_closure, false);
 					/* Load the appended call frame and continue execution. */
 					LOAD_FRAME();
 					break;
 			   }
+			}
+			DISPATCH();
+		}
+
+		CASE(RET): {
+			/* TODO: Perform return type checking. */
+
+			struct function *fn = closure->fn;
+			struct value *return_value;
+			if (fn->return_type != NULL) {
+				return_value = &POP();
+
+				struct type *return_value_type = value_get_type(state->vm,
+										return_value);
+				if (fn->return_type != &state->vm->void_type &&
+					fn->return_type != return_value_type) {
+					/* TODO: Error, incorrect return type. */
+					return 1;
+				}
+			}
+
+			state->sp = frame->bp;
+
+			if (closure->fn->return_type != NULL) {
+				PUSH(*return_value);
+			}
+
+			/* Decrement frame count and load previous frame. */
+			state->frames_count--;
+			LOAD_FRAME();
+
+			/* If error message set, return 1. */
+			if (state->error) {
+				return 1;
 			}
 			DISPATCH();
 		}
@@ -206,7 +242,7 @@ static int vm_dispatch(struct state *state) {
 		CASE(LD_LOCAL): {
 			uint8_t index = READ_UINT8();
 			pseu_assert(index < closure->locals_count);
-			struct value *local = &frame->bp[index + closure->fn->params_count];
+			struct value *local = &frame->bp[index];
 
 			/* Local's type was not initialized. */
 			if (local->type == VALUE_TYPE_VOID) {
@@ -228,13 +264,13 @@ static int vm_dispatch(struct state *state) {
 
 			/* Check if value can be stored into the variable. */
 			if (local->type != &state->vm->void_type && 
-					local->type != value_get_type(state->vm, value)) {
+				local->type != value_get_type(state->vm, value)) {
 				/* TODO: Set error. */
 				return 1;
 			}
 
 			/* Store value into local variable. */
-			frame->bp[index + closure->fn->params_count] = *value;
+			frame->bp[index] = *value;
 			DISPATCH();
 		}
 
@@ -246,17 +282,7 @@ static int vm_dispatch(struct state *state) {
 		CASE(ST_GLOBAL): {
 			uint16_t index = READ_UINT16();
 
-			/* TODO: Perform return type checking. */
-			DISPATCH();
-		}
-
-		CASE(RET): {
-			/* TODO: Perform return type checking. */
-
-			/* If error message set, return 1. */
-			if (state->error) {
-				return 1;
-			}
+			/* TODO: Perform type checking. */
 			DISPATCH();
 		}
 
@@ -280,7 +306,7 @@ int vm_call(struct state *state, struct function *fn) {
 	pseu_assert(state->sp - state->stack >= fn->params_count);
 
 	/* Append the call to the virtual machine state call stack. */
-	vm_append_call(state, fn->as_closure);
+	vm_append_call(state, fn->as_closure, true);
 	/* Run virtual machine dispatch loop and execute function. */
 	return vm_dispatch(state);
 }

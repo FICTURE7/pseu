@@ -10,7 +10,7 @@
 #include "pseu_symbol.h"
 
 /* TODO: Check for lexer error tokens. */
-/* TODO: Consider using UTF-8 encoding for the source or something. */
+/* TODO: Consider using UTF-8 encoding for strings or something. */
 
 static int get_precedence(enum token_type type) {
 	switch (type) {
@@ -26,12 +26,14 @@ static int get_precedence(enum token_type type) {
 			return 60;
 		case TOK_OP_LOGICAL_OR:
 			return 70;
+
 		default:
 			return -1;
 	}
 }
 
-static void error(struct parser *parser, struct location loc, const char *message) {
+static void error(struct parser *parser, struct location loc,
+				const char *message) {
 	pseu_vm_t *vm = parser->state->vm;
 
 	parser->error_count++;
@@ -40,7 +42,8 @@ static void error(struct parser *parser, struct location loc, const char *messag
 	}
 }
 
-static void warn(struct parser *parser, struct location loc, const char *message) {
+static void warn(struct parser *parser, struct location loc, 
+				const char *message) {
 	pseu_vm_t *vm = parser->state->vm;
 
 	if (vm->config.onwarn) {
@@ -52,7 +55,8 @@ static void eat(struct parser *parser) {
 	lexer_lex(parser->lexer, &parser->token);
 }
 
-static int expect(struct parser *parser, enum token_type type, const char *message) {
+static int expect(struct parser *parser, enum token_type type,
+				const char *message) {
 	int result = 0;
 	if (parser->token.type != type) {
 		error(parser, parser->token.loc, message);
@@ -621,7 +625,7 @@ static struct node *block(struct parser *parser) {
 }
 
 /*
- * function = "FUNCTION" identifier parameter-list ":"  identifier 
+ * function = "FUNCTION" identifier parameter-list [":" identifier]
  * 				block "ENDFUNCTION"
  */
 static struct node *function(struct parser *parser) {
@@ -638,10 +642,19 @@ static struct node *function(struct parser *parser) {
 
 	/* Parse parameter list. */
 	parameter_list(parser, &fn->params);
-	/* Expect ":" after function parameter list. */
-	expect(parser, TOK_COLON, "Expected ':' after parameter list");
 
-	fn->return_type_ident = (struct node_ident *)identifier(parser);
+	/* 
+	 * If there is a colon after parameter list, parse return type identifier.
+	 */
+	struct node_ident *return_type_ident = NULL;
+	if (parser->token.type == TOK_COLON) {
+		eat(parser);
+		return_type_ident = (struct node_ident *)identifier(parser);
+	}
+
+	fn->return_type_ident = return_type_ident;
+
+	/* TODO: Don't parse nested function blocks. */
 	fn->body = (struct node_block *)block(parser);
 
 	expect(parser, TOK_KW_ENDFUNCTION,

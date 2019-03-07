@@ -13,6 +13,8 @@
 #define MAX_CONSTS (1 << 8)
 /* Maximum number of local variables in a function. */
 #define MAX_LOCALS (1 << 8)
+/* Maximum number of globals in a pseu virtual machine instance. */
+#define MAX_GLOBALS (1 << 16)
 
 /* Represents an emitter to emit virtual machine bytecode/code_t. */
 struct emitter {
@@ -32,14 +34,10 @@ struct compiler {
 	/* State which owns this compiler instance. */
 	struct state *state;
 
-	/* Lexer of the compiler, used by the parser. */
-	struct lexer lexer;
-	/* Parser of the compiler. */
-	struct parser parser;
-	/* Emitter to emit virtual machine bytecode. */
-	struct emitter emitter;
 	/* Top level compiler; NULL if already top. */
 	struct compiler *top;
+	/* Emitter to emit virtual machine bytecode. */
+	struct emitter emitter;
 
 	/* 
 	 * Maximum size the function could occupy on the virtual machine evaluation

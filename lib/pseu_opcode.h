@@ -9,13 +9,13 @@
  */
 #define VM_OP \
 	OP(END) \
-	OP(RET) \
 	OP(LD_CONST) \
 	OP(LD_LOCAL) \
 	OP(ST_LOCAL) \
 	OP(LD_GLOBAL) \
 	OP(ST_GLOBAL) \
 	OP(CALL) \
+	OP(RET) \
 
 /*
  * Opcodes which the pseu virtual machine supports.

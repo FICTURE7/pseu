@@ -4,7 +4,7 @@ ENDFUNCTION
 
 DECLARE sum: INTEGER
 
-sum <- Add(1+1, 5)
+sum <- Add(Add(1, 5), 5)
 OUTPUT sum
 ---
-6
+11
