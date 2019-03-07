@@ -35,11 +35,11 @@ static void output(struct state *state, struct value *args) {
 	struct value *value = args;
 	switch (value->type) {
 		case VALUE_TYPE_INTEGER:
-			sprintf(buffer, "%d", value->as_int);
+			sprintf(buffer, "%d\n", value->as_int);
 			break;
 
 		default:
-			sprintf(buffer, "unknown(%d)<%p>", value->type, value);
+			sprintf(buffer, "unknown(%d)<%p>\n", value->type, value);
 			break;
 	}
 
