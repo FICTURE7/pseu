@@ -17,14 +17,6 @@ static void compiler_set_visitor(struct compiler *compiler,
 static struct closure *compiler_compile_closure(struct compiler *compiler,
 				struct node_block *node);
 
-static const char *strclone(pseu_vm_t *vm, const char *str) {
-	size_t len = strlen(str);
-	char *clone = pseu_alloc(vm, len + 1);
-	strcpy(clone, str);
-
-	return clone;
-}
-
 static void error(struct compiler *compiler, const char *format, ...) {
 	compiler->error_count++;
 
@@ -90,7 +82,7 @@ static struct variable *declare_local(struct compiler *compiler,
 	}
 
 	/* Clone ident, so it can be freed straight away. */
-	const char *ident_clone = strclone(compiler->state->vm, ident);
+	const char *ident_clone = pseu_strdup(compiler->state->vm, ident);
 	struct variable var = {
 		.ident = ident_clone,
 		.type = type
@@ -325,7 +317,7 @@ static void gen_function(struct visitor *visitor,
 	
 	/* Function we're going to compile from the node_function. */
 	struct function *sub_fn = pseu_alloc(state->vm, sizeof(struct function));
-	sub_fn->ident = strclone(state->vm, node->ident->val);
+	sub_fn->ident = pseu_strdup(state->vm, node->ident->val);
 	sub_fn->params_count = node->params.count;
 
 	/* Initialize compiler which will compile the new function. */

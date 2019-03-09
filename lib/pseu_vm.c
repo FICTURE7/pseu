@@ -314,6 +314,14 @@ int vm_call(struct state *state, struct function *fn) {
 	return vm_dispatch(state);
 }
 
+const char *pseu_strdup(pseu_vm_t *vm, const char *str) {
+	size_t len = strlen(str);
+	char *clone = pseu_alloc(vm, len + 1);
+	strcpy(clone, str);
+
+	return clone;
+}
+
 void *pseu_alloc(pseu_vm_t *vm, size_t size) {
 	pseu_assert(vm);
 	return vm->config.alloc(vm, size);

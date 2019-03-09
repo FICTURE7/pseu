@@ -62,9 +62,16 @@ struct pseu_vm {
  */
 int vm_call(struct state *state, struct function *fn);
 
-/* 
- * TODO: Consider renaming vm_{alloc,realloc,free} to pseu_{alloc,realloc,free}. 
+
+/*
+ * Returns a pointer to a duplicate of the specified C string which should be
+ * freed using pseu_free.
+ *
+ * @param[in] vm Pseu virtual machine instance.
+ * @param[in] str C String to duplicate.
+ * @return Pointer to `str` duplicate.
  */
+const char *pseu_strdup(pseu_vm_t *vm, const char *str);
 
 /*
  * Allocates a block of memory of the specified size using the alloc function
@@ -72,6 +79,7 @@ int vm_call(struct state *state, struct function *fn);
  *
  * @param[in] vm Pseu virtual machine instance.
  * @param[in] size Size of block to allocate.
+ * @return Pointer to memory block.
  */
 void *pseu_alloc(pseu_vm_t *vm, size_t size);
 
