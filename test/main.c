@@ -177,29 +177,29 @@ void test_parse(struct pseu_test *test, struct char_buffer *buffer) {
 		}
 	}
 
-	/* If no expected output section, return early. */
-	if (!has_output) {
-		test->input= malloc(buffer->length + 1);
-		memcpy((char *)test->input, buffer->data, buffer->length);
-		return;
-	}
-
-	/* Copy sections to test->input and test->expected_output. */
 	char *input_start = (char *)buffer_start;
 	size_t input_length = ptr - input_start;
-	char *expected_output_start = ptr + SEPERATOR_LEN;
-	size_t expected_output_length = buffer_end - expected_output_start;
+	char *expected_output_start;
+	size_t expected_output_length;
 
+	/* If expected output section, set section start and length. */
+	if (has_output) {
+		expected_output_start = ptr + SEPERATOR_LEN;
+		expected_output_length = buffer_end - expected_output_start;
+	}
+
+	/* Copy sections to test->input and test->expected_output if present. */
 	char *input = malloc(input_length + 1);
-	char *expected_output = malloc(expected_output_length + 1);
 	memcpy(input, input_start, input_length);
-	memcpy(expected_output, expected_output_start, expected_output_length);
-
 	input[input_length] = '\0';
-	expected_output[expected_output_length] = '\0';
-
 	test->input = input;
-	test->expected_output = expected_output;
+	
+	if (has_output) {
+		char *expected_output = malloc(expected_output_length + 1);
+		memcpy(expected_output, expected_output_start, expected_output_length);
+		expected_output[expected_output_length] = '\0';
+		test->expected_output = expected_output;
+	}
 
 	//printf("input: \n%s\n\n", input);
 	//printf("output: \n%s\n\n", expected_output);
@@ -307,6 +307,7 @@ void test(struct pseu_test_runner *runner, const char *path) {
 	if (result == PSEU_RESULT_SUCCESS) {
 		if (!test->expected_output) {
 			test->state = TEST_PASSED;
+			goto finalize;
 		}
 
 		const char *actual = test->output.data;
@@ -361,7 +362,7 @@ int main(int argc, const char **argv) {
 	clock_t end = clock();
 	double duration = (double)(end - start) / CLOCKS_PER_SEC;
 
-	printf("\n\nall tests done in %f -> ", duration);
+	printf("\n\nall tests done in %f ms -> ", duration * 1000);
 	if (runner.result) {
 		printf("failed\n");
 	} else {
