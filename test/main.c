@@ -285,7 +285,7 @@ void test(struct pseu_test_runner *runner, const char *path) {
 
 	/* If test not in NOTRAN state, means that loading failed. */
 	if (test->state != TEST_NOTRAN) {
-		runner.result = 1;
+		runner->result = 1;
 		goto finalize;
 	}
 
@@ -350,10 +350,13 @@ int main(int argc, const char **argv) {
 	clock_t start = clock();
 
 	/* Run tests. */
+	/*
 	test(&runner, "core/output.pseut");
 	test(&runner, "core/declare.pseut");
 	test(&runner, "core/assign.pseut");
 	test(&runner, "core/function.pseut");
+	*/
+	test(&runner, "core/sandbox.pseut");
 
 	clock_t end = clock();
 	double duration = (double)(end - start) / CLOCKS_PER_SEC;
