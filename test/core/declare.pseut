@@ -2,3 +2,4 @@ DECLARE x: INTEGER
 OUTPUT x
 ---
 0
+

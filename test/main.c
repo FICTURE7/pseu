@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 const char *path_combine(const char *base, const char *other) {
 	size_t base_len = strlen(base);
@@ -240,10 +241,10 @@ void test_print_state(struct pseu_test *test) {
 			printf("\x1B[32mpassed\x1B[0m");
 			break;
 		case TEST_ERR_PATH:
-			printf("\x1B[31mfailed\x1B[0m: Unable to combine path");
+			printf("\x1B[31mfailed\x1B[0m: Unable to combine path.");
 			break;
 		case TEST_ERR_ERRNO:
-			printf("\x1B[31mfailed\x1B[0m: %s", strerror(errno));
+			printf("\x1B[31mfailed\x1B[0m: %s.", strerror(errno));
 			break;
 
 		default:
@@ -284,6 +285,7 @@ void test(struct pseu_test_runner *runner, const char *path) {
 
 	/* If test not in NOTRAN state, means that loading failed. */
 	if (test->state != TEST_NOTRAN) {
+		runner.result = 1;
 		goto finalize;
 	}
 
@@ -327,8 +329,6 @@ void test(struct pseu_test_runner *runner, const char *path) {
 finalize:
 	printf(" - ");
 	test_print_state(test);
-	printf(".\n");
-
 	test_free(test);
 }
 
@@ -347,10 +347,23 @@ int main(int argc, const char **argv) {
 		.result = 0
 	};
 
+	clock_t start = clock();
+
 	/* Run tests. */
 	test(&runner, "core/output.pseut");
 	test(&runner, "core/declare.pseut");
 	test(&runner, "core/assign.pseut");
 	test(&runner, "core/function.pseut");
+
+	clock_t end = clock();
+	double duration = (double)(end - start) / CLOCKS_PER_SEC;
+
+	printf("\n\nall tests done in %f -> ", duration);
+	if (runner.result) {
+		printf("failed\n");
+	} else {
+		printf("passed\n");
+	}
+
 	return runner.result;
 }
