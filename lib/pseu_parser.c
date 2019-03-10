@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdarg.h>
 
 #include "pseu_vm.h"
 #include "pseu_node.h"
@@ -33,38 +34,67 @@ static int get_precedence(enum token_type type) {
 }
 
 static void error(struct parser *parser, struct location loc,
-				const char *message) {
+				const char *format, ...) {
 	pseu_vm_t *vm = parser->state->vm;
+	char buffer[256];
+
+	va_list args;
+	va_start(args, format);	
+	vsprintf(buffer, format, args);
+	va_end(args);
 
 	parser->error_count++;
 	if (vm->config.onerror) {
-		vm->config.onerror(vm, PSEU_ERROR_COMPILE, loc.ln, loc.col, message);
+		vm->config.onerror(vm, PSEU_ERROR_COMPILE, loc.ln, loc.col, buffer);
 	}
 }
 
 static void warn(struct parser *parser, struct location loc, 
-				const char *message) {
+				const char *format, ...) {
 	pseu_vm_t *vm = parser->state->vm;
+	char buffer[256];
+
+	va_list args;
+	va_start(args, format);	
+	vsprintf(buffer, format, args);
+	va_end(args);
 
 	if (vm->config.onwarn) {
-		vm->config.onwarn(vm, PSEU_WARN_COMPILE, loc.ln, loc.col, message);
+		vm->config.onwarn(vm, PSEU_WARN_COMPILE, loc.ln, loc.col, buffer);
 	}
 }
 
+/* Consumes the current token and moves to the next token. */
 static void eat(struct parser *parser) {
 	lexer_lex(parser->lexer, &parser->token);
+
+	switch (parser->token.type) {
+		case TOK_ERR_INVALID_HEX:
+			error(parser, parser->lexer->loc, "Invalid hexadecimal number");
+			break;
+		case TOK_ERR_INVALID_EXP:
+			break;
+		case TOK_ERR_INVALID_STRING:
+			error(parser, parser->lexer->loc, "Invalid string");
+			break;
+		case TOK_ERR_UNKNOWN_CHAR:
+			error(parser, parser->lexer->loc, "Unknown character");
+			break;
+
+		default:
+			break;
+	}
 }
 
 static int expect(struct parser *parser, enum token_type type,
 				const char *message) {
-	int result = 0;
 	if (parser->token.type != type) {
 		error(parser, parser->token.loc, message);
-		result = 1;
+		return 1;
 	}
 
 	eat(parser);
-	return result;
+	return 0;
 }
 
 /* Tries to recover from a syntax error. */
@@ -83,15 +113,21 @@ static void panic_comma(struct parser *parser) {
 				parser->token.type != TOK_COMMA);
 }
 
+/* Tries to recover to the next statement. */
+static void panic_statement(struct parser *parser) {
+	while (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
+		eat(parser);
+	}
+}
+
 static struct node *function(struct parser *parser);
 static struct node *expression(struct parser *parser);
 
-static struct node *identifier(struct parser *parser) {
+static struct node *identifier(struct parser *parser, const char *type) {
 	struct token token = parser->token;
 
 	if (parser->token.type != TOK_IDENT) {
-		error(parser, parser->token.loc, "Expected an identifier");
-		eat(parser);
+		error(parser, parser->token.loc, "Expected a %s identifier", type);
 		return NULL;
 	}
 
@@ -99,35 +135,36 @@ static struct node *identifier(struct parser *parser) {
 	eat(parser);
 
 	/* TODO: Consider using node_ident with a flexible array instead. */
-	char *val = pseu_alloc(parser->state->vm, token.len + 1);
-	val[token.len] = '\0';
-	memcpy(val, token.loc.pos, token.len);
+	char *buffer = pseu_alloc(parser->state->vm, token.len + 1);
+	buffer[token.len] = '\0';
+	memcpy(buffer, token.loc.pos, token.len);
 
-	struct node_ident *ident = pseu_alloc(parser->state->vm,
-				sizeof(struct node_ident));
-	ident->base.type = NODE_IDENT;
-	ident->val = val;
-	return (struct node *)ident;
+	struct node_ident *node = 
+		pseu_alloc(parser->state->vm, sizeof(struct node_ident));
+	node->base.type = NODE_IDENT;
+	node->val = buffer;
+	return (struct node *)node;
 }
 
+/*
+ * parameter = identifier ":" identifier
+ */
 static struct node *parameter(struct parser *parser) {
-	struct node_param *param = pseu_alloc(parser->state->vm,
-				sizeof(struct node_param));
-	param->base.type = NODE_PARAM;
-	param->ident = (struct node_ident *)identifier(parser);
+	struct node_param *node = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_param));
+	node->base.type = NODE_PARAM;
+	node->ident = (struct node_ident *)identifier(parser, "parameter");
 
-	if (parser->token.type != TOK_COLON) {
-		error(parser, parser->token.loc, 
-					"Expected ':' after parameter identifier");
-	}
+	/* Expect ":" token after identifier. */
+	expect(parser, TOK_COLON, "Expected ':' after parameter identifier");
 
-	/* Eat ":" token. */
-	eat(parser);
-
-	param->type_ident = (struct node_ident *)identifier(parser);
-	return (struct node *)param;
+	node->type_ident = (struct node_ident *)identifier(parser, "parameter type");
+	return (struct node *)node;
 }
 
+/*
+ * parameter-list = "(" parameter {"," parameter} ")"
+ */
 static void parameter_list(struct parser *parser, struct vector *params) {	
 	expect(parser, TOK_LPAREN, "Expected '(', for begining of parameter list");
 
@@ -144,9 +181,17 @@ static void parameter_list(struct parser *parser, struct vector *params) {
 	expect(parser, TOK_RPAREN, "Expected ')', after parameter list");
 }
 
+/*
+ * argument-list = "(" expression {"," expression} ")"
+ */
 static void argument_list(struct parser *parser, struct vector *args) {
 	/* Eat "(" token. */
 	eat(parser);
+
+	/* If next token is ")", exit early. */
+	if (parser->token.type == TOK_RPAREN) {
+		goto exit;
+	}
 
 	do {
 		struct node *arg = expression(parser);
@@ -162,12 +207,15 @@ static void argument_list(struct parser *parser, struct vector *args) {
 		}
 	} while (parser->token.type != TOK_RPAREN);
 
+exit:
 	/* Eat ")" token. */
 	eat(parser);
 }
 
 static struct node *string(struct parser *parser) {
 	char *buf = pseu_alloc(parser->state->vm, parser->token.len);
+
+	/* TODO: Might want to rework this. */
 
 	/* Unescape string. */
 	size_t len = parser->token.len;
@@ -243,8 +291,8 @@ add:
 	/* Eat string token. */
 	eat(parser);
 
-	struct node_string *node = pseu_alloc(parser->state->vm,
-				sizeof(struct node_string));
+	struct node_string *node = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_string));
 	node->base.type = NODE_LIT_STRING;
 	node->val = string_table_intern(&parser->state->vm->strings, buf, len);
 
@@ -257,49 +305,50 @@ add:
 }
 
 static struct node *real(struct parser *parser) {
-	char *buf = pseu_alloc(parser->state->vm, parser->token.len);
-	struct node_real *val = pseu_alloc(parser->state->vm,
-				sizeof(struct node_real));
+	char *buffer = pseu_alloc(parser->state->vm, parser->token.len);
+	struct node_real *node = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_real));
 
-	memcpy(buf, parser->token.loc.pos, parser->token.len);
-	val->base.type = NODE_LIT_REAL;
-	val->val = strtof(buf, NULL);
-	pseu_free(parser->state->vm, buf);
+	memcpy(buffer, parser->token.loc.pos, parser->token.len);
+	node->base.type = NODE_LIT_REAL;
+	node->val = strtof(buffer, NULL);
+	pseu_free(parser->state->vm, buffer);
 
 	/* Eat real token. */
 	eat(parser);
-	return (struct node *)val;
+	return (struct node *)node;
 }
 
 static struct node *integer(struct parser *parser) {
-	char *buf = NULL;
-	struct node_integer *val = pseu_alloc(parser->state->vm,
-				sizeof(struct node_integer));
+	char *buffer = NULL;
+	struct node_integer *node = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_integer));
 
-	val->base.type = NODE_LIT_INTEGER;
+	node->base.type = NODE_LIT_INTEGER;
 	switch (parser->token.type) {
 		case TOK_LIT_INTEGER:
-			buf = pseu_alloc(parser->state->vm, parser->token.len);
-			memcpy(buf, parser->token.loc.pos, parser->token.len);
-			val->val = strtol(buf, NULL, 10);
+			buffer = pseu_alloc(parser->state->vm, parser->token.len);
+			memcpy(buffer, parser->token.loc.pos, parser->token.len);
+			node->val = strtol(buffer, NULL, 10);
 			break;
 		case TOK_LIT_INTEGERHEX:
 			/* Skip the first '0x' characters. */
-			buf = pseu_alloc(parser->state->vm, parser->token.len - 2);
-			memcpy(buf, parser->token.loc.pos + 2, parser->token.len - 2);
-			val->val = strtol(buf, NULL, 16);
+			buffer = pseu_alloc(parser->state->vm, parser->token.len - 2);
+			memcpy(buffer, parser->token.loc.pos + 2, parser->token.len - 2);
+			node->val = strtol(buffer, NULL, 16);
 			break;
 
 		default:
 			/* Unexpected token type (should not happen). */
-			pseu_free(parser->state->vm, val);
+			pseu_free(parser->state->vm, node);
+			eat(parser);
 			return NULL;
 	}
 
-	pseu_free(parser->state->vm, buf);
+	pseu_free(parser->state->vm, buffer);
 	/* Eat integer token. */
 	eat(parser);
-	return (struct node *)val;
+	return (struct node *)node;
 }
 
 /*
@@ -335,14 +384,28 @@ static struct node *boolean(struct parser *parser) {
 			return NULL;
 	}
 
-	struct node_boolean *node = pseu_alloc(parser->state->vm,
-				sizeof(struct node_boolean));
+	struct node_boolean *node = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_boolean));
 	node->base.type = NODE_LIT_BOOLEAN;
 	node->val = val;
 
 	/* Eat "TRUE"/"FALSE" token. */
 	eat(parser);
 	return (struct node *)node;
+}
+
+/*
+ * call = identifier argument-list
+ */
+static struct node *call(struct parser *parser, struct node_ident *ident) {
+	struct node_call *call = 
+		pseu_alloc(parser->state->vm, sizeof(struct node_call));
+	call->base.type = NODE_CALL;
+	call->fn_ident = ident;
+
+	vector_init(parser->state->vm, &call->args, 4);
+	argument_list(parser, &call->args);
+	return (struct node *)call;
 }
 
 /*
@@ -355,8 +418,8 @@ static struct node *primary(struct parser *parser) {
 		case TOK_OP_ADD:
 		case TOK_OP_SUB:
 		case TOK_OP_LOGICAL_NOT: {
-			struct node_op_unary *unop = pseu_alloc(parser->state->vm,
-						sizeof(struct node_op_unary));
+			struct node_op_unary *unop = 
+				pseu_alloc(parser->state->vm, sizeof(struct node_op_unary));
 			unop->base.type = NODE_OP_UNARY;
 			unop->op = parser->token.type;
 
@@ -402,19 +465,13 @@ static struct node *primary(struct parser *parser) {
 		case TOK_LIT_REAL:
 			return number(parser);
 
-		/* Variable identifiers. */
+		/* Variable identifiers & calls. */
 		case TOK_IDENT: {
-			struct node *ident = identifier(parser);
+			struct node *ident = identifier(parser, NULL);
+			/* If next token is a '(' then its a function/procedure call. */
 			if (parser->token.type == TOK_LPAREN) {
-				struct node_call *call = pseu_alloc(parser->state->vm,
-									sizeof(struct node_call));
-				call->base.type = NODE_CALL;
-				call->fn_ident = (struct node_ident *)ident;
-				vector_init(parser->state->vm, &call->args, 16);
-				argument_list(parser, &call->args);
-				return (struct node *)call;
+				return call(parser, (struct node_ident *)ident);
 			}
-
 			return ident;
 		}
 
@@ -455,8 +512,8 @@ static struct node *expression_rhs(struct parser *parser,
 			rhs = new_rhs;
 		}
 
-		struct node_op_binary *new_lhs = pseu_alloc(parser->state->vm,
-					sizeof(struct node_op_binary));
+		struct node_op_binary *new_lhs = 
+				pseu_alloc(parser->state->vm, sizeof(struct node_op_binary));
 		new_lhs->base.type = NODE_OP_BINARY;
 		new_lhs->op = op;
 		new_lhs->left = lhs;
@@ -469,7 +526,6 @@ static struct node *expression(struct parser *parser) {
 	/* Parse left hand side of expression. */
 	struct node *lhs = primary(parser);
 	if (!lhs) {
-		/* error(parser, parser->token.loc, "Expected an expression"); */
 		return NULL;
 	}
 
@@ -480,58 +536,66 @@ static struct node *expression(struct parser *parser) {
 /*
  * declare-statement = "DECLARE" identifier ":" identifier
  *
- * TODO: Add assign expression to statement as well, giving this representation
- * assign = "<-" expression
- * declare-statement = "DECLARE" identifier ":" identifier [ assign ]
+ * TODO: Add single line multi-variable declare syntax:
+ * DECLARE x,y,z: INTEGER
+ * TODO: Add assign expression to statement:
+ * DECLARE x: INTEGER <- 1
+ * TODO: Make sure we can do this as well:
+ * DECLARE x,y,z: INTEGER <- 1
  */
 static struct node *declare_statement(struct parser *parser) {
 	/* Eat "DECLARE" keyword. */
 	eat(parser);
 
-	struct node_stmt_decl *decl = pseu_alloc(parser->state->vm,
-				sizeof(struct node_stmt_decl));
-	decl->base.type = NODE_STMT_DECLARE;
+	struct node_stmt_decl *node =
+			pseu_alloc(parser->state->vm, sizeof(struct node_stmt_decl));
+	node->base.type = NODE_STMT_DECLARE;
 
 	/* Parse variable identifier. */
-	decl->ident = (struct node_ident *)identifier(parser);
+	node->ident = (struct node_ident *)identifier(parser, "variable");
+	if (!node->ident) {
+		panic_statement(parser);
+		return (struct node *)node;
+	}
 
 	/* Expect ":" after variable identifier. */
-	if (parser->token.type != TOK_COLON) {
-		error(parser, parser->token.loc,
-				"Expected ':' after variable identifier");
+	if (expect(parser, TOK_COLON, "Expected ':' after variable identifier")) {
+		panic_statement(parser);
+		return (struct node *)node;
 	}
-	
-	/* Eat ":" token. */
-	eat(parser);
 
 	/* Parse type identifier. */
-	decl->type_ident = (struct node_ident *)identifier(parser);
-	return (struct node *)decl;
+	node->type_ident = (struct node_ident *)identifier(parser, "variable type");
+	if (!node->type_ident) {
+		panic_statement(parser);
+		return (struct node *)node;
+	}
+
+	return (struct node *)node;
 }
 
 /*
  * assign-statement = identifier "<-" expression
  */
 static struct node *assign_statement(struct parser *parser) {
-	struct node_stmt_assign *assign = pseu_alloc(parser->state->vm,
-				sizeof(struct node_stmt_assign));
-	assign->base.type = NODE_STMT_ASSIGN;
+	struct node_stmt_assign *node =
+			pseu_alloc(parser->state->vm, sizeof(struct node_stmt_assign));
+	node->base.type = NODE_STMT_ASSIGN;
 
 	/* Parse the variable being assigned's identifier. */
-	assign->ident = (struct node_ident *)identifier(parser);
+	node->ident = (struct node_ident *)identifier(parser, "variable");
 
 	/* Expect "<-" after variable identifier. */
-	if (parser->token.type != TOK_ASSIGN) {
-		error(parser, parser->token.loc,
-				"Expected assign operator, '<-', after variable identifier");
+	expect(parser, TOK_ASSIGN,
+			"Expected assign operator, '<-', after variable identifier");
+
+	/* Parse expression to which the identifier is being assigned to. */
+ 	node->right = expression(parser);
+	if (!node->right) {
+		error(parser, parser->token.loc, "Expected assign expression");
 	}
 
-	/* Eat "<-" token. */
-	eat(parser);
-
-	/* Parse value (expression) to which it is being assigned. */
-	assign->right = expression(parser);
-	return (struct node *)assign;
+	return (struct node *)node;
 }
 
 /*
@@ -541,30 +605,37 @@ static struct node *output_statement(struct parser *parser) {
 	/* Eat "OUTPUT" keyword. */
 	eat(parser);
 
-	struct node_stmt_output *output = pseu_alloc(parser->state->vm,
-				sizeof(struct node_stmt_output));
-	output->base.type = NODE_STMT_OUTPUT;
+	struct node_stmt_output *node =
+			pseu_alloc(parser->state->vm, sizeof(struct node_stmt_output));
+	node->base.type = NODE_STMT_OUTPUT;
+	/* Parse expression to output. */
+	node->expr = expression(parser);
+	if (!node->expr) {
+		error(parser, parser->token.loc, "Expected expression to output");
+		panic_statement(parser);
+	}
 
-	/* Parse value (expression) to output. */
-	struct node *expr = expression(parser);
-	output->expr = expr;
-
-	return (struct node *)output;
+	return (struct node *)node;
 }
 
+/*
+ * return-statement = "RETURN" expression
+ */
 static struct node *return_statement(struct parser *parser) {
 	/* Eat "RETURN" keyword. */
 	eat(parser);
 
-	struct node_stmt_return *ret = pseu_alloc(parser->state->vm,
-				sizeof(struct node_stmt_return));
-	ret->base.type = NODE_STMT_RETURN;
-
+	struct node_stmt_return *node = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_stmt_return));
+	node->base.type = NODE_STMT_RETURN;
 	/* Parse expression to return. */
-	struct node *expr = expression(parser);
-	ret->expr = expr;
-	
-	return (struct node *)ret;
+	node->expr = expression(parser);
+	if (!node->expr) {
+		error(parser, parser->token.loc, "Expected expression to return");
+		panic_statement(parser);
+	}
+
+	return (struct node *)node;
 }
 
 /*
@@ -575,6 +646,7 @@ static struct node *statement(struct parser *parser) {
 		case TOK_KW_DECLARE:
 			return declare_statement(parser);
 		case TOK_IDENT:
+			/* TODO: Peek for "<-" operator before parsing assign. */
 			return assign_statement(parser);
 		case TOK_KW_OUTPUT:
 			return output_statement(parser);
@@ -585,7 +657,7 @@ static struct node *statement(struct parser *parser) {
 			return function(parser);
 
 		default:
-			error(parser, parser->token.loc, "Expected beginning of statement");
+			error(parser, parser->token.loc, "Invalid statement");
 			return NULL;
 	}
 }
@@ -594,11 +666,14 @@ static struct node *statement(struct parser *parser) {
  * block = { statement | empty-statement }
  */
 static struct node *block(struct parser *parser) {
-	struct node *stmt;
-	struct node_block *block = pseu_alloc(parser->state->vm,
-				sizeof(struct node_block));
+	struct node_block *block = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_block));
 	block->base.type = NODE_BLOCK;
 	vector_init(parser->state->vm, &block->stmts, 16);
+
+	if (parser->token.type == TOK_EOF) {
+		return (struct node *)block;
+	}
 
 	do {
 		/* If new-line, move to next token. */
@@ -608,7 +683,8 @@ static struct node *block(struct parser *parser) {
 		}
 
 		/* Parse statement. */
-		stmt = statement(parser);
+		struct node *stmt = statement(parser);
+
 		/* 
 		 * If parsed statement, add to list of block statements; otherwise
 		 * panic and try to recover to next parsable statement.
@@ -617,6 +693,11 @@ static struct node *block(struct parser *parser) {
 			vector_add(parser->state->vm, &block->stmts, stmt);
 		} else {
 			panic(parser);
+		}
+
+		if (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
+			error(parser, parser->token.loc, "Expected new line or end of file");
+			panic_statement(parser);
 		}
 	} while (parser->token.type != TOK_EOF && 
 			parser->token.type != TOK_KW_ENDFUNCTION);
@@ -632,13 +713,13 @@ static struct node *function(struct parser *parser) {
 	/* Eat "FUNCTION" keyword. */
 	eat(parser);
 
-	struct node_function *fn = pseu_alloc(parser->state->vm,
-				sizeof(struct node_function));
+	struct node_function *fn = 
+			pseu_alloc(parser->state->vm, sizeof(struct node_function));
 	fn->base.type = NODE_FUNCTION;
-	vector_init(parser->state->vm, &fn->params, 16);
+	vector_init(parser->state->vm, &fn->params, 4);
 
 	/* Parse function identifier. */
-	fn->ident = (struct node_ident *)identifier(parser);
+	fn->ident = (struct node_ident *)identifier(parser, "function");
 
 	/* Parse parameter list. */
 	parameter_list(parser, &fn->params);
@@ -649,7 +730,8 @@ static struct node *function(struct parser *parser) {
 	struct node_ident *return_type_ident = NULL;
 	if (parser->token.type == TOK_COLON) {
 		eat(parser);
-		return_type_ident = (struct node_ident *)identifier(parser);
+		return_type_ident = 
+			(struct node_ident *)identifier(parser, "function return type");
 	}
 
 	fn->return_type_ident = return_type_ident;
@@ -658,11 +740,18 @@ static struct node *function(struct parser *parser) {
 	fn->body = (struct node_block *)block(parser);
 
 	expect(parser, TOK_KW_ENDFUNCTION,
-				"Expected 'ENDFUNCTION' keyword after body");
+				"Expected 'ENDFUNCTION' keyword after function body");
 
 	/* Eat "ENDFUNCTION" token. */
 	eat(parser);
 	return (struct node *)fn;
+}
+
+/*
+ * root = 
+ */
+static struct node *root(struct parser *parser) {
+	return block(parser);
 }
 
 void parser_init(struct parser *parser, struct lexer *lexer,
@@ -674,21 +763,15 @@ void parser_init(struct parser *parser, struct lexer *lexer,
 	parser->lexer = lexer;
 
 	/* Scan first token. */
-	lexer_lex(lexer, &parser->token);
+	eat(parser);
 }
 
 struct node *parser_parse(struct parser *parser) {
 	pseu_assert(parser);
 
-	struct node *root;
-	/* Parse list of statements. */
-	root = block(parser);
+	/* Parse list of top-level statements. */
+	struct node *node = root(parser);
 	/* Next token should be end of file. */
-	if (parser->token.type != TOK_EOF) {
-		error(parser, parser->token.loc, "Expected end of file");
-	}
-
-	/* Eat EOF token. */
-	eat(parser);
-	return root;
+	expect(parser, TOK_EOF, "Expected end of file");
+	return node;
 }

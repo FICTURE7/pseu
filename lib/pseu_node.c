@@ -77,6 +77,7 @@ static void free_block(struct visitor *visitor,
 void node_free(pseu_vm_t *vm, struct node *node) {
 	pseu_assert(vm && node);
 
+	/* TODO: Free other newly introduced nodes. */
 	struct visitor visitor = { };
 	visitor.data = vm;
 	visitor.visit_ident = free_ident;

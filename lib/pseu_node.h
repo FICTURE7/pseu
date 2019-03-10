@@ -57,7 +57,10 @@ struct node_function {
 	struct node base;
 	struct node_ident *ident;
 	struct node_ident *return_type_ident;
+
+	/* TODO: Rename body to block. */
 	struct node_block *body;
+
 	struct vector params;
 };
 
@@ -123,6 +126,7 @@ struct node_op_binary {
  * Statement nodes definitions.
  */
 
+/* TODO: Rename decl to decalre. */
 struct node_stmt_decl {
 	struct node base;
 	struct node_ident *ident;
@@ -132,6 +136,8 @@ struct node_stmt_decl {
 struct node_stmt_assign {
 	struct node base;
 	struct node_ident *ident;
+
+	/* TODO: Rename to expr. */
 	struct node *right;
 };
 
