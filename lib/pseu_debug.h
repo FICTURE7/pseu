@@ -21,5 +21,6 @@ void pseu_dump_value(FILE *stream, struct value *value);
 void pseu_dump_variable(FILE *stream, struct variable *var);
 void pseu_dump_function_info(FILE *stream, struct function *fn);
 void pseu_dump_function_code(FILE *stream, pseu_vm_t *vm, struct function *fn);
+void pseu_dump_stack(FILE *stream, struct state *state); 
 
 #endif /* PSEU_DEBUG_H */

@@ -4,11 +4,6 @@
 
 #include "pseu_lexer.h"
 
-#ifdef LEXER_DEBUG
-#include <stdio.h>
-#include "pseu_debug.h"
-#endif
-
 /* advances the lexer's position by the specified amount of character */
 static char *advance_by(struct lexer *lexer, int count) {
 	lexer->loc.pos += count;
@@ -280,24 +275,9 @@ void lexer_init(struct lexer *lexer, const char *src) {
 	lexer->loc.pos = (char *)src;
 	lexer->loc.ln = 1;
 	lexer->loc.col = 1;
-
-#ifdef LEXER_DEBUG
-	struct token token;
-	printf("\nlex('%s')\n", src);
-
-	lexer_lex(lexer, &token);
-	while (token.type != TOK_EOF) {
-		pseu_dump_token(stdout, &token);
-		lexer_lex(lexer, &token);
-	}
-	/* reset */
-	lexer->loc.pos = (char *)src;
-	lexer->loc.ln = 1;
-	lexer->loc.col = 1;
-#endif
 }
 
-void lexer_lex(struct lexer *lexer, struct token *token) {
+void lexer_next(struct lexer *lexer, struct token *token) {
 	/* peek character */
 	char p;
 	/* current character */
@@ -481,4 +461,11 @@ advance_exit:
 eof_exit:
 	token_init(token, TOK_EOF, lexer->loc, 0);
 	return;
+}
+
+void lexer_peek(struct lexer *lexer, struct token *token) {
+	/* Store the location of the lexer before peeking. */
+	struct location loc_original = lexer->loc;
+	lexer_next(lexer, token);
+	lexer->loc = loc_original;
 }

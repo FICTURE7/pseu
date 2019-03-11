@@ -330,6 +330,7 @@ void test(struct pseu_test_runner *runner, const char *path) {
 finalize:
 	printf(" - ");
 	test_print_state(test);
+	printf("\n");
 	test_free(test);
 }
 
@@ -351,18 +352,16 @@ int main(int argc, const char **argv) {
 	clock_t start = clock();
 
 	/* Run tests. */
-	/*
 	test(&runner, "core/output.pseut");
 	test(&runner, "core/declare.pseut");
 	test(&runner, "core/assign.pseut");
 	test(&runner, "core/function.pseut");
-	*/
-	test(&runner, "core/sandbox.pseut");
+	//test(&runner, "core/sandbox.pseut");
 
 	clock_t end = clock();
 	double duration = (double)(end - start) / CLOCKS_PER_SEC;
 
-	printf("\n\nall tests done in %f ms -> ", duration * 1000);
+	printf("\nall tests done in %f ms -> ", duration * 1000);
 	if (runner.result) {
 		printf("failed\n");
 	} else {

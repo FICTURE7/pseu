@@ -30,6 +30,14 @@ void lexer_init(struct lexer *lexer, const char *src);
  * @param lexer Lexer to use.
  * @param token Token to set.
  */
-void lexer_lex(struct lexer *lexer, struct token *token);
+void lexer_next(struct lexer *lexer, struct token *token);
+
+/*
+ * Peeks the next token in the source of the specified lexer.
+ *
+ * @param lexer Lexer to use.
+ * @param token Token to set.
+ */
+void lexer_peek(struct lexer *lexer, struct token *token);
 
 #endif /* PSEU_LEXER_H */

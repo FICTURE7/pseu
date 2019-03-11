@@ -60,9 +60,12 @@ static void print_params(FILE *stream, unsigned int depth,
 	depth++;
 	for (size_t i = 0; i < params->count; i++) {
 		struct node_param *param = params->data[i];
+		const char *ident = param->ident ? param->ident->val : NULL;
+		const char *type_ident = 
+			param->type_ident ? param->type_ident->val : NULL;
 
 		print_indent(stream, depth);
-		fprintf(stream, "%s:%s\n", param->ident->val, param->type_ident->val);
+		fprintf(stream, "%s:%s\n", ident, type_ident);
 	}
 }
 
@@ -182,17 +185,21 @@ static void dump_stmt_decl(struct visitor *visitor,
 				struct node_stmt_decl *decl) {
 	struct node_dump_info *info = visitor->data;
 
+	const char *ident = decl->ident ? decl->ident->val : NULL;
+	const char *type_ident = decl->type_ident ? decl->type_ident->val : NULL;
+
 	print_indent(info->stream, info->depth);
-	fprintf(info->stream, "decl(%s:%s)\n", decl->ident->val,
-				decl->type_ident->val);
+	fprintf(info->stream, "decl(%s:%s)\n", ident, type_ident);
 }
 
 static void dump_stmt_assign(struct visitor *visitor,
 				struct node_stmt_assign *assign) {
 	struct node_dump_info *info = visitor->data;
 
+	const char *ident = assign->ident ? assign->ident->val : NULL;
+
 	print_indent(info->stream, info->depth);
-	fprintf(info->stream, "assign(%s):\n", assign->ident->val);
+	fprintf(info->stream, "assign(%s):\n", ident);
 
 	info->depth++;
 	dump_node(visitor, assign->right);
@@ -241,9 +248,12 @@ static void dump_function(struct visitor *visitor,
 			struct node_function *fn) {
 	struct node_dump_info *info = visitor->data;
 
+	const char *ident = fn->ident ? fn->ident->val : NULL;
+	const char *return_type_ident = 
+		fn->return_type_ident ? fn->return_type_ident->val : "VOID";
+
 	print_indent(info->stream, info->depth);
-	fprintf(info->stream, "function(%s:%s):\n", fn->ident->val, 
-						fn->return_type_ident->val);
+	fprintf(info->stream, "function(%s:%s):\n", ident, return_type_ident);
 
 	info->depth++;
 	print_params(info->stream, info->depth, &fn->params);
@@ -344,6 +354,7 @@ void pseu_dump_function_code(FILE *stream, pseu_vm_t *vm, struct function *fn) {
 	struct closure *closure = fn->as_closure;
 	code_t *ip = closure->code;
 	code_t op = OP(END);
+
 	do {
 		fprintf(stream, "%03u ", (unsigned int)(ip - closure->code));
 		op = READ_UINT8();
@@ -355,6 +366,10 @@ void pseu_dump_function_code(FILE *stream, pseu_vm_t *vm, struct function *fn) {
 
 				fprintf(stream, "call '%s'   ; -> [%u]\n",
 							call_fn->ident, call_fn_id);
+				break;
+			}
+			case OP(RET): {
+				fprintf(stream, "ret\n");
 				break;
 			}
 			case OP(LD_CONST): {
@@ -394,4 +409,8 @@ void pseu_dump_function_code(FILE *stream, pseu_vm_t *vm, struct function *fn) {
 			}
 		}
 	} while (op != OP(END));
+}
+
+void pseu_dump_stack(FILE *stream, struct state *state) {
+	/* TODO: Implement. */
 }

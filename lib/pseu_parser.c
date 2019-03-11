@@ -66,13 +66,15 @@ static void warn(struct parser *parser, struct location loc,
 
 /* Consumes the current token and moves to the next token. */
 static void eat(struct parser *parser) {
-	lexer_lex(parser->lexer, &parser->token);
+	lexer_next(parser->lexer, &parser->token);
 
+	/* TODO: This can be set directly by the lexer, to save some performance. */
 	switch (parser->token.type) {
 		case TOK_ERR_INVALID_HEX:
 			error(parser, parser->lexer->loc, "Invalid hexadecimal number");
 			break;
 		case TOK_ERR_INVALID_EXP:
+			error(parser, parser->lexer->loc, "Invalid exponential value");
 			break;
 		case TOK_ERR_INVALID_STRING:
 			error(parser, parser->lexer->loc, "Invalid string");
@@ -97,14 +99,7 @@ static int expect(struct parser *parser, enum token_type type,
 	return 0;
 }
 
-/* Tries to recover from a syntax error. */
-static void panic(struct parser *parser) {
-	/* skip tokens until a line feed or eof */
-	do {
-		eat(parser);
-	} while (parser->token.type != TOK_LF && parser->token.type != TOK_EOF);
-}
-
+/* Tries to recover to the next comma. */
 static void panic_comma(struct parser *parser) {
 	do {
 		eat(parser);
@@ -113,7 +108,7 @@ static void panic_comma(struct parser *parser) {
 				parser->token.type != TOK_COMMA);
 }
 
-/* Tries to recover to the next statement. */
+/* Tries to recover to the next statement (new line or end of file). */
 static void panic_statement(struct parser *parser) {
 	while (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
 		eat(parser);
@@ -163,7 +158,7 @@ static struct node *parameter(struct parser *parser) {
 }
 
 /*
- * parameter-list = "(" parameter {"," parameter} ")"
+ * parameter-list = "(" parameter { "," parameter } ")"
  */
 static void parameter_list(struct parser *parser, struct vector *params) {	
 	expect(parser, TOK_LPAREN, "Expected '(', for begining of parameter list");
@@ -182,7 +177,7 @@ static void parameter_list(struct parser *parser, struct vector *params) {
 }
 
 /*
- * argument-list = "(" expression {"," expression} ")"
+ * argument-list = "(" expression { "," expression } ")"
  */
 static void argument_list(struct parser *parser, struct vector *args) {
 	/* Eat "(" token. */
@@ -427,6 +422,10 @@ static struct node *primary(struct parser *parser) {
 			eat(parser);
 
 			unop->expr = primary(parser);
+			if (!unop->expr) {
+				error(parser, parser->token.loc,
+						"Expected expression after unary operator");
+			}
 			return (struct node *)unop;
 		}
 
@@ -442,7 +441,8 @@ static struct node *primary(struct parser *parser) {
 
 			/* Expect ")" after end of expression. */
 			if (parser->token.type != TOK_RPAREN) {
-				error(parser, parser->token.loc, "Expected a ')'");
+				error(parser, parser->token.loc, 
+						"Expected a ')' after expression");
 			} else {
 				/* Eat ")" token. */
 				eat(parser);
@@ -586,13 +586,17 @@ static struct node *assign_statement(struct parser *parser) {
 	node->ident = (struct node_ident *)identifier(parser, "variable");
 
 	/* Expect "<-" after variable identifier. */
-	expect(parser, TOK_ASSIGN,
-			"Expected assign operator, '<-', after variable identifier");
+	if (expect(parser, TOK_ASSIGN,
+			"Expected assign operator, '<-', after variable identifier")) {
+		panic_statement(parser);
+		return (struct node *)node;
+	};
 
 	/* Parse expression to which the identifier is being assigned to. */
  	node->right = expression(parser);
 	if (!node->right) {
 		error(parser, parser->token.loc, "Expected assign expression");
+		panic_statement(parser);
 	}
 
 	return (struct node *)node;
@@ -639,90 +643,89 @@ static struct node *return_statement(struct parser *parser) {
 }
 
 /*
- * statement = declare-statement | assign-statement | output-statement
+ * function-block-statement = declare-statement / assign-statement /
+ * 					output-statement / return-statement / empty-statement
  */
-static struct node *statement(struct parser *parser) {
+static struct node *function_block_statement(struct parser *parser) {
 	switch (parser->token.type) {
 		case TOK_KW_DECLARE:
 			return declare_statement(parser);
-		case TOK_IDENT:
-			/* TODO: Peek for "<-" operator before parsing assign. */
-			return assign_statement(parser);
 		case TOK_KW_OUTPUT:
 			return output_statement(parser);
 		case TOK_KW_RETURN:
 			return return_statement(parser);
+		case TOK_IDENT: {
+			struct token peek;
+			lexer_peek(parser->lexer, &peek);
 
-		case TOK_KW_FUNCTION:
-			return function(parser);
+			/* If next token is "<-" then parse assgin statement. */
+			if (peek.type == TOK_ASSIGN) {
+				return assign_statement(parser);
+			}
+			break;
+		}
 
 		default:
-			error(parser, parser->token.loc, "Invalid statement");
-			return NULL;
+			break;
 	}
+
+	error(parser, parser->token.loc,
+			"Only declaration, assignment, output and return statements can be "
+			"used");
+	return NULL;
 }
 
 /*
- * block = { statement | empty-statement }
+ * function-block = function-statement { LF function-statement }
  */
-static struct node *block(struct parser *parser) {
-	struct node_block *block = 
+static struct node *function_block(struct parser *parser) {
+	struct node_block *node =
 			pseu_alloc(parser->state->vm, sizeof(struct node_block));
-	block->base.type = NODE_BLOCK;
-	vector_init(parser->state->vm, &block->stmts, 16);
+	node->base.type = NODE_BLOCK;
+	vector_init(parser->state->vm, &node->stmts, 16);
 
-	if (parser->token.type == TOK_EOF) {
-		return (struct node *)block;
-	}
-
-	do {
-		/* If new-line, move to next token. */
+	/* Parse statements until ENDFUNCTION keyword or end of file. */
+	while (parser->token.type != TOK_KW_ENDFUNCTION &&
+			parser->token.type != TOK_EOF) {
+		/* empty-statement definition, just consume the token. */
 		if (parser->token.type == TOK_LF) {
 			eat(parser);
 			continue;
 		}
 
-		/* Parse statement. */
-		struct node *stmt = statement(parser);
-
-		/* 
-		 * If parsed statement, add to list of block statements; otherwise
-		 * panic and try to recover to next parsable statement.
-		 */
+		/* Parse statement which are allowed in functions. */
+		struct node *stmt = function_block_statement(parser);
 		if (stmt) {
-			vector_add(parser->state->vm, &block->stmts, stmt);
-		} else {
-			panic(parser);
+			vector_add(parser->state->vm, &node->stmts, stmt);
 		}
 
-		if (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
-			error(parser, parser->token.loc, "Expected new line or end of file");
+		/* Expect new line or end of file at end of statement. */
+		if (expect(parser, TOK_LF, "Expected new line")) {
 			panic_statement(parser);
 		}
-	} while (parser->token.type != TOK_EOF && 
-			parser->token.type != TOK_KW_ENDFUNCTION);
+	}
 
-	return (struct node *)block;
+	return (struct node *)node;
 }
 
 /*
  * function = "FUNCTION" identifier parameter-list [":" identifier]
- * 				block "ENDFUNCTION"
+ * 				function-block "ENDFUNCTION"
  */
 static struct node *function(struct parser *parser) {
 	/* Eat "FUNCTION" keyword. */
 	eat(parser);
 
-	struct node_function *fn = 
+	struct node_function *node = 
 			pseu_alloc(parser->state->vm, sizeof(struct node_function));
-	fn->base.type = NODE_FUNCTION;
-	vector_init(parser->state->vm, &fn->params, 4);
+	node->base.type = NODE_FUNCTION;
+	vector_init(parser->state->vm, &node->params, 4);
 
 	/* Parse function identifier. */
-	fn->ident = (struct node_ident *)identifier(parser, "function");
+	node->ident = (struct node_ident *)identifier(parser, "function");
 
 	/* Parse parameter list. */
-	parameter_list(parser, &fn->params);
+	parameter_list(parser, &node->params);
 
 	/* 
 	 * If there is a colon after parameter list, parse return type identifier.
@@ -734,24 +737,82 @@ static struct node *function(struct parser *parser) {
 			(struct node_ident *)identifier(parser, "function return type");
 	}
 
-	fn->return_type_ident = return_type_ident;
+	expect(parser, TOK_LF, "Expected new line after function declaration");
 
-	/* TODO: Don't parse nested function blocks. */
-	fn->body = (struct node_block *)block(parser);
+	node->return_type_ident = return_type_ident;
+	node->body = (struct node_block *)function_block(parser);
 
 	expect(parser, TOK_KW_ENDFUNCTION,
-				"Expected 'ENDFUNCTION' keyword after function body");
-
-	/* Eat "ENDFUNCTION" token. */
-	eat(parser);
-	return (struct node *)fn;
+			"Expected 'ENDFUNCTION' keyword after function body");
+	return (struct node *)node;
 }
 
 /*
- * root = 
+ * root-block-statement = declare-statement / assign-statement /
+ * 					output-statement / empty-statement / function
  */
-static struct node *root(struct parser *parser) {
-	return block(parser);
+static struct node *root_block_statement(struct parser *parser) {
+	switch (parser->token.type) {
+		case TOK_KW_DECLARE:
+			return declare_statement(parser);
+		case TOK_KW_OUTPUT:
+			return output_statement(parser);
+		case TOK_IDENT: {
+			struct token peek;
+			lexer_peek(parser->lexer, &peek);
+
+			/* If next token is "<-" then parse assgin statement. */
+			if (peek.type == TOK_ASSIGN) {
+				return assign_statement(parser);
+			}
+			break;
+		}
+
+		case TOK_KW_FUNCTION:
+			return function(parser);
+
+		default:
+			break;
+	}
+
+	error(parser, parser->token.loc, 
+			"Only declaration, assignment and output statements can be used");
+	return NULL;
+}
+
+/*
+ * root-block = root-statement { LF root-statement }
+ */
+static struct node *root_block(struct parser *parser) {
+	struct node_block *node =
+			pseu_alloc(parser->state->vm, sizeof(struct node_block));
+	node->base.type = NODE_BLOCK;
+	vector_init(parser->state->vm, &node->stmts, 16);
+
+	/* Parse statements until end of file. */
+	while (parser->token.type != TOK_EOF) {
+		/* empty-statement definition, just consume the token. */
+		if (parser->token.type == TOK_LF) {
+			eat(parser);
+			continue;
+		}
+
+		/* Parse top-level statement. */
+		struct node *stmt = root_block_statement(parser);
+		if (stmt) {
+			vector_add(parser->state->vm, &node->stmts, stmt);
+		}
+
+		/* Expect new line or end of file at end of statement. */
+		if (parser->token.type != TOK_LF && parser->token.type != TOK_EOF) {
+			error(parser, parser->token.loc, "Expected new line or end of file");
+			panic_statement(parser);
+		} else {
+			eat(parser);
+		}
+	}
+
+	return (struct node *)node;
 }
 
 void parser_init(struct parser *parser, struct lexer *lexer,
@@ -770,7 +831,7 @@ struct node *parser_parse(struct parser *parser) {
 	pseu_assert(parser);
 
 	/* Parse list of top-level statements. */
-	struct node *node = root(parser);
+	struct node *node = root_block(parser);
 	/* Next token should be end of file. */
 	expect(parser, TOK_EOF, "Expected end of file");
 	return node;
