@@ -1,10 +1,10 @@
 #include <pseu.h>
-#include "pseu_vm.h"
-#include "pseu_core.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+#include "vm.h"
+#include "core.h"
 
 /* Default print function of the pseu virtual machine. */
 static void default_print(pseu_vm_t *vm, const char *text) 

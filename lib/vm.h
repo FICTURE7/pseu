@@ -25,7 +25,7 @@
 #define PSEU_MAX_TYPE   (1 << 16) - 1
 
 #ifdef PSEU_USE_ASSERT
-	#define pseu_assert(cond) 	assert(cond);
+	#define pseu_assert(cond)	assert(cond);
 #else
 	#define pseu_assert(cond)
 #endif
@@ -38,8 +38,8 @@
 	#define pseu_unlikely(x)	(x)
 #endif
 
-#define pseu_unreachable(x) 	assert(0 && "Unreachable code reached")
-#define pseu_unused(x) 			(void)(x)
+#define pseu_unreachable(x)		assert(0 && "Unreachable code reached")
+#define pseu_unused(x)			(void)(x)
 
 pseu_state_t *pseu_state_new(pseu_vm_t *vm);
 void pseu_state_free(pseu_state_t *s);

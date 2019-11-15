@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "pseu_core.h"
+#include "core.h"
 
 P_FARITH(add, +)
 P_FARITH(sub, -)

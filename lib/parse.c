@@ -1,5 +1,5 @@
-#include "pseu_vm.h"
-#include "pseu_lex.h"
+#include "vm.h"
+#include "lex.h"
 
 /* A local variable. */
 struct local {

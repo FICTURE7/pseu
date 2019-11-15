@@ -1,7 +1,7 @@
 #ifndef PSEU_CORE_H
 #define PSEU_CORE_H
 
-#include "pseu_vm.h"
+#include "vm.h"
 
 /*
  * TODO: Document this macro soccery.

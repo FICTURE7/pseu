@@ -1,4 +1,4 @@
-#include "pseu_vm.h"
+#include "vm.h"
 
 /* Do int32 arithmetic operation 'op' on value 'a' and 'b', outputs result in
  * value 'o'. 
@@ -8,7 +8,7 @@ static void arith_int(struct value *a, struct value *b, struct value *o, int op)
 	int vr;
 	switch (op) {
 	case ARITH_ADD:
-		vr = v_asint(a) + v_asint(b);
+	  vr = v_asint(a) + v_asint(b);
 		break;
 	case ARITH_SUB:
 		vr = v_asint(a) - v_asint(b);

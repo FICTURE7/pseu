@@ -1,4 +1,4 @@
-#include "pseu_vm.h"
+#include "vm.h"
 
 int cbuf_new(pseu_state_t *s, struct cbuffer *buf, size_t size)
 {
