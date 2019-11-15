@@ -1,64 +1,47 @@
-set(LIBPSEU_INCLUDE_DIR "../include")
+set(LIBPSEU_INC_DIR "../include")
 set(LIBPSEU_SRC
-	${LIBPSEU_INCLUDE_DIR}/pseu.h
-	pseu_vm.h
-	pseu_core.h
-	pseu_node.h
-	pseu_state.h
-	pseu_value.h  
-	pseu_debug.h
-	pseu_lexer.h
-	pseu_token.h
-	pseu_string.h
-	pseu_symbol.h
-	pseu_parser.h
-	pseu_opcode.h
-	pseu_vector.h
-	pseu_visitor.h
-	pseu_compiler.h
-	pseu_location.h
-
+	${LIBPSEU_INC_DIR}/pseu.h
 	pseu.c
-	pseu_vm.c
-	pseu_core.c
-	pseu_node.c
-	pseu_state.c
-	pseu_value.c
-	pseu_debug.c
-	pseu_lexer.c
-	pseu_token.c
-	pseu_string.c
-	pseu_symbol.c
-	pseu_parser.c
-	pseu_vector.c
-	pseu_visitor.c
-	pseu_compiler.c
+
+	vm.h
+	vm.c
+	obj.h
+	obj.c
+	lex.h
+	lex.c
+	parse.c
+	buf.c
+	gc.h
+	gc.c
+	core.c
+	core.h
 )
 
-# objects
-add_library(libpseu OBJECT ${LIBPSEU_SRC})
-target_include_directories(libpseu PUBLIC ${LIBPSEU_INCLUDE_DIR})
+# Achieve faster build time in Debug configuration by building an intermediary
+# object library target `libpseu`. However since `libpseu-shared` is a shared
+# library it requires position independent code and therefore `libpseu` must
+# also be compiled with position independent code, reducing performance (in
+# debug config).
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	# Objects.
+	add_library(libpseu OBJECT ${LIBPSEU_SRC})
+	set_target_properties(libpseu PROPERTIES POSITION_INDEPENDENT_CODE ON)
+	target_include_directories(libpseu PUBLIC ${LIBPSEU_INC_DIR})
 
-# c pre-processor definitions
-if (PSEU_USE_ASSERT)
-	target_compile_definitions(libpseu PRIVATE PSEU_USE_ASSERT)
+	# Static library.
+	add_library(libpseu-static STATIC $<TARGET_OBJECTS:libpseu>)
+	# Shared library.
+	add_library(libpseu-shared SHARED $<TARGET_OBJECTS:libpseu>)
+	set_target_properties(libpseu-shared PROPERTIES POSITION_INDEPENDENT_CODE ON)
+else()
+	# Static library.
+	add_library(libpseu-static STATIC ${LIBPSEU_SRC})
+	# Shared library.
+	add_library(libpseu-shared STATIC ${LIBPSEU_SRC})
+	set_target_properties(libpseu-shared PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
-if (PSEU_DEBUG_AST)
-	target_compile_definitions(libpseu PRIVATE PSEU_DEBUG_AST)
-endif()
-
-if (PSEU_DEBUG_CODE)
-	target_compile_definitions(libpseu PRIVATE PSEU_DEBUG_CODE)
-endif()
-
-# static library
-add_library(libpseu-static STATIC $<TARGET_OBJECTS:libpseu>)
-target_include_directories(libpseu-static PUBLIC ${LIBPSEU_INCLUDE_DIR})
 set_target_properties(libpseu-static PROPERTIES OUTPUT_NAME "pseu")
-
-# shared library
-add_library(libpseu-shared SHARED $<TARGET_OBJECTS:libpseu>)
-target_include_directories(libpseu-shared PUBLIC ${LIBPSEU_INCLUDE_DIR})
 set_target_properties(libpseu-shared PROPERTIES OUTPUT_NAME "pseu")
-
+target_include_directories(libpseu-static PUBLIC ${LIBPSEU_INC_DIR})
+target_include_directories(libpseu-shared PUBLIC ${LIBPSEU_INC_DIR})

@@ -5,7 +5,8 @@
 #include <string.h>
 #include <time.h>
 
-const char *path_combine(const char *base, const char *other) {
+const char *path_combine(const char *base, const char *other)
+{
 	size_t base_len = strlen(base);
 	size_t other_len = strlen(other);
 	int has_seperator = base[base_len - 1] == '/';
@@ -18,9 +19,8 @@ const char *path_combine(const char *base, const char *other) {
 
 	/* Copy base of path and add seperator at end if it wasn't there. */
 	memcpy(new_path, base, base_len);
-	if (!has_seperator) {
+	if (!has_seperator)
 		new_path[base_len++] = '/';
-	}
 
 	/* Copy other part of path and add NULL terminator. */
 	memcpy(new_path + base_len, other, other_len);
@@ -37,22 +37,23 @@ struct char_buffer {
 	size_t size;
 };
 
-void buffer_init(struct char_buffer *buffer) {
+void buffer_init(struct char_buffer *buffer)
+{
 	buffer->data= malloc(CHAR_BUFFER_CHUNK);
 	buffer->length = 0;
 	buffer->size = CHAR_BUFFER_CHUNK;
 }
 
-void buffer_deinit(struct char_buffer *buffer) {
-	if (buffer) {
+void buffer_deinit(struct char_buffer *buffer)
+{
+	if (buffer)
 		free(buffer->data);
-	}
 }
 
-int buffer_write(struct char_buffer *buffer, const char *data, size_t length) {
-	if (length > CHAR_BUFFER_CHUNK) {
+int buffer_write(struct char_buffer *buffer, const char *data, size_t length)
+{
+	if (length > CHAR_BUFFER_CHUNK)
 		return 1;
-	}
 
 	size_t new_length = buffer->length + length;
 	if (new_length > buffer->size) {
@@ -65,11 +66,11 @@ int buffer_write(struct char_buffer *buffer, const char *data, size_t length) {
 	return 0;
 }
 
-int buffer_readfile(struct char_buffer *buffer, const char *path) {
+int buffer_readfile(struct char_buffer *buffer, const char *path)
+{
 	FILE *stream = fopen(path, "r");
-	if (!stream) {
+	if (!stream)
 		return 1;
-	}
 
 	size_t count = 0;
 	char *temp = malloc(CHAR_BUFFER_CHUNK);
@@ -108,12 +109,16 @@ struct pseu_test {
 	enum pseu_test_state state;
 };
 
-static void runner_print(pseu_vm_t *vm, const char *text) {
+static void runner_print(pseu_vm_t *vm, const char *text)
+{
 	struct pseu_test *test = pseu_vm_get_data(vm);
 	buffer_write(&test->output, text, strlen(text));
+
+	printf("%s", text);
 }
 
-static void *runner_alloc(pseu_vm_t *vm, size_t size) {
+static void *runner_alloc(pseu_vm_t *vm, size_t size)
+{
 #ifdef TEST_CLEAN_MEM
 	/* Force clean memory allocations for consisten testing. */
 	return calloc(1, size);
@@ -122,17 +127,19 @@ static void *runner_alloc(pseu_vm_t *vm, size_t size) {
 #endif
 }
 
-static void *runner_realloc(pseu_vm_t *vm, void *ptr, size_t size) {
+static void *runner_realloc(pseu_vm_t *vm, void *ptr, size_t size)
+{
 	return realloc(ptr, size);
 }
 
-static void runner_free(pseu_vm_t *vm, void *ptr) {
+static void runner_free(pseu_vm_t *vm, void *ptr)
+{
 	free(ptr);
 }
 
-static void runner_onerror(pseu_vm_t *vm, enum pseu_error_type type,
-				unsigned int row, unsigned int col, const char *message) {
-	fprintf(stderr, "at %u:%u: error: %s.\n", row, col, message);
+static void runner_panic(pseu_vm_t *vm, const char *message)
+{
+	fprintf(stderr, "error: %s.\n", message);
 }
 
 /* Represents a test runner. */
@@ -145,7 +152,8 @@ struct pseu_test_runner {
 
 /* Allocates a new pseu_test instance using the specified runner and path. */
 struct pseu_test *test_create(struct pseu_test_runner *runner,
-					const char *path) {
+		const char *path)
+{
 	struct pseu_test *test = calloc(1, sizeof(struct pseu_test));
 	test->name = malloc(strlen(path) + 1);
 	test->path = path_combine(runner->base_path, path);
@@ -162,7 +170,8 @@ struct pseu_test *test_create(struct pseu_test_runner *runner,
  * Parses the specified buffer (which is not NULL terminated) into a pseu_test
  * looking for the source code section and expected output section.
  */
-void test_parse(struct pseu_test *test, struct char_buffer *buffer) {
+void test_parse(struct pseu_test *test, struct char_buffer *buffer)
+{
 	/* Indicates if the .pseut has an expected output section. */
 	int has_output = 0;
 
@@ -200,14 +209,12 @@ void test_parse(struct pseu_test *test, struct char_buffer *buffer) {
 		expected_output[expected_output_length] = '\0';
 		test->expected_output = expected_output;
 	}
-
-	//printf("input: \n%s\n\n", input);
-	//printf("output: \n%s\n\n", expected_output);
 }
 
 /* Parse a .pseut file into a struct pseu_test. */
 struct pseu_test *test_load(struct pseu_test_runner *runner,
-					const char *path) {
+		const char *path)
+{
 	struct pseu_test *test = test_create(runner, path);
 	/* Check if combination of path failed. */
 	if (!test->path) {
@@ -232,7 +239,8 @@ exit:
 	return test;
 }
 
-void test_print_state(struct pseu_test *test) {
+void test_print_state(struct pseu_test *test)
+{
 	switch (test->state) {
 		case TEST_FAILED:
 			printf("\x1B[31mfailed\x1B[0m");
@@ -253,31 +261,26 @@ void test_print_state(struct pseu_test *test) {
 	}
 }
 
-void test_free(struct pseu_test *test) {
-	if (!test) {
+void test_free(struct pseu_test *test) 
+{
+	if (!test)
 		return;
-	}
-
-	if (test->name) {
+	if (test->name)
 		free((char *)test->name);
-	}
-	if (test->path) {
+	if (test->path)
 		free((char *)test->path);
-	}
-	if (test->input) {
+	if (test->input)
 		free((char *)test->input);
-	}
-	if (test->expected_output) {
+	if (test->expected_output)
 		free((char *)test->expected_output);
-	}
-	if (test->output.data) {
+	if (test->output.data)
 		buffer_deinit(&test->output);
-	}
 
 	free(test);
 }
 
-void test(struct pseu_test_runner *runner, const char *path) {
+void test(struct pseu_test_runner *runner, const char *path) 
+{
 	struct pseu_test *test = test_load(runner, path);
 	/* Print test name first & force a flush of the stdout. */
 	printf("\x1B[33mtest\x1B[0m %s:\n", test->name);
@@ -295,13 +298,12 @@ void test(struct pseu_test_runner *runner, const char *path) {
 		.alloc = runner_alloc,
 		.realloc = runner_realloc,
 		.free = runner_free,
-		.onerror = runner_onerror,
-		.onwarn = NULL
+		.panic = runner_panic
 	};
 
 	pseu_vm_t *vm = pseu_vm_new(&config);
 	pseu_vm_set_data(vm, test);
-	int result = pseu_interpret(vm, test->input);
+	int result = pseu_vm_eval(vm, test->input);
 	pseu_vm_free(vm);
 
 	if (result == PSEU_RESULT_SUCCESS) {
@@ -334,9 +336,9 @@ finalize:
 	test_free(test);
 }
 
-int main(int argc, const char **argv) {
+int main(int argc, const char **argv)
+{
 	/* TODO: Enable ANSI color codes when on Windows. */
-
 	if (argc < 2) {
 		fprintf(stderr, "error: no test directory provided\n");
 		fprintf(stderr, "usage: libpseu-test <test-directory>\n");
@@ -353,20 +355,20 @@ int main(int argc, const char **argv) {
 
 	/* Run tests. */
 	test(&runner, "core/output.pseut");
+	test(&runner, "core/constants.pseut");
 	test(&runner, "core/declare.pseut");
-	test(&runner, "core/assign.pseut");
-	test(&runner, "core/function.pseut");
+	//test(&runner, "core/assign.pseut");
+	//test(&runner, "core/function.pseut");
+	test(&runner, "core/comment.pseut");
 	//test(&runner, "core/sandbox.pseut");
 
 	clock_t end = clock();
-	double duration = (double)(end - start) / CLOCKS_PER_SEC;
+	double duration = (double)(end - start) / (CLOCKS_PER_SEC * 1000);
 
-	printf("\nall tests done in %f ms -> ", duration * 1000);
-	if (runner.result) {
+	printf("\nall tests done in %f ms -> ", duration);
+	if (runner.result)
 		printf("failed\n");
-	} else {
+	else
 		printf("passed\n");
-	}
-
 	return runner.result;
 }

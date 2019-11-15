@@ -1,4 +1,4 @@
-OUTPUT 1
+OUTPUT 5 * 2
 ---
-1
+10
 

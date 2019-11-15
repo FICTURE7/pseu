@@ -1,0 +1,14 @@
+/* 
+ * This is used for testing the lexer's ability to lex multi-line comments
+ * such as this one.
+ */
+
+OUTPUT /* Outputs 1. */ 1 
+OUTPUT 1 + 4  /* Outputs 5. */
+// Some more comments.
+OUTPUT 33 // This outputs 33.
+---
+1
+5
+33
+

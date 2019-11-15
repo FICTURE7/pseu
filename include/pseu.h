@@ -2,6 +2,7 @@
 #define PSEU_H
 
 #include <stdlib.h>
+#include <stdint.h>
 
 /**
  * Represents a pseu virtual machine instance.
@@ -9,64 +10,41 @@
 typedef struct pseu_vm pseu_vm_t;
 
 /**
- * Type of errors.
+ * Configuration flags of a pseu virtual machine.
  */
-enum pseu_error_type {
-	/** Runtime error. */
-	PSEU_ERROR_RUNTIME,
-	/** Compile time error. */
-	PSEU_ERROR_COMPILE
-};
-
-/**
- * Type of warnings.
- */
-enum pseu_warn_type {
-	/** Runtime warning. */
-	PSEU_WARN_RUNTIME,
-	/** Compile time warning. */
-	PSEU_WARN_COMPILE
-};
+typedef enum pseu_config_flags {
+	PSEU_CONFIG_DUMP_BYTECODE	= 0x01,
+} pseu_config_flags_t;
 
 /**
  * Represents the configuration of a pseu virtual machine.
  */
 typedef struct pseu_config {
+	/**
+	 * Configuration flags.
+	 */
+	pseu_config_flags_t flags;
+
 	/** 
 	 * Callback whenever pseu has encoutered an error.
 	 *
-	 * @param[in] pseu Pseu instance.
-	 * @param[in] type Type of error.
-	 * @param[in] row Row in source which caused the error.
-	 * @param[in] col Column in source which caused the error.
+	 * @param[in] vm Pseu instance.
 	 * @param[in] message Message describing the error.
 	 */
-	void (*onerror)(pseu_vm_t *pseu, enum pseu_error_type type,
-			unsigned int row, unsigned int col, const char *message); 
-
-	/** 
-	 * Callback whenever pseu has encoutered a warning.
-	 *
-	 * @param[in] pseu Pseu instance.
-	 * @param[in] type Type of warning.
-	 * @param[in] row Row in source which caused the error.
-	 * @param[in] col Column in source which caused the error.
-	 * @param[in] message Message describing the error.
-	 */
-	void (*onwarn)(pseu_vm_t *pseu, enum pseu_warn_type type,
-			unsigned int row, unsigned int col, const char *message); 
+	void (*panic)(pseu_vm_t *vm, const char *message); 
 
 	/** 
 	 * Callback whenever pseu wants to write to the standard output.
 	 *
-	 * @param[in] pseu Pseu instance.
+	 * @param[in] vm Pseu instance.
 	 * @param[in] text Text to write to the standard output.
 	 */
-	void (*print)(pseu_vm_t *pseu, const char *text); 	
+	void (*print)(pseu_vm_t *vm, const char *text); 	
 
 	/**
 	 * Fuction to allocate a block of memory of the specified size.
 	 *
+	 * @param[in] vm Pseu instance.
 	 * @param[in] size Size of block to allocate.
 	 * @returns Pointer to block if success; otherwise NULL if failed.
 	 *
@@ -77,6 +55,7 @@ typedef struct pseu_config {
 	/** 
 	 * Function to reallocates a block of memory to a new size.
 	 *
+	 * @param[in] vm Pseu instance.
 	 * @param[in] ptr Pointer to block reallocate.
 	 * @param[in] size New size of block.
 	 * @returns Pointer to block if success; otherwise NULL if failed.
@@ -86,6 +65,7 @@ typedef struct pseu_config {
 	/** 
 	 * Function to free a block of memory.
 	 *
+	 * @param[in] vm Pseu instance.
 	 * @param[in] Pointer to block to free.
 	 */
 	void (*free)(pseu_vm_t *vm, void *ptr);
@@ -116,36 +96,36 @@ pseu_vm_t *pseu_vm_new(pseu_config_t *config);
  * Frees the specified pseu virtual machine instance. If `pseu` is null, nothing
  * happens.
  *
- * @param[in] pseu Pseu instance to free.
+ * @param[in] vm Pseu instance to free.
  */
-void pseu_vm_free(pseu_vm_t *pseu);
+void pseu_vm_free(pseu_vm_t *vm);
 
 /**
  * Sets the user data of the specified pseu virtual machine instance.
  *
- * @param[in] pseu Pseu instance.
+ * @param[in] vm Pseu instance.
  * @param[in] data User data.
  */
-void pseu_vm_set_data(pseu_vm_t *pseu, void *data);
+void pseu_vm_set_data(pseu_vm_t *vm, void *data);
 
 /**
  * Gets the user data of the specified pseu virtual machine instance.
  *
- * @param[in] pseu Pseu instance.
+ * @param[in] vm Pseu instance.
  * @return User data if set; otherwise returns NULL.
  */
-void *pseu_vm_get_data(pseu_vm_t *pseu);
+void *pseu_vm_get_data(pseu_vm_t *vm);
 
 /**
  * Interprets the specified pseu source code using the specified pseu virtual
  * machine instance.
  * 
- * @param[in] pseu Pseu instance.
+ * @param[in] vm Pseu instance.
  * @param[in] src Source code to interpret.
  *
  * @retval PSEU_RESULT_SUCCESS When success.
  * @retval PSEU_RESULT_ERROR When failed.
  */
-int pseu_interpret(pseu_vm_t *pseu, const char *src);
+int pseu_vm_eval(pseu_vm_t *vm, const char *src);
 
 #endif /* PSEU_H */

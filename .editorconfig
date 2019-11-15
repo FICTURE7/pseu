@@ -1,0 +1,8 @@
+[*.c]
+tab_size=4
+
+[*.h]
+tab_size=4
+
+[*.txt]
+tab_size=4
