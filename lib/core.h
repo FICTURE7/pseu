@@ -3,95 +3,82 @@
 
 #include "vm.h"
 
-/*
- * TODO: Document this macro soccery.
- */
+#define ARR_PARAMS(...) (const char *[]) { __VA_ARGS__ }
+#define NUM_PARAMS(...) sizeof(ARR_PARAMS(__VA_ARGS__)) / sizeof(char *)
 
-#define P_FDEF(x) 												\
-	static int impl_##x(pseu_state_t *s, struct value *stack); 	\
-	static void def_##x(pseu_vm_t *vm) { 						\
-		function_c_t c = impl_##x; 								\
-		const char *n = "@" #x; 								\
-		struct type *t[] = 										
-#define P_FPARAM(d) (d)
-#define P_FDEF_END(r) 													\
-		;																\
-		def_function_primitive(vm, n, c, r, t, sizeof(t) / sizeof(*t)); \
-	}
+#define PARAMS(...) ARR_PARAMS(__VA_ARGS__), NUM_PARAMS(__VA_ARGS__)
+#define RETURN(x) 	x
 
-#define P_FIMPL(x) \
+#define PSEU_DEF_CONST(x, v)	 def_const(vm, #x, v)
+#define PSEU_DEF_TYPE(x, r) 	 def_type(vm, #x, r)
+#define PSEU_DEF_PROC(x, pt) 	 def_func(vm, "@" #x, impl_##x, NULL, pt)
+#define PSEU_DEF_FUNC(x, rt, pt) def_func(vm, "@" #x, impl_##x, rt, pt)
+
+#define PSEU_FUNC(x) \
 	static int impl_##x(pseu_state_t *s, struct value * args)
 
-#define P_FARITH(x, o) 								\
-	P_FDEF(x) { 									\
-		P_FPARAM(vm->any_type), 					\
-		P_FPARAM(vm->any_type) 						\
-	} 												\
-	P_FDEF_END(vm->any_type) 						\
-	P_FIMPL(x) 										\
-	{ 												\
-		pseu_unused(s); 							\
-		struct value *a = &args[0]; 				\
-		struct value *b = &args[1]; 				\
-		return pseu_arith_binary(a, b, a, #o[0]); 	\
-	}
-
-static void def_constf(pseu_vm_t *vm, const char *ident, float value)
+static void def_const(pseu_vm_t *vm, const char *ident, struct value k)
 {
-	struct variable v;
-	const char *nident = pseu_strdup(vm->state, ident);
-
-	v.k = 1;
-	v.ident = nident;
-	v.value = (struct value) {
-		.type = VAL_FLOAT,
-		.as.real = value
+	struct variable v = {
+		.k = 1,
+		.ident = pseu_strdup(vm->state, ident),
+		.value = k
 	};
-	
-	pseu_def_variable(vm, &v);
+	int index = pseu_def_variable(vm, &v);
+	if (index == PSEU_INVALID_GLOBAL)
+		pseu_panic(vm->state, "Reached maximum number of globals");
 }
 
-static void def_type_primitive(pseu_vm_t *vm, const char *ident, 
-		struct type **out)
+static void def_type(pseu_vm_t *vm, const char *ident, struct type **out)
 {
-	struct type t;
-	const char *nident = pseu_strdup(vm->state, ident);
-
-	t.ident  = nident;
-	t.fields = NULL;
-	t.fields_count = 0;
-
-	*out = pseu_def_type(vm, &t);
+	struct type t = {
+		.ident = pseu_strdup(vm->state, ident),
+		.fields = NULL,
+		.fields_count = -1
+	};
+	int index = pseu_def_type(vm, &t);
+	if (index == PSEU_INVALID_TYPE)
+		pseu_panic(vm->state, "Reached maximum number of types.");
+	*out = &vm->types[index];
 }
 
-static void def_function_primitive(
-		pseu_vm_t *vm, 
-		const char *ident,
-		function_c_t cfn, 
-		struct type *return_type,
-		struct type **param_types,
-		uint8_t params_count)
+static void def_func(pseu_vm_t *vm, const char *ident, function_c_t fn,
+		const char *ret_type, const char **par_types, uint8_t params_count)
 {
-	struct function f;
-	const char *nident = pseu_strdup(vm->state, ident);
+	int index;
+	struct type *return_type;
+	struct type **param_types;
+	struct function f = {
+		.type = FN_C,
+		.ident = pseu_strdup(vm->state, ident),
+		.as.c = fn
+	};
 
-	f.type  = FN_C;
-	f.ident = nident;
-	f.params_count = params_count;
-	f.return_type  = return_type;
-	f.as.c  = cfn;
-
-	if (params_count == 0) {
-		f.param_types = NULL;
+	if (!ret_type) {
+		return_type = NULL;
 	} else {
-		size_t n = params_count * sizeof(*f.param_types);
-		f.param_types = pseu_alloc(vm->state, n);
-		memcpy(f.param_types, param_types, n);
+		return_type = pseu_get_type(vm, ret_type, strlen(ret_type));
+		if (return_type == NULL)
+			pseu_panic(vm->state, "Unknown return type.");
 	}
 
-	pseu_def_function(vm, &f);
+	param_types = pseu_alloc(vm->state, sizeof(struct type *) * params_count);
+
+	for (uint8_t i = 0; i < params_count; i++) {
+		param_types[i] = pseu_get_type(vm, par_types[i], 
+				strlen(par_types[i]));
+		if (param_types[i] == NULL)
+			pseu_panic(vm->state, "Unknown parameter type.");
+	}
+
+	f.param_types = param_types;
+	f.params_count = params_count;
+	f.return_type = return_type;
+	index = pseu_def_function(vm, &f);
+	if (index == PSEU_INVALID_FUNC)
+		pseu_panic(vm->state, "Reached maximum number of functions.");
 }
 
-int pseu_core_init(pseu_vm_t *vm);
+void pseu_core_init(pseu_vm_t *vm);
 
 #endif /* PSEU_CORE_H */

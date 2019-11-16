@@ -18,11 +18,22 @@
 /* Maximum number of local variables in a function. */
 #define PSEU_MAX_LOCAL  (1 << 8)
 /* Maximum number of globals in a pseu virtual machine instance. */
-#define PSEU_MAX_GLOBAL (1 << 16) - 1
+#define PSEU_MAX_GLOBAL ((1 << 16) - 1)
 /* Maximum number of functions in a pseu virtual machine instance. */
-#define PSEU_MAX_FUNC   (1 << 16) - 1 
+#define PSEU_MAX_FUNC   ((1 << 16) - 1)
 /* Maximum number of types in a pseu virtual machine instance. */
-#define PSEU_MAX_TYPE   (1 << 16) - 1
+#define PSEU_MAX_TYPE   ((1 << 16) - 1)
+
+/* Represents an invalid constant handle. */
+#define PSEU_INVALID_CONST  PSEU_MAX_CONST
+/* Represents an invalid local handle. */
+#define PSEU_INVALID_LOCAL  PSEU_MAX_LOCAL
+/* Represents an invalid global handle. */
+#define PSEU_INVALID_GLOBAL PSEU_MAX_GLOBAL
+/* Represents an invalid function handle. */
+#define PSEU_INVALID_FUNC   PSEU_MAX_FUNC
+/* Represents an invalid type handle. */
+#define PSEU_INVALID_TYPE   PSEU_MAX_TYPE
 
 #ifdef PSEU_USE_ASSERT
 	#define pseu_assert(cond)	assert(cond);
@@ -67,14 +78,14 @@ int pseu_arith_unary(struct value *a, int op);
 int pseu_arith_binary(struct value *a, struct value *b,
 		struct value *o, int op);
 
-/* ----WIP---- */
-struct type *pseu_def_type(pseu_vm_t *vm, struct type *type);
-int pseu_def_function(pseu_vm_t *vm, struct function *fn);
-int pseu_def_variable(pseu_vm_t *vm, struct variable *var);
+uint16_t pseu_def_type(pseu_vm_t *vm, struct type *type);
+uint16_t pseu_def_variable(pseu_vm_t *vm, struct variable *var);
+uint16_t pseu_def_function(pseu_vm_t *vm, struct function *fn);
 
+/* ----WIP---- */
 struct type *pseu_get_type(pseu_vm_t *vm, const char *ident, size_t len);
-uint16_t pseu_get_function(pseu_vm_t *vm, const char *ident);
 uint16_t pseu_get_variable(pseu_vm_t *vm, const char *ident, size_t len);
+uint16_t pseu_get_function(pseu_vm_t *vm, const char *ident);
 /* ----WIP---- */
 
 #endif /* PSEU_VM_H */

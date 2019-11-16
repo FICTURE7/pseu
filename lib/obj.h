@@ -53,7 +53,10 @@ enum value_type {
 #define v_asint(v)	 ((v)->as.integer)
 #define v_asfloat(v) ((v)->as.real)
 
-#define v_int(v, k)	 ((v)->type = VAL_INT, (v)->as.integer = k)
+#define v_bool(k)	 ((struct value) { .type = VAL_BOOL, .as.boolean = (k) })
+#define v_obj(k)	 ((struct value) { .type = VAL_OBJ, .as.object = (k) })
+#define v_int(k)	 ((struct value) { .type = VAL_INT, .as.integer = (k) })
+#define v_float(k)	 ((struct value) { .type = VAL_FLOAT, .as.real = (k) })
 
 #define v_i2f(v)	 ((float)v_asint(v))
 #define v_f2i(v)	 ((int32_t)v_asfloat(v))
@@ -112,18 +115,6 @@ int cbuf_new(pseu_state_t *s, struct cbuffer *buf, size_t size);
 int cbuf_put(pseu_state_t *s, struct cbuffer *buf, char c);
 void cbuf_free(pseu_state_t *s, struct cbuffer *buf);
 
-#if 0
-struct table {
-	size_t count;
-	size_t size;
-	void *entries;
-};
-
-int _table_init(pseu_state_t *s, struct table *tab, size_t elm_size);
-int _table_insert(pseu_state_t *s, struct table *tab, void *elm, size_t elm_size);
-int _table_delete(pseu_state_t *s, struct table *tab, void *elm, size_t elm_size);
-#endif
-
 /* Types of pseu function. */
 enum function_type {
 	FN_PSEU, 	/* Pseu function; consisting of VM bytecode. */
@@ -146,7 +137,9 @@ struct function_pseu {
 /* A C function. */
 typedef int (*function_c_t)(pseu_state_t *s, struct value *args);
 
-/* A pseu function, can also represent a procedure; see function.return_type. */
+/* A pseu function description. It can also represent a procedure; see
+ * function.return_type.
+ */
 struct function {
 	uint8_t type;			/* Type of function; see function_type. */
 	const char *ident; 		/* Identifier of function. */

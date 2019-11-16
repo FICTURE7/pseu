@@ -8,7 +8,7 @@ static void arith_int(struct value *a, struct value *b, struct value *o, int op)
 	int vr;
 	switch (op) {
 	case ARITH_ADD:
-	  vr = v_asint(a) + v_asint(b);
+	  	vr = v_asint(a) + v_asint(b);
 		break;
 	case ARITH_SUB:
 		vr = v_asint(a) - v_asint(b);
@@ -93,7 +93,7 @@ static int vm_ensure_stack(pseu_state_t *s, size_t n)
 	size_t k = s->sp - (s->stack + s->stack_size);
 	if (k >= n)
 		return 0;
-	/* TODO: Grow to the power 2 number closest to n. */
+	/* TODO: Grow to the power 2 number closest to n. (or something) */
 	return 1;
 }
 
@@ -113,11 +113,11 @@ static int vm_append_call(pseu_state_t *s, struct function *fn)
 
 	// XXX: Move this to another function.
 	for (i = 0; i < fn->as.pseu.local_count; i++) {
-		struct type *loc_type = &fn->as.pseu.locals[i];
+		struct type *loc_type = fn->as.pseu.locals[i];
 		if (t_isany(s, loc_type))
 			continue;
 		else if (t_isint(s, loc_type))
-			v_int(&frame.bp[i], 0);
+			frame.bp[i] = v_int(0);
 		else
 			return 1;
 	}
@@ -128,7 +128,7 @@ static int vm_append_call(pseu_state_t *s, struct function *fn)
 static int vm_dispatch(pseu_state_t *s) 
 {
 	#define READ_UINT8()  	(*ip++)
-	#define READ_UINT16() 	(*ip++) /* FIXME */
+	#define READ_UINT16() 	(*ip++) /* FIXME: Temp solution for now. */
 
 	#define PUSH(x) 		*s->sp++ = x
 	#define POP(x)  		*(--s->sp)
@@ -223,8 +223,6 @@ int pseu_call(pseu_state_t *s, struct function *fn)
 	pseu_assert(s->sp - s->stack >= fn->params_count);
 	pseu_assert(fn->type == FN_PSEU);
 
-	/* TODO: Handle primitive/builtin calls. */
-
 	if (pseu_unlikely(vm_ensure_stack(s, fn->as.pseu.max_stack)))
 		return 1;
 	if (pseu_unlikely(vm_append_call(s, fn)))
@@ -234,7 +232,7 @@ int pseu_call(pseu_state_t *s, struct function *fn)
 
 void *pseu_alloc(pseu_state_t *s, size_t size) 
 {
-	return VM(s)->config.alloc(VM(s), size);
+	return VM(s)->config.alloc(VM(s), size); /* XXX: Handle out of memory. */
 }
 
 void *pseu_realloc(pseu_state_t *s, void *ptr, size_t size) 
@@ -250,6 +248,11 @@ void pseu_free(pseu_state_t *s, void *ptr)
 void pseu_print(pseu_state_t *s, const char *text) 
 {
 	VM(s)->config.print(VM(s), text);
+}
+
+void pseu_panic(pseu_state_t *s, const char *message)
+{
+	VM(s)->config.panic(VM(s), message);
 }
 
 char *pseu_strdup(pseu_state_t *s, const char *str)
@@ -285,7 +288,7 @@ int _pseu_vec_grow(pseu_state_t *s, void **vec, size_t *cap_elm, size_t size_elm
 
 int pseu_arith_binary(struct value *a, struct value *b, struct value *o, int op)
 {
-	 if (v_isnum(a) && v_isnum(b)) {
+ 	if (v_isnum(a) && v_isnum(b)) {
 		arith_num(a, b, o, op);
 	} else {
 		struct value na;
@@ -297,28 +300,28 @@ int pseu_arith_binary(struct value *a, struct value *b, struct value *o, int op)
 	return 0;
 }
 
-// XXX
-struct type *pseu_def_type(pseu_vm_t *vm, struct type *type)
+uint16_t pseu_def_type(pseu_vm_t *vm, struct type *type)
 {
-	int result = (int)vm->types_count++;
+	uint16_t result = vm->types_count++;
 	vm->types[result] = *type;
-	return &vm->types[result];
+	return result;
 }
 
-int pseu_def_function(pseu_vm_t *vm, struct function *fn)
+uint16_t pseu_def_function(pseu_vm_t *vm, struct function *fn)
 {
-	int result = (int)vm->fns_count++;
+	uint16_t result = vm->fns_count++;
 	vm->fns[result] = *fn;
 	return result;
 }
 
-int pseu_def_variable(pseu_vm_t *vm, struct variable *var)
+uint16_t pseu_def_variable(pseu_vm_t *vm, struct variable *var)
 {
-	int result = (int)vm->vars_count++;
+	uint16_t result = vm->vars_count++;
 	vm->vars[result] = *var;
 	return result;
 }
 
+// XXX
 struct type *pseu_get_type(pseu_vm_t *vm, const char *ident, size_t len)
 {
 	size_t i;
@@ -336,7 +339,7 @@ uint16_t pseu_get_function(pseu_vm_t *vm, const char *ident)
 		if (strcmp(vm->fns[i].ident, ident) == 0)
 			return i;
 	}
-	return 0xFFFF;
+	return PSEU_INVALID_FUNC;
 }
 
 uint16_t pseu_get_variable(pseu_vm_t *vm, const char *ident, size_t len)
@@ -346,6 +349,6 @@ uint16_t pseu_get_variable(pseu_vm_t *vm, const char *ident, size_t len)
 		if (strncmp(vm->vars[i].ident, ident, len) == 0)
 			return i;
 	}
-	return 0xFFFF;
+	return PSEU_INVALID_GLOBAL;
 }
 // XXX

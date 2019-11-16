@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "vm.h"
 #include "lex.h"
 
 #define char_isalpha(x) ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z'))

@@ -34,11 +34,12 @@ static void default_free(pseu_vm_t *vm, void *ptr)
 	free(ptr);
 }
 
-/* Default onerror handler. */
+/* Default panic handler. */
 static void default_panic(pseu_vm_t *vm, const char *message)
 {
 	pseu_unused(vm);
 	fprintf(stderr, "error: %s.", message);
+	abort();
 }
 
 /* Initializes the default configuration, used when pseu_vm_new(NULL) is 

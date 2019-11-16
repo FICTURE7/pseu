@@ -42,7 +42,8 @@ static int spaneq(struct span *a, struct span *b)
 
 static void parse_err(struct parser *p, const char *message, ...)
 {
-	printf("%s.\n", message);
+	pseu_print(p->lex.state, message);
+	pseu_print(p->lex.state, "\n");
 	p->failed = 1;
 }
 
@@ -86,7 +87,7 @@ static int declare_local(struct parser *p, struct local *lcl)
 	uint16_t index = resolve_global(p, lcl->ident.pos, lcl->ident.len);
 	if (index != 0xFFFF) {
 		parse_err(p, "Global already defined with same identifier");
-		return 1;
+ 		return 1;
 	}
 
 	/* Look for duplicate ident in locals. */
@@ -159,6 +160,8 @@ static void emit_ld_variable(struct parser *p, const char *ident, size_t len)
 static void emit_call(struct parser *p, const char *ident)
 {
 	int index = pseu_get_function(VM(p->lex.state), ident);
+	if (index == PSEU_INVALID_FUNC)
+		pseu_panic(p->lex.state, "what");
 	emit(p, OP_CALL);
 	emit(p, index);
 }
@@ -306,7 +309,6 @@ static void parse_declare(struct parser *p)
 			.type_ident = type_ident,
 			.type = pseu_get_type(VM(p->lex.state), type_ident.pos, type_ident.len) 
 		};
-
 
 		declare_local(p, &lcl);
 	} else {

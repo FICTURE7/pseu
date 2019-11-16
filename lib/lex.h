@@ -40,6 +40,7 @@ struct lexer {
 	struct value value;
 };
 
-token_t pseu_lex_can(struct lexer *l);
+token_t pseu_lex_scan(struct lexer *l);
+int pseu_lex_init(pseu_state_t *s, struct lexer *l, const char *src);
 
 #endif /* PSEU_LEX_H */
