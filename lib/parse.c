@@ -359,6 +359,7 @@ int pseu_parse(pseu_state_t *s, struct function *fn, const char *src)
 	p.vars_size  = 8;
 	if (pseu_vec_init(s, &p.vars, p.vars_size, struct local))
 		goto fail_consts;
+
 	if (parse_root(&p))
 		goto fail_vars;
 
@@ -377,6 +378,10 @@ int pseu_parse(pseu_state_t *s, struct function *fn, const char *src)
 
 	for (size_t i = 0; i < fn->as.pseu.local_count; i++)
 		fn->as.pseu.locals[i] = p.vars[i].type;
+
+	if (pseu_config_flag(s, PSEU_CONFIG_DUMP_FUNCTION))
+		pseu_dump_function(s, stdout, fn);
+
 	return p.failed;
 
 fail_vars:

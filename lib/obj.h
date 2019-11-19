@@ -125,7 +125,7 @@ enum function_type {
 struct function_pseu {
 	uint8_t const_count;	/* Number of constants in `consts`. */
 	uint8_t local_count;	/* Number of locals in `locals`.*/
-	uint32_t code_count;	/* Number of instructions in `code`. */
+	uint16_t code_count;	/* Number of instructions in `code`. */
 
 	uint32_t max_stack;		/* Maximum space the function occupies on the stack. */
 

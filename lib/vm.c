@@ -140,9 +140,9 @@ static int vm_dispatch(pseu_state_t *s)
 			code_t op; 					\
 			decode: 					\
 			switch ((op = READ_UINT8()))
-		#define DISPATCH_EXIT(c) return c;
-		#define DISPATCH() goto decode
-		#define OP(x) case OP_##x
+		#define DISPATCH_EXIT(c) 	return c;
+		#define DISPATCH() 			goto decode
+		#define OP(x) 				case OP_##x
 	#endif
 
 	struct frame *frame = &s->frames[s->frames_count - 1];

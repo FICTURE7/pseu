@@ -298,7 +298,8 @@ void test(struct pseu_test_runner *runner, const char *path)
 		.alloc = runner_alloc,
 		.realloc = runner_realloc,
 		.free = runner_free,
-		.panic = runner_panic
+		.panic = runner_panic,
+		.flags = PSEU_CONFIG_DUMP_FUNCTION
 	};
 
 	pseu_vm_t *vm = pseu_vm_new(&config);

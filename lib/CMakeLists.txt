@@ -15,6 +15,7 @@ set(LIBPSEU_SRC
 	gc.c
 	core.c
 	core.h
+	dump.c
 )
 
 # Achieve faster build time in Debug configuration by building an intermediary

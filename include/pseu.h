@@ -13,7 +13,7 @@ typedef struct pseu_vm pseu_vm_t;
  * Configuration flags of a pseu virtual machine.
  */
 typedef enum pseu_config_flags {
-	PSEU_CONFIG_DUMP_BYTECODE	= 0x01,
+	PSEU_CONFIG_DUMP_FUNCTION = 0x01,
 } pseu_config_flags_t;
 
 /**

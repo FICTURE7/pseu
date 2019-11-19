@@ -3,6 +3,7 @@
 
 #include <pseu.h>
 #include <assert.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -52,6 +53,8 @@
 #define pseu_unreachable(x)		assert(0 && "Unreachable code reached")
 #define pseu_unused(x)			(void)(x)
 
+#define pseu_config_flag(S, x)	((VM(S)->config.flags & (x)) != 0)
+
 pseu_state_t *pseu_state_new(pseu_vm_t *vm);
 void pseu_state_free(pseu_state_t *s);
 
@@ -73,6 +76,8 @@ int _pseu_vec_grow(pseu_state_t *s, void **vec,
 
 int pseu_call(pseu_state_t *s, struct function *fn);
 int pseu_parse(pseu_state_t *s, struct function *fn, const char *src);
+
+void pseu_dump_function(pseu_state_t *s, FILE* f, struct function *fn);
 
 int pseu_arith_unary(struct value *a, int op);
 int pseu_arith_binary(struct value *a, struct value *b,
