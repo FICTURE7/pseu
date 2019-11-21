@@ -42,6 +42,17 @@ enum value_type {
 	VAL_OBJ					/* Pointer to a heap allocated pseu object. */
 };
 
+/* A pseu value. */
+struct value {
+	uint8_t type; 	/* Type of value; see value_type. */
+	union {
+		float real;				/* As a real value. */
+		int boolean;			/* As a boolean. */
+		int32_t integer;		/* As an integer. */
+		struct object *object;	/* As an object. */
+	} as;
+};
+
 #define v_isbool(v)  ((v)->type == VAL_BOOL)
 #define v_isobj(v)	 ((v)->type == VAL_OBJ)
 #define v_isint(v) 	 ((v)->type == VAL_INT)
@@ -61,16 +72,7 @@ enum value_type {
 #define v_i2f(v)	 ((float)v_asint(v))
 #define v_f2i(v)	 ((int32_t)v_asfloat(v))
 
-/* A pseu value. */
-struct value {
-	uint8_t type; 	/* Type of value; see value_type. */
-	union {
-		float real;				/* As a real value. */
-		int boolean;			/* As a boolean. */
-		int32_t integer;		/* As an integer. */
-		struct object *object;	/* As an object. */
-	} as;
-};
+struct type *v_type(pseu_state_t *s, struct value *v);
 
 /* A pseu variable. */
 struct variable {
@@ -82,7 +84,7 @@ struct variable {
 #define GC_HEADER uint8_t flags
 
 /* A pseu user object. */
-struct gc_object {
+struct object {
 	GC_HEADER;
 	struct type *type;		/* Type of object. */
 	struct value fields[1]; /* Field values of the object. */

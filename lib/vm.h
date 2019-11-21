@@ -77,6 +77,7 @@ int _pseu_vec_grow(pseu_state_t *s, void **vec,
 int pseu_call(pseu_state_t *s, struct function *fn);
 int pseu_parse(pseu_state_t *s, struct function *fn, const char *src);
 
+void pseu_dump_stack(pseu_state_t *s, FILE* f);
 void pseu_dump_function(pseu_state_t *s, FILE* f, struct function *fn);
 
 int pseu_arith_unary(struct value *a, int op);
