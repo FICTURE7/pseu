@@ -361,7 +361,7 @@ int main(int argc, const char **argv)
 	//test(&runner, "core/assign.pseut");
 	//test(&runner, "core/function.pseut");
 	test(&runner, "core/comment.pseut");
-	//test(&runner, "core/sandbox.pseut");
+	test(&runner, "core/sandbox.pseut");
 
 	clock_t end = clock();
 	double duration = (double)(end - start) / (CLOCKS_PER_SEC * 1000);

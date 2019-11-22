@@ -5,7 +5,7 @@
 	_(END) 			\
 	_(LD_KFALSE) 	\
 	_(LD_KTRUE) 	\
-	_(LD_KVAL) 		\
+	_(LD_CONST) 	\
 	_(LD_LOCAL) 	\
 	_(ST_LOCAL) 	\
 	_(LD_GLOBAL) 	\

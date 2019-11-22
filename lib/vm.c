@@ -150,7 +150,7 @@ static int vm_dispatch(pseu_state_t *s)
 	struct function *fn = frame->fn;
 
 	INTERPRET {
-		OP(LD_KVAL): {
+		OP(LD_CONST): {
 			uint16_t index = READ_UINT16(); 
 			PUSH(fn->as.pseu.consts[index]);
 			DISPATCH();

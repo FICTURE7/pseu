@@ -114,12 +114,14 @@ static void emit(struct parser *p, code_t code)
 	p->code[p->code_count++] = code;
 }
 
-static void emit_ld_kval(struct parser *p, struct value *v)
+static void emit_ld_const(struct parser *p, struct value *v)
 {
 	int index = declare_const(p, v);
-	if (index != -1) {
+	if (index == -1) {
+		parse_err(p, "Exceeded maximum number of constant in a function/procedure");
+	} else {
 		p->max_stack++;
-		emit(p, OP_LD_KVAL);
+		emit(p, OP_LD_CONST);
 		emit(p, index);
 	}
 }
@@ -191,6 +193,7 @@ static int op_precedence(token_t tok)
 	}
 }
 
+/* == Forward declaration. */
 static void parse_expr(struct parser *p);
 
 /* Parse an expression term. */
@@ -199,35 +202,46 @@ static int parse_expr_primary(struct parser *p)
 	switch (p->tok) {
 	case '+':
 	case '-':
+		eat(p);
+		/* TODO: Emit call to add or sub, or something. */
 		return parse_expr_primary(p);
 
 	case '(':
 		eat(p);
 		parse_expr(p);
-		if (p->tok == ')')
+		if (p->tok == ')') {
+			eat(p);
 			return 0;
+		}
 		parse_err(p, "Expected ')'");
 		return 1;
 
 	case TK_lit_real:
 	case TK_lit_integer:
 	case TK_lit_string:
-		emit_ld_kval(p, &p->lex.value);
+		emit_ld_const(p, &p->lex.value);
+		eat(p);
 		return 0;
 
+		/*
 	case TK_lit_true:
 		emit(p, OP_LD_KTRUE);
+		eat(p);
 		return 0;
 	case TK_lit_false:
 		emit(p, OP_LD_KFALSE);
+		eat(p);
 		return 0;
+		*/
 
 	case TK_identifier:
 		emit_ld_variable(p, p->lex.span.pos, p->lex.span.len);
+		eat(p);
 		return 0;
 
 	default:
 		parse_err(p, "Expected expression term");
+		/* TODO: Panic to new line */
 		return 1;
 	}
 }
@@ -235,29 +249,25 @@ static int parse_expr_primary(struct parser *p)
 /* Parse a binary expression. */
 static void parse_expr_binop(struct parser *p, int prece)
 {
-	/* FIXME: Fix precedence, expression such as these (1+2)*3/9 is not properly
-	 * emitted (with the proper precedence).
-	 */
 	if (!parse_expr_primary(p)) {
-		eat(p);
 		for (;;) {
 			token_t op_tok = p->tok;
 			int cur_prece = op_precedence(op_tok);
-			if (cur_prece < prece)
+			if (cur_prece <= prece)
 				return;
 
 			eat(p);
 			parse_expr_binop(p, cur_prece);
 
-			/* XXX: Review this stuff out. */
-			if (op_tok == '+')
-				emit_call(p, "@add");
-			else if (op_tok == '-')
-				emit_call(p, "@sub");
-			else if (op_tok == '*')
-				emit_call(p, "@mul");
-			else if (op_tok == '/')
-				emit_call(p, "@div");
+			switch (op_tok) {
+			case '+': emit_call(p, "@add"); break;
+			case '-': emit_call(p, "@sub"); break;
+			case '*': emit_call(p, "@mul"); break;
+			case '/': emit_call(p, "@div"); break;
+			default:
+				parse_err(p, "Unknown operator");
+				break;
+			}
 		}
 	}
 }
@@ -283,7 +293,7 @@ static void parse_declare(struct parser *p)
 	struct span ident;
 
 	if (!expect(p, TK_identifier)) {
-		parse_err(p, "Expected identifier");
+		parse_err(p, "Expected variable identifier");
 		return;
 	}
 
@@ -291,7 +301,7 @@ static void parse_declare(struct parser *p)
 
 	if (eat(p) == ':') {
 		if (!expect(p, TK_identifier)) {
-			parse_err(p, "Expected type identifier.");
+			parse_err(p, "Expected variable type.");
 			return;
 		}
 

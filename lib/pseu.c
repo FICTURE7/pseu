@@ -97,7 +97,6 @@ int pseu_vm_eval(pseu_vm_t *vm, const char *src)
 		return PSEU_RESULT_ERROR;
 	if (pseu_call(vm->state, &fn))
 		return PSEU_RESULT_ERROR;
-	// XXX: Consider memory leak?
 	return PSEU_RESULT_SUCCESS;
 }
 
