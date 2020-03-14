@@ -77,10 +77,12 @@ static token_t lex_ident(struct lexer *l)
 		result = TK_kw_output;
 	} else if (strncmp("DECLARE", start, len) == 0) {
 		result = TK_kw_declare;
+  /*
 	} else if (strncmp("TRUE", start, len) == 0) {
 		result = TK_lit_true;
 	} else if (strncmp("FALSE", start, len) == 0) {
 		result = TK_lit_false;
+  */
 	} else {
 		l->span.pos = start;
 		l->span.len = len;

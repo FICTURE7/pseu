@@ -60,8 +60,7 @@ static void parse_err(struct parser *p, const char *message, ...)
   p->failed = 1;
 }
 
-static int resolve_local(struct parser *p, const char *ident, size_t len)
-  size_t i;
+static int resolve_local(struct parser *p, const char *ident, size_t len) {
   struct span lcl_ident = {
     .pos = (char *)ident,
     .len = len
@@ -244,17 +243,6 @@ static int parse_expr_primary(struct parser *p)
     emit_ld_const(p, &p->lex.value);
     eat(p);
     return 0;
-
-    /*
-       case TK_lit_true:
-       emit(p, OP_LD_KTRUE);
-       eat(p);
-       return 0;
-       case TK_lit_false:
-       emit(p, OP_LD_KFALSE);
-       eat(p);
-       return 0;
-       */
 
   case TK_identifier:
     emit_ld_variable(p, p->lex.span.pos, p->lex.span.len);

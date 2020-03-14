@@ -1,4 +1,8 @@
 OUTPUT PI
+OUTPUT TRUE
+OUTPUT FALSE
 ---
 3.141593
+true
+false
 

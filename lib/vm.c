@@ -334,7 +334,7 @@ int pseu_arith_binary(struct value *a, struct value *b, struct value *o, int op)
 {
   if (v_isnum(a) && v_isnum(b)) {
     arith_num(a, b, o, op);
-    return;
+    return 0;
   }
 
   struct value na;
@@ -344,6 +344,7 @@ int pseu_arith_binary(struct value *a, struct value *b, struct value *o, int op)
     return 1;
 
   arith_num(&na, &nb, o, op);
+  return 0;
 }
 
 uint16_t pseu_def_type(pseu_vm_t *vm, struct type *type)

@@ -32,7 +32,7 @@ PSEU_FUNC(output)
 
   switch (ARG(0)->type) {
   case VAL_BOOL:
-    sprintf(buffer, ARG(0)->as.boolean == 0 ? "false" : "true");
+    sprintf(buffer, ARG(0)->as.boolean == 0 ? "false\n" : "true\n");
     break;
   case VAL_INT:
     sprintf(buffer, "%d\n", ARG(0)->as.integer);
@@ -67,4 +67,6 @@ void pseu_core_init(pseu_vm_t *vm)
   PSEU_DEF_FUNC(div, 	  RETURN("ANY"), 	PARAMS("ANY", "ANY"));
 
   PSEU_DEF_CONST(PI,    v_float(M_PI));
+  PSEU_DEF_CONST(TRUE,  v_bool(1));
+  PSEU_DEF_CONST(FALSE, v_bool(0));
 }
