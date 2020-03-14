@@ -68,8 +68,6 @@ static token_t lex_ident(struct lexer *l)
 			(char_isalpha(l->peek) || 
 			 char_isdigit(l->peek) ||
 			 l->peek == '_'));
-	
-	/* TODO: Binary search this stuff. */
 
 	if (strncmp("PROCEDURE", start, len) == 0) {
 		result = TK_kw_procedure;
@@ -147,6 +145,7 @@ token_t pseu_lex_scan(struct lexer *l)
 {
 	for (;;) {
 		char c = l->peek;
+
 		if (char_isdigit(c))
 			return lex_number(l);
 		else if (char_isalpha(c))

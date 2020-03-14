@@ -1,8 +1,10 @@
-[*.c]
-tab_size=4
+root = true
+[*]
+end_of_line = lf
+insert_final_newline = true
 
-[*.h]
-tab_size=4
-
-[*.txt]
-tab_size=4
+[*.{h,c}]
+charset = utf-8
+indent_style = space
+indent_size = 4
+tab_size = 4
