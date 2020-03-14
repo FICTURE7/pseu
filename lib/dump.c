@@ -26,6 +26,12 @@ void dump_value(pseu_state_t *s, FILE *f, struct value *v)
   }
 }
 
+void dump_variable(pseu_state_t *s, FILE *f, struct variable *v)
+{
+  printf("\'%s\':", v->ident);
+  dump_value(s, f, &v->value);
+}
+
 void dump_fn_sig(FILE *f, struct function *fn)
 {
   if (fn->return_type)
@@ -103,6 +109,7 @@ void dump_fn_code(pseu_state_t *s, FILE *f, struct function *fn)
   INTERPRET {
     OP(LD_CONST): {
       uint16_t index = READ_UINT16(); 
+
       fprintf(f, " %05d %s ", IP, "ld.const");
       dump_value(s, f, &fn->as.pseu.consts[index]);
       DISPATCH();
@@ -110,13 +117,16 @@ void dump_fn_code(pseu_state_t *s, FILE *f, struct function *fn)
 
     OP(LD_LOCAL): {
       uint16_t index = READ_UINT8();
+
       OP_DUMP1("ld.local", index);
       DISPATCH();
     }
     
     OP(LD_GLOBAL): {
       uint16_t index = READ_UINT16(); 
-      OP_DUMP1("ld.global", index);
+
+      fprintf(f, " %05d %s ", IP, "ld.global");
+      dump_variable(s, f, &VM(s)->vars[index]);
       DISPATCH();
     }
 
