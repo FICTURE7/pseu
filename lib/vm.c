@@ -1,13 +1,12 @@
 #include "vm.h"
+#include "obj.h"
 
 /* Do int32 arithmetic operation 'op' on value 'a' and 'b', outputs result in
  * value 'o'. 
  */
-static void arith_int(struct value *a, 
-                      struct value *b,
-                      struct value *o, int op)
+static void arith_int(Value *a, Value *b, Value *o, ArithType op)
 {
-  uint32_t vr;
+  u32 vr;
 
   switch (op) {
   case ARITH_ADD:
@@ -35,11 +34,9 @@ static void arith_int(struct value *a,
 /* Do float arithmetic operation 'op' on value 'a' and 'b', outputs result in
  * value 'o'. 
  */
-static void arith_float(struct value *a,
-                        struct value *b,
-                        struct value *o, int op)
+static void arith_float(Value *a, Value *b, Value *o, ArithType op)
 {
-  float vr;
+  f32 vr;
 
   switch (op) {
   case ARITH_ADD:
@@ -67,29 +64,21 @@ static void arith_float(struct value *a,
 /* Do arithmetic operation 'op' on value 'a' and 'b', outputs result in value
  * 'o'. 
  */
-static void arith_num(struct value *a, 
-                      struct value *b,
-                      struct value *o, int op)
+static void arith_num(Value *a, Value *b, Value *o, ArithType op)
 {
   if (v_isint(a) && v_isint(b)) {
     arith_int(a, b, o, op);
   } else if (v_isfloat(a) && v_isfloat(b)) {
     arith_float(a, b, o, op);
   } else {
-    struct value na;
-    struct value nb;
-
-    na.as.real = v_isint(a) ? v_i2f(a) : v_asfloat(a);
-    nb.as.real = v_isint(b) ? v_i2f(b) : v_asfloat(b);
-    /* No need to set type of 'na' and 'nb' since arith_float doesn't type
-     * check.
-     */
+    Value na = v_float(v_isint(a) ? v_i2f(a) : v_asfloat(a));
+    Value nb = v_float(v_isint(b) ? v_i2f(b) : v_asfloat(b));
     arith_float(&na, &nb, o, op);
   }
 }
 
 /* Attempts to coerce the specified value to a numeric one (float, int). */
-static int coerce_numeric(struct value *i, struct value *o)
+static int coerce_numeric(Value *i, Value *o)
 {
   if (v_isnum(i)) {
     *o = *i;
@@ -101,9 +90,9 @@ static int coerce_numeric(struct value *i, struct value *o)
 }
 
 /* Ensures that the specified number of slots 'n' is available. */
-static int vm_ensure_stack(pseu_state_t *s, size_t n)
+static int vm_ensure_stack(State *s, size n)
 {
-  size_t k = s->sp - (s->stack + s->stack_size);
+  size k = s->sp - (s->stack + s->stack_size);
 
   if (k >= n)
     return 0;
@@ -112,17 +101,17 @@ static int vm_ensure_stack(pseu_state_t *s, size_t n)
   return 1;
 }
 
-static int vm_init_stack(pseu_state_t *s, struct frame *frame)
+static int vm_init_stack(State *s, Frame *frame)
 {
-  struct function *fn = frame->fn;
+  Function *fn = frame->fn;
   pseu_assert(fn->type == FN_PSEU);
 
-  for (size_t i = 0; i < fn->as.pseu.local_count; i++) {
-    struct type *loc_type = fn->as.pseu.locals[i];
-
+  for (size i = 0; i < fn->as.pseu.local_count; i++) {
+    Type *loc_type = fn->as.pseu.locals[i];
     if (t_isany(s, loc_type))
       continue;
-    else if (t_isint(s, loc_type))
+
+    if (t_isint(s, loc_type))
       frame->bp[i] = v_int(0);
     else
       return 1;
@@ -132,26 +121,27 @@ static int vm_init_stack(pseu_state_t *s, struct frame *frame)
 }
 
 /* Appends the specified function as a call frame to the call stack. */
-static int vm_append_call(pseu_state_t *s, struct function *fn)
+static int vm_append_call(State *s, Function *fn)
 {
   if (s->frames_count >= s->frames_size)
-    pseu_vec_grow(s, s->frames, &s->frames_size, struct frame);
+    pseu_vec_grow(s, s->frames, &s->frames_size, Frame);
 
-  s->frames[s->frames_count++] = (struct frame) {
+  s->frames[s->frames_count] = (Frame) {
     .fn = fn,
     .ip = fn->as.pseu.code,
     .bp = s->sp,
   };
 
-  vm_init_stack(s, &s->frames[s->frames_count - 1]);
+  vm_init_stack(s, &s->frames[s->frames_count]);
+  s->frames_count++;
   return 0;
 }
 
 /* Dispatches the last frame on the call stack. */
-static int vm_dispatch(pseu_state_t *s) 
+static int vm_dispatch(State *s) 
 {
-  #define READ_UINT8()  	(*ip++)
-  #define READ_UINT16() 	(*ip++) /* FIXME: Temp solution for now. */
+  #define READ_U8()  	(*ip++)
+  #define READ_U16() 	(*ip++) /* FIXME: Temp solution for now. */
 
   #define PUSH(x) 		*s->sp++ = x
   #define POP(x)  		*(--s->sp)
@@ -160,43 +150,40 @@ static int vm_dispatch(pseu_state_t *s)
     #error Computed gotos are not implemented yet
   #else
     #define INTERPRET  \
-      code_t op; 			 \
+      BCode op; 			 \
       decode: 				 \
-      switch ((op = READ_UINT8()))
+      switch ((op = READ_U8()))
     #define DISPATCH_EXIT(c) 	return c
     #define DISPATCH() 			  goto decode
     #define OP(x) 				    case OP_##x
   #endif
 
-  struct frame *frame = &s->frames[s->frames_count - 1];
-  code_t *ip = frame->ip;
-  struct function *fn = frame->fn;
+  Frame *frame = &s->frames[s->frames_count - 1];
+  BCode *ip = frame->ip;
+  Function *fn = frame->fn;
 
   INTERPRET {
     OP(LD_CONST): {
-      uint16_t index = READ_UINT16(); 
+      u16 index = READ_U16(); 
 
       PUSH(fn->as.pseu.consts[index]);
       DISPATCH();
     }
-
     OP(LD_GLOBAL): {
-      uint16_t index = READ_UINT16(); 
+      u16 index = READ_U16(); 
 
-      PUSH(VM(s)->vars[index].value);
+      PUSH(V(s)->vars[index].value);
       DISPATCH();
     }
-
     OP(LD_LOCAL): {
-      uint8_t index = READ_UINT8();
+      u8 index = READ_U8();
 
       PUSH(*(frame->bp + index));
       DISPATCH();
     }
-
     OP(CALL): {
-      uint16_t index = READ_UINT16();
-      struct function *f = &VM(s)->fns[index];
+      u8 index = READ_U16();
+      Function *f = &V(s)->fns[index];
 
       if (f->type == FN_C) {
         f->as.c(s, s->sp - f->params_count);	
@@ -212,7 +199,6 @@ static int vm_dispatch(pseu_state_t *s)
       }
       DISPATCH();
     }
-
     OP(RET): {
       DISPATCH_EXIT(0);
     }
@@ -220,9 +206,9 @@ static int vm_dispatch(pseu_state_t *s)
   return 1;
 }
 
-pseu_state_t *pseu_state_new(pseu_vm_t *vm)
+State *pseu_state_new(VM *vm)
 {
-  pseu_state_t *s = vm->config.alloc(vm, sizeof(*s));
+  State *s = (State *)vm->config.alloc(vm, sizeof(*s));
 
   if (!s)
     return NULL;
@@ -232,9 +218,9 @@ pseu_state_t *pseu_state_new(pseu_vm_t *vm)
   s->frames_count = 0;
   s->frames_size = PSEU_INIT_CALLSTACK_SIZE;
 
-  if (pseu_vec_init(s, &s->frames, s->frames_size, struct frame))
+  if (pseu_vec_init(s, &s->frames, s->frames_size, Frame))
     goto free_frames;
-  if (pseu_vec_init(s, &s->stack, s->stack_size, struct value))
+  if (pseu_vec_init(s, &s->stack, s->stack_size, Value))
     goto free_stack;
 
   s->sp = s->stack;
@@ -248,14 +234,14 @@ free_frames:
   return NULL;
 }
 
-void pseu_state_free(pseu_state_t *s)
+void pseu_state_free(State *s)
 {
   pseu_free(s, s->stack);
   pseu_free(s, s->frames);
   pseu_free(s, s);
 }
 
-int pseu_call(pseu_state_t *s, struct function *fn) 
+int pseu_call(State *s, Function *fn) 
 {
   pseu_assert(s->sp - s->stack >= fn->params_count);
   pseu_assert(fn->type == FN_PSEU);
@@ -267,37 +253,36 @@ int pseu_call(pseu_state_t *s, struct function *fn)
   return vm_dispatch(s);
 }
 
-void *pseu_alloc(pseu_state_t *s, size_t size) 
+void *pseu_alloc(State *s, size sz) 
 {
-  return VM(s)->config.alloc(VM(s), size); /* XXX: Handle out of memory. */
+  return V(s)->config.alloc(V(s), sz); /* XXX: Handle out of memory. */
 }
 
-void *pseu_realloc(pseu_state_t *s, void *ptr, size_t size) 
+void *pseu_realloc(State *s, void *ptr, size sz) 
 {
-  return VM(s)->config.realloc(VM(s), ptr, size);
+  return V(s)->config.realloc(V(s), ptr, sz);
 }
 
-void pseu_free(pseu_state_t *s, void *ptr) 
+void pseu_free(State *s, void *ptr) 
 {
-  VM(s)->config.free(VM(s), ptr);
+  V(s)->config.free(V(s), ptr);
 }
 
-void pseu_print(pseu_state_t *s, const char *text) 
+void pseu_print(State *s, const char *text) 
 {
-  VM(s)->config.print(VM(s), text);
+  V(s)->config.print(V(s), text);
 }
 
-void pseu_panic(pseu_state_t *s, const char *message)
+void pseu_panic(State *s, const char *message)
 {
   // TODO: Jump to somewhere safe. longjmp and stuff.
-  VM(s)->config.panic(VM(s), message);
+  V(s)->config.panic(V(s), message);
 }
 
-char *pseu_strdup(pseu_state_t *s, const char *str)
+char *pseu_strdup(State *s, const char *str)
 {
-  size_t len = strlen(str);
+  size len = strlen(str);
   char *nstr = pseu_alloc(s, len);
-
   if (pseu_unlikely(!nstr))
     return NULL;
 
@@ -306,10 +291,9 @@ char *pseu_strdup(pseu_state_t *s, const char *str)
   return nstr;
 }
 
-int _pseu_vec_init(pseu_state_t *s, void **vec, size_t cap_elm, size_t size_elm)
+int _pseu_vec_init(State *s, void **vec, size cap_elm, size sz_elm)
 {
-  void *new_vec = pseu_alloc(s, cap_elm * size_elm);
-
+  void *new_vec = pseu_alloc(s, cap_elm * sz_elm);
   if (pseu_unlikely(!new_vec))
     return 1;
 
@@ -317,11 +301,10 @@ int _pseu_vec_init(pseu_state_t *s, void **vec, size_t cap_elm, size_t size_elm)
   return 0;
 }
 
-int _pseu_vec_grow(pseu_state_t *s, void **vec, size_t *cap_elm, size_t size_elm)
+int _pseu_vec_grow(State *s, void **vec, size *cap_elm, size sz_elm)
 {
-  size_t new_cap_elm = (*cap_elm * 2);
-  void *new_vec = pseu_realloc(s, *vec, new_cap_elm * size_elm);
-
+  size new_cap_elm = (*cap_elm * 2);
+  void *new_vec = pseu_realloc(s, *vec, new_cap_elm * sz_elm);
   if (pseu_unlikely(!new_vec))
     return 1;
 
@@ -330,16 +313,15 @@ int _pseu_vec_grow(pseu_state_t *s, void **vec, size_t *cap_elm, size_t size_elm
   return 0;
 }
 
-int pseu_arith_binary(struct value *a, struct value *b, struct value *o, int op)
+int pseu_arith_binary(Value *a, Value *b, Value *o, ArithType op)
 {
   if (v_isnum(a) && v_isnum(b)) {
     arith_num(a, b, o, op);
     return 0;
   }
 
-  struct value na;
-  struct value nb; 
-
+  Value na;
+  Value nb; 
   if (coerce_numeric(a, &na) || coerce_numeric(b, &nb))
     return 1;
 
@@ -347,33 +329,33 @@ int pseu_arith_binary(struct value *a, struct value *b, struct value *o, int op)
   return 0;
 }
 
-uint16_t pseu_def_type(pseu_vm_t *vm, struct type *type)
+u16 pseu_def_type(VM *vm, Type *type)
 {
-  uint16_t result = vm->types_count++;
+  u16 result = vm->types_count++;
 
   vm->types[result] = *type;
   return result;
 }
 
-uint16_t pseu_def_function(pseu_vm_t *vm, struct function *fn)
+u16 pseu_def_function(VM *vm, Function *fn)
 {
-  uint16_t result = vm->fns_count++;
+  u16 result = vm->fns_count++;
 
   vm->fns[result] = *fn;
   return result;
 }
 
-uint16_t pseu_def_variable(pseu_vm_t *vm, struct variable *var)
+u16 pseu_def_variable(VM *vm, Variable *var)
 {
-  uint16_t result = vm->vars_count++;
+  u16 result = vm->vars_count++;
 
   vm->vars[result] = *var;
   return result;
 }
 
-struct type *pseu_get_type(pseu_vm_t *vm, const char *ident, size_t len)
+Type *pseu_get_type(VM *vm, const char *ident, size len)
 {
-  for (size_t i = 0; i < vm->types_count; i++) {
+  for (size i = 0; i < vm->types_count; i++) {
     if (strncmp(vm->types[i].ident, ident, len) == 0)
       return &vm->types[i];
   }
@@ -381,9 +363,9 @@ struct type *pseu_get_type(pseu_vm_t *vm, const char *ident, size_t len)
   return NULL;
 }
 
-uint16_t pseu_get_function(pseu_vm_t *vm, const char *ident)
+u16 pseu_get_function(VM *vm, const char *ident)
 {
-  for (size_t i = 0; i < vm->fns_count; i++) {
+  for (size i = 0; i < vm->fns_count; i++) {
     if (strcmp(vm->fns[i].ident, ident) == 0)
       return i;
   }
@@ -391,9 +373,9 @@ uint16_t pseu_get_function(pseu_vm_t *vm, const char *ident)
   return PSEU_INVALID_FUNC;
 }
 
-uint16_t pseu_get_variable(pseu_vm_t *vm, const char *ident, size_t len)
+u16 pseu_get_variable(VM *vm, const char *ident, size len)
 {
-  for (size_t i = 0; i < vm->vars_count; i++) {
+  for (size i = 0; i < vm->vars_count; i++) {
     if (strncmp(vm->vars[i].ident, ident, len) == 0)
       return i;
   }

@@ -4,6 +4,7 @@
 #include "obj.h"
 
 typedef char token_t;
+typedef token_t Token;
 
 enum token {
 	TK_eof,
@@ -20,25 +21,25 @@ enum token {
 	TK_lit_string,
 };
 
-struct span {
+typedef struct span {
 	char *pos;
-	uint32_t len;
-};
+	u32 len;
+} Span;
 
-struct lexer {
-	pseu_state_t *state;
-	struct span span;
+typedef struct lexer {
+	State *state;
 	char *pos;
 	char *start;
 	char *end;
 	char peek;
-	uint32_t col;
-	uint32_t row;
-	uint8_t failed;
-	struct value value;
-};
+	u32 col;
+	u32 row;
+	u8 failed;
+	Span span;
+	Value value;
+} Lexer;
 
-token_t pseu_lex_scan(struct lexer *l);
-int pseu_lex_init(pseu_state_t *s, struct lexer *l, const char *src);
+Token pseu_lex_scan(Lexer *l);
+int pseu_lex_init(State *s, Lexer *l, const char *src);
 
 #endif /* PSEU_LEX_H */

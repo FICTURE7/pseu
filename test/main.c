@@ -5,6 +5,8 @@
 #include <string.h>
 #include <time.h>
 
+#define unused(x) (void)(x)
+
 const char *path_combine(const char *base, const char *other)
 {
 	size_t base_len = strlen(base);
@@ -109,7 +111,7 @@ struct pseu_test {
 	enum pseu_test_state state;
 };
 
-static void runner_print(pseu_vm_t *vm, const char *text)
+static void runner_print(PseuVM *vm, const char *text)
 {
 	struct pseu_test *test = pseu_vm_get_data(vm);
 	buffer_write(&test->output, text, strlen(text));
@@ -117,28 +119,27 @@ static void runner_print(pseu_vm_t *vm, const char *text)
 	printf("%s", text);
 }
 
-static void *runner_alloc(pseu_vm_t *vm, size_t size)
+static void *runner_alloc(PseuVM *vm, size_t sz)
 {
-#ifdef TEST_CLEAN_MEM
-	/* Force clean memory allocations for consisten testing. */
-	return calloc(1, size);
-#else
-	return malloc(size);
-#endif
+  unused(vm);
+	return malloc(sz);
 }
 
-static void *runner_realloc(pseu_vm_t *vm, void *ptr, size_t size)
+static void *runner_realloc(PseuVM *vm, void *ptr, size_t sz)
 {
-	return realloc(ptr, size);
+  unused(vm);
+	return realloc(ptr, sz);
 }
 
-static void runner_free(pseu_vm_t *vm, void *ptr)
+static void runner_free(PseuVM *vm, void *ptr)
 {
+  unused(vm);
 	free(ptr);
 }
 
-static void runner_panic(pseu_vm_t *vm, const char *message)
+static void runner_panic(PseuVM *vm, const char *message)
 {
+  unused(vm);
 	fprintf(stderr, "error: %s.\n", message);
 }
 
@@ -293,7 +294,7 @@ void test(struct pseu_test_runner *runner, const char *path)
 	}
 
 	/* Runner configuration. */
-	pseu_config_t config = {
+	PseuConfig config = {
 		.print = runner_print,
 		.alloc = runner_alloc,
 		.realloc = runner_realloc,
@@ -302,7 +303,7 @@ void test(struct pseu_test_runner *runner, const char *path)
 		.flags = PSEU_CONFIG_DUMP_FUNCTION
 	};
 
-	pseu_vm_t *vm = pseu_vm_new(&config);
+	PseuVM *vm = pseu_vm_new(&config);
 	pseu_vm_set_data(vm, test);
 	int result = pseu_vm_eval(vm, test->input);
 	pseu_vm_free(vm);

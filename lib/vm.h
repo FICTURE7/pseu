@@ -58,45 +58,45 @@
 #define pseu_unreachable(x)  __assume(0 && "Unreachable code reached")
 #endif
 
-#define pseu_config_flag(S, x)	((VM(S)->config.flags & (x)) != 0)
+#define pseu_config_flag(S, x)	  ((VM(S)->config.flags & (x)) != 0)
 
-pseu_state_t *pseu_state_new(pseu_vm_t *vm);
-void pseu_state_free(pseu_state_t *s);
-
-#define pseu_alloc_t(s, t)     pseu_alloc((s), sizeof(t))
-#define pseu_alloc_nt(s, t, n) pseu_alloc((s), sizeof(t) * (n))
-
-void *pseu_alloc(pseu_state_t *s, size_t size);
-void *pseu_realloc(pseu_state_t *s, void *ptr, size_t size);
-void pseu_free(pseu_state_t *s, void *ptr);
-void pseu_print(pseu_state_t *s, const char *text);
-void pseu_panic(pseu_state_t *s, const char *message);
-
-char *pseu_strdup(pseu_state_t *s, const char *str);
+#define pseu_alloc_t(s, t)        pseu_alloc((s), sizeof(t))
+#define pseu_alloc_nt(s, t, n)    pseu_alloc((s), sizeof(t) * (n))
 
 #define pseu_vec_init(S, v, c, t) _pseu_vec_init(S, (void **)(v), c, sizeof(t))
 #define pseu_vec_grow(S, v, c, t) _pseu_vec_grow(S, (void **)(v), c, sizeof(t))
 
-int _pseu_vec_init(pseu_state_t *s, void **vec, size_t cap_elm, size_t size_elm);
-int _pseu_vec_grow(pseu_state_t *s, void **vec, size_t *cap_elm, size_t size_elm);
+State *pseu_state_new(VM *vm);
+void pseu_state_free(State *s);
 
-int pseu_call(pseu_state_t *s, struct function *fn);
-int pseu_parse(pseu_state_t *s, struct function *fn, const char *src);
+void *pseu_alloc(State *s, size_t sz);
+void *pseu_realloc(State *s, void *ptr, size_t sz);
+void pseu_free(State *s, void *ptr);
+void pseu_print(State *s, const char *text);
+void pseu_panic(State *s, const char *message);
 
-void pseu_dump_stack(pseu_state_t *s, FILE* f);
-void pseu_dump_function(pseu_state_t *s, FILE* f, struct function *fn);
+char *pseu_strdup(State *s, const char *str);
 
-int pseu_arith_unary(struct value *a, int op);
-int pseu_arith_binary(struct value *a, struct value *b, struct value *o, int op);
+int _pseu_vec_init(State *s, void **vec, size_t cap_elm, size_t size_elm);
+int _pseu_vec_grow(State *s, void **vec, size_t *cap_elm, size_t size_elm);
 
-uint16_t pseu_def_type(pseu_vm_t *vm, struct type *type);
-uint16_t pseu_def_variable(pseu_vm_t *vm, struct variable *var);
-uint16_t pseu_def_function(pseu_vm_t *vm, struct function *fn);
+int pseu_call(State *s, Function *fn);
+int pseu_parse(State *s, Function *fn, const char *src);
+
+void pseu_dump_stack(State *s, FILE* f);
+void pseu_dump_function(State *s, FILE* f, Function *fn);
+
+int pseu_arith_unary(Value *a, ArithType op);
+int pseu_arith_binary(Value *a, Value *b, Value *o, ArithType op);
+
+u16 pseu_def_type(VM *vm, Type *type);
+u16 pseu_def_variable(VM *vm, Variable *var);
+u16 pseu_def_function(VM *vm, Function *fn);
 
 /* ----WIP---- */
-struct type *pseu_get_type(pseu_vm_t *vm, const char *ident, size_t len);
-uint16_t pseu_get_variable(pseu_vm_t *vm, const char *ident, size_t len);
-uint16_t pseu_get_function(pseu_vm_t *vm, const char *ident);
+Type *pseu_get_type(VM *vm, const char *ident, size_t len);
+u16 pseu_get_variable(VM *vm, const char *ident, size_t len);
+u16 pseu_get_function(VM *vm, const char *ident);
 /* ----WIP---- */
 
 #endif /* PSEU_VM_H */

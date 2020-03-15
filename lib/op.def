@@ -1,0 +1,9 @@
+_(END)          \
+_(LD_CONST)     \
+_(LD_LOCAL)     \
+_(ST_LOCAL)     \
+_(LD_GLOBAL)    \
+_(ST_GLOBAL)    \
+_(CALL)         \
+_(RET)          \
+_(RET_VAL)

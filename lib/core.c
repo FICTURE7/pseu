@@ -42,7 +42,7 @@ PSEU_FUNC(output)
     break;
 
   default: {
-    struct type *t = v_type(s, ARG(0));
+    Type *t = v_type(s, ARG(0));
     sprintf(buffer, "%s<%p>\n", t->ident, (void *)ARG(0));
     break;
     }
@@ -52,7 +52,7 @@ PSEU_FUNC(output)
   return 0;
 }
 
-void pseu_core_init(pseu_vm_t *vm)
+void pseu_core_init(VM *vm)
 {
   PSEU_DEF_TYPE(ANY,     &vm->any_type);
   PSEU_DEF_TYPE(REAL,    &vm->real_type);
@@ -66,7 +66,7 @@ void pseu_core_init(pseu_vm_t *vm)
   PSEU_DEF_FUNC(mul, 	  RETURN("ANY"), 	PARAMS("ANY", "ANY"));
   PSEU_DEF_FUNC(div, 	  RETURN("ANY"), 	PARAMS("ANY", "ANY"));
 
-  PSEU_DEF_CONST(PI,    v_float(M_PI));
   PSEU_DEF_CONST(TRUE,  v_bool(1));
   PSEU_DEF_CONST(FALSE, v_bool(0));
+  PSEU_DEF_CONST(PI,    v_float(M_PI));
 }

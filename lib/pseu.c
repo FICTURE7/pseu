@@ -7,35 +7,35 @@
 #include "core.h"
 
 /* Default print function of the pseu virtual machine. */
-static void default_print(pseu_vm_t *vm, const char *text) 
+static void default_print(VM *vm, const char *text) 
 {
   pseu_unused(vm);
   printf("%s", text);
 }
 
 /* Default alloc function of the pseu virtual machine. */
-static void *default_alloc(pseu_vm_t *vm, size_t size) 
+static void *default_alloc(VM *vm, size_t size) 
 {
   pseu_unused(vm);
   return malloc(size);
 }
 
 /* Default realloc function of the pseu virtual machine. */
-static void *default_realloc(pseu_vm_t *vm, void *ptr, size_t size) 
+static void *default_realloc(VM *vm, void *ptr, size_t size) 
 {
   pseu_unused(vm);
   return realloc(ptr, size);
 }
 
 /* Default free function of the pseu virtual machine. */
-static void default_free(pseu_vm_t *vm, void *ptr) 
+static void default_free(VM *vm, void *ptr) 
 {
   pseu_unused(vm);
   free(ptr);
 }
 
 /* Default panic handler. */
-static void default_panic(pseu_vm_t *vm, const char *message)
+static void default_panic(VM *vm, const char *message)
 {
   pseu_unused(vm);
   fprintf(stderr, "error: %s.", message);
@@ -45,7 +45,7 @@ static void default_panic(pseu_vm_t *vm, const char *message)
 /* Initializes the default configuration, used when pseu_vm_new(NULL) is 
  * called.
  */
-static void config_init_default(pseu_config_t *config) 
+static void config_init_default(PseuConfig *config) 
 {
   config->panic = default_panic;
   config->print = default_print;
@@ -54,20 +54,20 @@ static void config_init_default(pseu_config_t *config)
   config->free = default_free;
 }
 
-pseu_vm_t *pseu_vm_new(pseu_config_t *config)
+PseuVM *pseu_vm_new(PseuConfig *config)
 {
-  pseu_vm_t *vm;
+  PseuVM *vm;
 
   if (config)
-    vm = config->alloc(NULL, sizeof(pseu_vm_t));
+    vm = config->alloc(NULL, sizeof(PseuVM));
   else
-    vm = malloc(sizeof(pseu_vm_t));
+    vm = malloc(sizeof(PseuVM));
 
   if (!vm)
     goto exit;
 
   if (config)
-    memcpy(&vm->config, config, sizeof(pseu_config_t));
+    memcpy(&vm->config, config, sizeof(PseuConfig));
   else
     config_init_default(&vm->config);
 
@@ -92,10 +92,11 @@ exit:
   return NULL;
 }
 
-int pseu_vm_eval(pseu_vm_t *vm, const char *src) 
+int pseu_vm_eval(PseuVM *vm, const char *src) 
 {
   assert(vm && src);
-  struct function fn;
+
+  Function fn;
   if (pseu_parse(vm->state, &fn, src))
     return PSEU_RESULT_ERROR;
   if (pseu_call(vm->state, &fn))
@@ -103,20 +104,20 @@ int pseu_vm_eval(pseu_vm_t *vm, const char *src)
   return PSEU_RESULT_SUCCESS;
 }
 
-void pseu_vm_free(pseu_vm_t *vm)
+void pseu_vm_free(PseuVM *vm)
 {
   /* TODO: Free the other stuff as well. */
   if (vm)
     pseu_state_free(vm->state);
 }
 
-void pseu_vm_set_data(pseu_vm_t *vm, void *data)
+void pseu_vm_set_data(PseuVM *vm, void *data)
 {
   assert(vm);
   vm->data = data;
 }
 
-void *pseu_vm_get_data(pseu_vm_t *vm) 
+void *pseu_vm_get_data(PseuVM *vm) 
 {
   assert(vm);
   return vm->data;

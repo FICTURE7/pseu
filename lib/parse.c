@@ -1,53 +1,54 @@
 #include "vm.h"
+#include "obj.h"
 #include "lex.h"
 
 #include <stdarg.h>
 
 /* A local variable. */
-struct local {
-  size_t scope;           /* Scope of local. */
-  struct span ident;      /* Identifier of local. */
-  struct span type_ident;	/* Type identifier of local. */
-  struct type *type;      /* Type of local. */
-};
+typedef struct Local {
+  size scope;             /* Scope of local. */
+  Span ident;             /* Identifier of local. */
+  Span type_ident;	      /* Type identifier of local. */
+  Type *type;             /* Type of local. */
+} Local;
 
 /* A parser state. */
-struct parser {
-  token_t tok;
-  struct lexer lex;
-  struct function *fn;
+typedef struct Parser {
+  Token tok;
+  Lexer lex;
+  Function *fn;
 
-  uint16_t scope;
-  uint32_t max_stack;
+  u16 scope;
+  u32 max_stack;
 
-  size_t code_size;
-  size_t code_count;
-  code_t *code;	
+  size code_size;
+  size code_count;
+  BCode *code;	
 
-  size_t consts_size;
-  size_t consts_count;
-  struct value *consts;
+  size consts_size;
+  size consts_count;
+  Value *consts;
 
-  size_t vars_size;
-  size_t vars_count;
-  struct local *vars;
+  size vars_size;
+  size vars_count;
+  Local *vars;
 
   int failed;
-};
+} Parser;
 
-static int spaneq(struct span *a, struct span *b)
+static int spaneq(Span *a, Span *b)
 {
   if (a->len != b->len)
     return 0;
   return strncmp(a->pos, b->pos, a->len) == 0;
 }
 
-static void parse_err(struct parser *p, const char *message, ...)
+static void parse_err(Parser *p, const char *message, ...)
 {
   va_list args;
   va_start(args, message);
 
-  size_t needed = vsnprintf(NULL, 0, message, args);
+  size needed = vsnprintf(NULL, 0, message, args);
   char *buffer = pseu_alloc(p->lex.state, needed);
 
   vsprintf(buffer, message, args);
@@ -60,15 +61,14 @@ static void parse_err(struct parser *p, const char *message, ...)
   p->failed = 1;
 }
 
-static int resolve_local(struct parser *p, const char *ident, size_t len) {
-  struct span lcl_ident = {
+static int resolve_local(Parser *p, const char *ident, size len) {
+  Span lcl_ident = {
     .pos = (char *)ident,
     .len = len
   };
 
-  for (size_t i = 0; i < p->vars_count; i++) {
-    struct local *olcl = &p->vars[i];
-
+  for (size i = 0; i < p->vars_count; i++) {
+    Local *olcl = &p->vars[i];
     if (olcl->scope <= p->scope && spaneq(&lcl_ident, &olcl->ident))
       return i;
   }
@@ -76,37 +76,33 @@ static int resolve_local(struct parser *p, const char *ident, size_t len) {
   return -1;
 }
 
-static uint16_t resolve_global(struct parser *p, const char *ident, size_t len)
+static u16 resolve_global(Parser *p, const char *ident, size len)
 {
   return pseu_get_variable(VM(p->lex.state), ident, len);
 }
 
-static int declare_const(struct parser *p, struct value *v)
+static int declare_const(Parser *p, Value *v)
 {
   if (p->consts_count >= PSEU_MAX_CONST)
     return -1;
-
   if (p->consts_count >= p->consts_size)
-    pseu_vec_grow(p->lex.state, &p->consts, &p->consts_size, struct value);
-
+    pseu_vec_grow(p->lex.state, &p->consts, &p->consts_size, Value);
   p->consts[p->consts_count] = *v;
   return p->consts_count++;
 }
 
-static int declare_local(struct parser *p, struct local *lcl)
+static int declare_local(Parser *p, Local *lcl)
 {
   /* Look for duplicate ident in globals. */
-  uint16_t index = resolve_global(p, lcl->ident.pos, lcl->ident.len);
-
+  u16 index = resolve_global(p, lcl->ident.pos, lcl->ident.len);
   if (index != 0xFFFF) {
     parse_err(p, "Global already defined with same identifier");
     return 1;
   }
 
   /* Look for duplicate ident in locals. */
-  for (size_t i = 0; i < p->vars_count; i++) {
-    struct local *olcl = &p->vars[i];
-
+  for (size i = 0; i < p->vars_count; i++) {
+    Local *olcl = &p->vars[i];
     if (olcl->scope <= lcl->scope && spaneq(&lcl->ident, &olcl->ident)) {
       parse_err(p, "Local already defined with same identifier");
       return 1;
@@ -114,27 +110,24 @@ static int declare_local(struct parser *p, struct local *lcl)
   }
 
   if (p->vars_count >= p->vars_size)
-    pseu_vec_grow(p->lex.state, &p->vars, &p->vars_size, struct local);
+    pseu_vec_grow(p->lex.state, &p->vars, &p->vars_size, Local);
 
   p->vars[p->vars_count++] = *lcl;
   return 0;
 }
 
-static void emit(struct parser *p, code_t code)
+static void emit(Parser *p, BCode code)
 {
   if (p->failed)
     return;
-
   if (p->code_count >= p->code_size)
-    pseu_vec_grow(p->lex.state, &p->code, &p->code_size, code_t);
-
+    pseu_vec_grow(p->lex.state, &p->code, &p->code_size, BCode);
   p->code[p->code_count++] = code;
 }
 
-static void emit_ld_const(struct parser *p, struct value *v)
+static void emit_ld_const(Parser *p, Value *v)
 {
   int index = declare_const(p, v);
-
   if (index == -1) {
     parse_err(p, "Exceeded maximum number of constant in a function/procedure");
   } else {
@@ -145,10 +138,9 @@ static void emit_ld_const(struct parser *p, struct value *v)
   }
 }
 
-static void emit_ld_global(struct parser *p, const char *ident, size_t len)
+static void emit_ld_global(Parser *p, const char *ident, size len)
 {
-  uint16_t index = pseu_get_variable(VM(p->lex.state), ident, len);
-
+  u16 index = pseu_get_variable(VM(p->lex.state), ident, len);
   if (index == 0xFFFF) {
     parse_err(p, "Global not defined");
   } else {
@@ -159,10 +151,9 @@ static void emit_ld_global(struct parser *p, const char *ident, size_t len)
   }
 }
 
-static void emit_ld_local(struct parser *p, const char *ident, size_t len)
+static void emit_ld_local(Parser *p, const char *ident, size len)
 {
   int index = resolve_local(p, ident, len);
-
   if (index == -1) {
     parse_err(p, "Local \"%s\" not defined", ident);
   } else {
@@ -173,20 +164,18 @@ static void emit_ld_local(struct parser *p, const char *ident, size_t len)
   }
 }
 
-static void emit_ld_variable(struct parser *p, const char *ident, size_t len)
+static void emit_ld_variable(Parser *p, const char *ident, size len)
 {
   int index = resolve_global(p, ident, len);
-
   if (index != 0xFFFF)
     emit_ld_global(p, ident, len);
   else
     emit_ld_local(p, ident, len);
 }
 
-static void emit_call(struct parser *p, const char *ident)
+static void emit_call(Parser *p, const char *ident)
 {
   int index = pseu_get_function(VM(p->lex.state), ident);
-
   if (index == PSEU_INVALID_FUNC) {
     parse_err(p, "Function or procedure \"%s\" is not defined.", ident);
   } else {
@@ -196,7 +185,7 @@ static void emit_call(struct parser *p, const char *ident)
 }
 
 /* Returns the precedence of the specifed token. */
-static int op_precedence(token_t tok)
+static int op_precedence(Token tok)
 {
   switch (tok) {
     case '+':
@@ -215,10 +204,10 @@ static int op_precedence(token_t tok)
 #define expect(P, t)	(eat(p) == t)
 
 /* == Forward declaration. */
-static void parse_expr(struct parser *p);
+static void parse_expr(Parser *p);
 
 /* Parse an expression term. */
-static int parse_expr_primary(struct parser *p)
+static int parse_expr_primary(Parser *p)
 {
   switch (p->tok) {
   case '+':
@@ -256,14 +245,14 @@ static int parse_expr_primary(struct parser *p)
 }
 
 /* Parse a binary expression. */
-static void parse_expr_binop(struct parser *p, int prece)
+static void parse_expr_binop(Parser *p, int prece)
 {
   /* Parse lhs of expression; bail if failed. */
   if (parse_expr_primary(p))
     return;
 
   for (;;) {
-    token_t op_tok = p->tok;
+    Token op_tok = p->tok;
     int cur_prece = op_precedence(op_tok);
     if (cur_prece <= prece)
       return;
@@ -286,13 +275,13 @@ static void parse_expr_binop(struct parser *p, int prece)
 }
 
 /* Parse an expression. */
-static void parse_expr(struct parser *p)
+static void parse_expr(Parser *p)
 {
   parse_expr_binop(p, 0);
 }
 
 /* Parse an output statement. */
-static void parse_output(struct parser *p)
+static void parse_output(Parser *p)
 {
   eat(p);
 
@@ -300,26 +289,23 @@ static void parse_output(struct parser *p)
   emit_call(p, "@output");
 }
 
-static void parse_declare(struct parser *p)
+static void parse_declare(Parser *p)
 {
-  struct span type_ident;
-  struct span ident;
-
   if (!expect(p, TK_identifier)) {
     parse_err(p, "Expected variable identifier");
     return;
   }
 
-  ident = p->lex.span;
+  Span ident = p->lex.span;
 
   /* TODO: Non typed variable. */
   if (eat(p) == ':') {
     if (!expect(p, TK_identifier)) {
       parse_err(p, "Expected variable type");
     } else {
-      type_ident = p->lex.span;
+      Span type_ident = p->lex.span;
 
-      struct local lcl;
+      Local lcl;
       lcl.scope = p->scope;
       lcl.ident = ident;
       lcl.type_ident = type_ident;
@@ -332,7 +318,7 @@ static void parse_declare(struct parser *p)
   } 
 }
 
-static int parse_root(struct parser *p)
+static int parse_root(Parser *p)
 {
   while (eat(p) != TK_eof) {
     switch (p->tok) {
@@ -354,9 +340,9 @@ static int parse_root(struct parser *p)
   return 0;
 }
 
-int pseu_parse(pseu_state_t *s, struct function *fn, const char *src)
+int pseu_parse(State *s, Function *fn, const char *src)
 {
-  struct parser p;	
+  Parser p;	
   if (pseu_lex_init(s, &p.lex, src))
     goto fail;
 
@@ -367,19 +353,19 @@ int pseu_parse(pseu_state_t *s, struct function *fn, const char *src)
   p.code_count = 0;
   p.code_size  = 16;
 
-  if (pseu_vec_init(s, &p.code, p.code_size, code_t))
+  if (pseu_vec_init(s, &p.code, p.code_size, BCode))
     goto fail;
 
   p.consts_count = 0;
   p.consts_size  = 8;
 
-  if (pseu_vec_init(s, &p.consts, p.consts_size, struct value))
+  if (pseu_vec_init(s, &p.consts, p.consts_size, Value))
     goto fail_code;
 
   p.vars_count = 0;
   p.vars_size  = 8;
 
-  if (pseu_vec_init(s, &p.vars, p.vars_size, struct local))
+  if (pseu_vec_init(s, &p.vars, p.vars_size, Local))
     goto fail_consts;
   if (parse_root(&p))
     goto fail_vars;
@@ -393,11 +379,11 @@ int pseu_parse(pseu_state_t *s, struct function *fn, const char *src)
   fn->as.pseu.code_count = p.code_count;
   fn->as.pseu.consts = p.consts;
   fn->as.pseu.const_count = p.consts_count;
-  fn->as.pseu.locals = p.vars_count > 0 ? pseu_alloc(s, p.vars_count * sizeof(struct type *)) : NULL;
+  fn->as.pseu.locals = p.vars_count > 0 ? pseu_alloc(s, p.vars_count * sizeof(Type *)) : NULL;
   fn->as.pseu.local_count = p.vars_count;
   fn->as.pseu.max_stack = p.max_stack;
 
-  for (size_t i = 0; i < fn->as.pseu.local_count; i++)
+  for (size i = 0; i < fn->as.pseu.local_count; i++)
     fn->as.pseu.locals[i] = p.vars[i].type;
 
   if (pseu_config_flag(s, PSEU_CONFIG_DUMP_FUNCTION))

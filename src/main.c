@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-	pseu_vm_t *vm = pseu_vm_new(NULL);
+	PseuVM *vm = pseu_vm_new(NULL);
 	pseu_vm_eval(vm, "OUTPUT 1");
 	pseu_vm_free(vm);
 

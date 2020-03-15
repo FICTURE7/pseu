@@ -2,57 +2,84 @@
 #define PSEU_OBJ_H
 
 #include <pseu.h>
-#include "op.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef int8_t    i8;
+typedef int16_t   i16;
+typedef int32_t   i32;
+typedef int64_t   i64;
+
+typedef uint8_t   u8;
+typedef uint16_t  u16;
+typedef uint32_t  u32;
+typedef uint64_t  u64;
+
+typedef float     f32;
+typedef double    f64;
+
+typedef size_t    size;
 
 /* ** Forward references. ** */
-struct type;
-struct object;
+typedef struct Type Type;
+typedef struct Object Object;
 
-typedef struct pseu_state pseu_state_t;
+typedef struct PseuVM VM;
+typedef struct PseuState State;
+
+/* Opcodes which the pseu virtual machine supports. */
+enum code {
+  #define _(x) OP_##x,
+  #include "op.def" 
+  #undef  _
+};
+
+/* Represents a pseu virutal machine instruction byte code. */
+typedef u8 BCode;
 
 /* Types of pseu arithmetics. */
-enum arith {
+typedef enum Arith {
   ARITH_ADD = '+',
   ARITH_SUB = '-',
   ARITH_MUL = '*',
   ARITH_DIV = '/'
-};
+} ArithType;
 
 /* A pseu type field. */
-struct field {
+typedef struct Field {
   const char *ident;		/* Identifier of field. */
-  struct type *type;		/* Type of field. */
-};
+  Type *type;		        /* Type of field. */
+} Field;
 
 #define t_isany(S, t) ((t) == VM(S)->any_type)
 #define t_isint(S, t) ((t) == VM(S)->integer_type)
 
 /* A pseu type. */
-struct type {
-  uint8_t fields_count; /* Number of fields of type. */
-  struct field *fields; /* Fields of type. */
+struct Type {
+  u8 fields_count;      /* Number of fields of type. */
+  Field *fields;        /* Fields of type. */
   const char *ident;    /* Identifier of type. */
 };
 
 /* Types of pseu value. */
-enum value_type {
-  VAL_NIL,        /* Empty. XXX: Reconsider. */
-  VAL_BOOL,       /* Boolean. */
-  VAL_INT,        /* Signed 32-bit integer. */
-  VAL_FLOAT,      /* Single-precision floating point. */
-  VAL_OBJ         /* Pointer to a heap allocated pseu object. */
-};
+typedef enum ValueType {
+  VAL_NIL,              /* Empty. XXX: Reconsider. */
+  VAL_BOOL,             /* Boolean. */
+  VAL_INT,              /* Signed 32-bit integer. */
+  VAL_FLOAT,            /* Single-precision floating point. */
+  VAL_OBJ               /* Pointer to a heap allocated pseu object. */
+} ValueType;
 
 /* A pseu value. */
-struct value {
-  uint8_t type;   /* Type of value; see value_type. */
+typedef struct Value {
+  u8 type;              /* Type of value; see value_type. */
   union {
-    float real;             /* As a real value. */
-    int boolean;            /* As a boolean. */
-    int32_t integer;        /* As an integer. */
-    struct object *object;  /* As an object. */
+    float real;         /* As a real value. */
+    bool boolean;       /* As a boolean. */
+    i32 integer;        /* As an integer. */
+    Object *object;     /* As an object. */
   } as;
-};
+} Value;
 
 #define v_isbool(v)  ((v)->type == VAL_BOOL)
 #define v_isobj(v)   ((v)->type == VAL_OBJ)
@@ -65,147 +92,147 @@ struct value {
 #define v_asint(v)   ((v)->as.integer)
 #define v_asfloat(v) ((v)->as.real)
 
-#define v_bool(k)    ((struct value) { .type = VAL_BOOL, .as.boolean = (k) })
-#define v_obj(k)     ((struct value) { .type = VAL_OBJ, .as.object = (k) })
-#define v_int(k)     ((struct value) { .type = VAL_INT, .as.integer = (k) })
-#define v_float(k)   ((struct value) { .type = VAL_FLOAT, .as.real = (k) })
+#define v_bool(k)    ((Value) {.type = VAL_BOOL,  .as.boolean = (k)})
+#define v_obj(k)     ((Value) {.type = VAL_OBJ,   .as.object = (k)})
+#define v_int(k)     ((Value) {.type = VAL_INT,   .as.integer = (k)})
+#define v_float(k)   ((Value) {.type = VAL_FLOAT, .as.real = (k)})
 
 #define v_i2f(v)     ((float)v_asint(v))
 #define v_f2i(v)     ((int32_t)v_asfloat(v))
 
 /* A pseu variable. */
-struct variable {
-  uint8_t k;              /* Is variable a constant. */
+typedef struct Variable {
+  bool konst;             /* Is variable a constant. */
   const char *ident;      /* Identifier of variable. */
-  struct value value;     /* Value of variable. */
-};
+  Value value;            /* Value of variable. */
+} Variable;
 
-#define GC_HEADER uint8_t flags
+#define GC_HEADER u8 flags
 
 /* A pseu user object. */
-struct object {
+struct Object {
   GC_HEADER;
-  struct type *type;      /* Type of object. */
-  struct value fields[1]; /* Field values of the object. */
+  Type *type;             /* Type of object. */
+  Value fields[1];        /* Field values of the object. */
 };
 
 /* A pseu string object. */
-struct gc_string {
+typedef struct String {
   GC_HEADER;
-  uint32_t hash;          /* Hash of string. */
-  uint32_t len;	          /* Length of string. */
-  uint8_t buf[1];         /* Buffer containing string. */
-};
+  u32 hash;               /* Hash of string. */
+  u32 length;	            /* Length of string. */
+  u8 buffer[1];           /* Buffer containing string. */
+} String;
 
 /* A pseu array object. */
-struct gc_array {
+typedef struct Array {
   GC_HEADER;
-  uint32_t start;         /* Start of array. */
-  uint32_t end;           /* End of array. */
-  struct value *val[1];   /* Values of array. */
-};
+  u32 start;              /* Start of array. */
+  u32 end;                /* End of array. */
+  Value *val[1];   /* Values of array. */
+} Array;
 
 /* A char buffer. */
-struct cbuffer {
+typedef struct CBuffer {
   size_t count;           /* Number of chars in buffer. */
   size_t size;            /* Size/capacity of buffer. */
   char *buffer;           /* Pointer to buffer block. */
-};
+} CBuffer;
 
-int cbuf_new(pseu_state_t *s, struct cbuffer *buf, size_t size);
-int cbuf_put(pseu_state_t *s, struct cbuffer *buf, char c);
-void cbuf_free(pseu_state_t *s, struct cbuffer *buf);
+int cbuf_new(State *s, CBuffer *buf, size sz);
+int cbuf_put(State *s, CBuffer *buf, char c);
+void cbuf_free(State *s, CBuffer *buf);
 
 /* Types of pseu function. */
-enum function_type {
-  FN_PSEU,  /* Pseu function; consisting of VM bytecode. */
-  FN_C      /* Native C function which operates on a VM state eval stack. */
-};
+typedef enum FunctionType {
+  FN_PSEU,                /* Pseu function; consisting of VM bytecode. */
+  FN_C                    /* Native C function which operates on a VM state
+                           * evalulation stack. */
+} FunctionType;
 
 /* A pseu function. */
-struct function_pseu {
-  uint8_t const_count;  /* Number of constants in `consts`. */
-  uint8_t local_count;  /* Number of locals in `locals`.*/
-  uint16_t code_count;  /* Number of instructions in `code`. */
+typedef struct FunctionPseu {
+  u8 const_count;         /* Number of constants in `consts`. */
+  u8 local_count;         /* Number of locals in `locals`.*/
+  u16 code_count;         /* Number of instructions in `code`. */
 
-  uint32_t max_stack;   /* Maximum space the function occupies on the stack. */
+  u32 max_stack;          /* Maximum space the function occupies on the stack. */
 
-  struct value *consts; /* Constants in the function. */
-  struct type **locals; /* Locals in the function. */
-  code_t *code;         /* Instructions of function. */
-};
+  Value *consts;          /* Constants in the function. */
+  Type **locals;          /* Locals in the function. */
+  BCode *code;            /* Instructions of function. */
+} FunctionPseu;
 
 /* A C function. */
-typedef int (*function_c_t)(pseu_state_t *s, struct value *args);
+typedef int (*FunctionC)(State *s, Value *args);
 
 /* A pseu function description. It can also represent a procedure; see
  * function.return_type.
  */
-struct function {
-  uint8_t type;         /* Type of function; see function_type. */
-  const char *ident;    /* Identifier of function. */
+typedef struct Function {
+  u8 type;                /* Type of function; see function_type. */
+  const char *ident;      /* Identifier of function. */
 
-  uint8_t params_count;         /* Number of parameters (arity).*/
-  struct type **param_types;    /* Types of parameters. */
-  struct type *return_type;     /* Return type; NULL when procedure. */
+  u8 params_count;        /* Number of parameters (arity).*/
+  Type **param_types;     /* Types of parameters. */
+  Type *return_type;      /* Return type; NULL when procedure. */
 
   union {
-    function_c_t c;             /* As a C function. */
-    struct function_pseu pseu;  /* As a pseu function. */
+    FunctionC c;          /* As a C function. */
+    FunctionPseu pseu;    /* As a pseu function. */
   } as;
-};
+} Function;
 
 /* A pseu call frame. */
-struct frame {
-  struct function *fn;  /* Function of that frame. */
-  code_t *ip;           /* Instruction pointer. */
-  struct value *bp;     /* Base of stack frame. */
-};
+typedef struct Frame {
+  Function *fn;           /* Function of that frame. */
+  BCode *ip;              /* Instruction pointer. */
+  Value *bp;              /* Base of stack frame. */
+} Frame;
 
 /* Reference to the VM instance of state `S`. */
 #define VM(S) ((S)->vm)
 #define V(S)  ((S)->vm)
 
-/* Reference to the state instance of VM 'v'. */
-#define S(v)  ((v)->state)
+/* Reference to the state instance of VM `V`. */
+#define S(V)  ((V)->state)
 
 /* A per thread pseu state. */
-struct pseu_state {
-  pseu_vm_t *vm;        /* Reference to global VM state. */
+typedef struct PseuState {
+  VM *vm;                 /* Reference to global VM state. */
 
-  struct value *sp;     /* Stack pointer. */
-  size_t stack_size;    /* Capacity of evaluation stack. */	
-  struct value *stack;  /* Evaluation stack; points to bottom. */
+  Value *sp;              /* Stack pointer. */
+  size stack_size;        /* Capacity of evaluation stack. */	
+  Value *stack;           /* Evaluation stack; points to bottom. */
 
-  size_t frames_count;  /* Number of frames in the call frame stack. */
-  size_t frames_size;   /* Capacity of call frame stack. */
-  struct frame *frames; /* Call frame stack; points to bottom. */
-};
+  size frames_count;      /* Number of frames in the call frame stack. */
+  size frames_size;       /* Capacity of call frame stack. */
+  Frame *frames;          /* Call frame stack; points to bottom. */
+} PseuState;
 
 /* Global pseu virtual machine in a pseu instance. */
-struct pseu_vm {
-  pseu_state_t *state;  /* Current state executing. */
-  pseu_config_t config; /* Configuration of VM. */
+struct PseuVM {
+  PseuState *state;       /* Current state executing. */
+  PseuConfig config;      /* Configuration of VM. */
 
   // XXX
-  size_t types_count;
-  struct type types[8];
+  size fns_count;
+  size vars_count;
+  size types_count;
 
-  size_t fns_count;
-  struct function fns[8];
-
-  size_t vars_count;
-  struct variable vars[8];
+  Function fns[8];
+  Variable vars[8];
+  Type types[8];
   // XXX
 
-  struct type *any_type;
-  struct type *real_type;
-  struct type *integer_type;
-  struct type *boolean_type;
+  Type *any_type;
+  Type *real_type;
+  Type *integer_type;
+  Type *boolean_type;
 
-  char *error;        /* Error message set; NULL when no error. */
-  void *data;         /* User attached data; pseu_vm_{set,get}_data(). */
+  char *error;            /* Error message set; NULL when no error. */
+  void *data;             /* User attached data; pseu_vm_{set,get}_data(). */
 };
 
-struct type *v_type(pseu_state_t *s, struct value *v);
+Type *v_type(PseuState *s, Value *v);
 #endif /* PSEU_OBJ_H */

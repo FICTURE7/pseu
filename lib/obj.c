@@ -1,6 +1,6 @@
 #include "obj.h"
 
-struct type *v_type(pseu_state_t *s, struct value *v)
+Type *v_type(State *s, Value *v)
 {
 	switch (v->type) {
 	case VAL_BOOL:

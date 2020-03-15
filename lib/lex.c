@@ -7,7 +7,7 @@
 #define char_isalpha(x) ((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z'))
 #define char_isdigit(x) ((x >= '0' && x <= '9'))
 
-static void lex_err(struct lexer *l, const char *message, ...)
+static void lex_err(Lexer *l, const char *message, ...)
 {
 	l->failed = 1;
 	/* Proper error reporting. */
@@ -15,7 +15,7 @@ static void lex_err(struct lexer *l, const char *message, ...)
 }
 
 /* Moves l->pos to the next character, setting l->peek. */
-static void lex_eat(struct lexer *l)
+static void lex_eat(Lexer *l)
 {
 	if (l->pos + 1 >= l->end) {
 		l->peek = TK_eof;
@@ -26,13 +26,14 @@ static void lex_eat(struct lexer *l)
 }
 
 /* Moves l->col, l->row to a new line. */
-static void lex_newline(struct lexer *l)
+static void lex_newline(Lexer *l)
 {
-	l->col = 1; l->row++;
+	l->col = 1;
+  l->row++;
 }
 
 /* Skips over a block comment. */
-static void lex_skip_block_comment(struct lexer *l)
+static void lex_skip_block_comment(Lexer *l)
 {
 	do {
 		lex_eat(l);
@@ -47,17 +48,17 @@ static void lex_skip_block_comment(struct lexer *l)
 }
 
 /* Skips over a line comment. */
-static void lex_skip_line_comment(struct lexer *l)
+static void lex_skip_line_comment(Lexer *l)
 {
 	do {
 		lex_eat(l);
-	}  while (l->peek != TK_eof && l->peek != '\n');
+	} while (l->peek != TK_eof && l->peek != '\n');
 }
 
 /* Lexes an identifier or a reserved keyword. */
-static token_t lex_ident(struct lexer *l)
+static Token lex_ident(Lexer *l)
 {
-	token_t result;
+	Token result;
 	char *start = l->pos;
 	size_t len = 0;
 
@@ -77,12 +78,6 @@ static token_t lex_ident(struct lexer *l)
 		result = TK_kw_output;
 	} else if (strncmp("DECLARE", start, len) == 0) {
 		result = TK_kw_declare;
-  /*
-	} else if (strncmp("TRUE", start, len) == 0) {
-		result = TK_lit_true;
-	} else if (strncmp("FALSE", start, len) == 0) {
-		result = TK_lit_false;
-  */
 	} else {
 		l->span.pos = start;
 		l->span.len = len;
@@ -92,7 +87,7 @@ static token_t lex_ident(struct lexer *l)
 	return result;
 }
 
-static void lex_string(struct lexer *l)
+static void lex_string(Lexer *l)
 {
 	do {
 		lex_eat(l);
@@ -103,9 +98,9 @@ static void lex_string(struct lexer *l)
 	l->value.as.object = NULL;
 }
 
-static token_t lex_number(struct lexer *l)
+static Token lex_number(Lexer *l)
 {
-	token_t result = TK_lit_integer;
+	Token result = TK_lit_integer;
 	char *start = l->pos;
 	char *end = start;
 
@@ -116,7 +111,7 @@ static token_t lex_number(struct lexer *l)
 
 	if (result == TK_lit_integer) {
 		l->value.type = VAL_INT;
-		l->value.as.integer = (uint32_t)strtol(start, &end, 10);
+		l->value.as.integer = (u32)strtol(start, &end, 10);
 
 		/* TODO: Check if overflow and stuff. */
 	} else if (result == TK_lit_real) {
@@ -129,12 +124,12 @@ static token_t lex_number(struct lexer *l)
 	return result;
 }
 
-int pseu_lex_init(pseu_state_t *s, struct lexer *l, const char *src)
+int pseu_lex_init(State *s, Lexer *l, const char *src)
 {
 	l->state = s;
 	l->start = src;
 	l->end = src + strlen(src);
-	l->value = (struct value) { 0 };
+	l->value = (Value) { 0 };
 	l->pos = (char *)l->start;
 	l->row = 1;
 	l->col = 1;
@@ -143,7 +138,7 @@ int pseu_lex_init(pseu_state_t *s, struct lexer *l, const char *src)
 	return 0;
 }
 
-token_t pseu_lex_scan(struct lexer *l)
+Token pseu_lex_scan(Lexer *l)
 {
 	for (;;) {
 		char c = l->peek;

@@ -15,84 +15,73 @@
 #define PSEU_DEF_FUNC(x, rt, pt) def_func(vm, "@" #x, rt, pt, impl_##x)
 
 #define PSEU_FUNC(x) \
-  static int impl_##x(pseu_state_t *s, struct value *args)
+  static int impl_##x(State *s, Value *args)
 
-static inline struct type *resolve_type(pseu_vm_t *vm, 
-                                        const char *type_ident,
-                                        const char *error_message)
+static inline
+Type *resolve_type(VM *vm, const char *type_ident, const char *error_message)
 {
-  struct type *result = pseu_get_type(vm, type_ident, strlen(type_ident));
-
+  Type *result = pseu_get_type(vm, type_ident, strlen(type_ident));
   if (result == NULL)
-    pseu_panic(vm->state, error_message);
-
+    pseu_panic(S(vm), error_message);
   return result;
 }
 
-static inline void def_const(pseu_vm_t *vm, 
-                             const char *ident,
-                             struct value konst_value)
+static inline
+void def_const(VM *vm, const char *ident, Value konst_value)
 {
-  struct variable v = {
-    .ident = pseu_strdup(vm->state, ident),
+  Variable var = {
+    .ident = pseu_strdup(S(vm), ident),
     .value = konst_value,
-    .k = 1
+    .konst = true
   };
 
-  uint16_t index = pseu_def_variable(vm, &v);
-
+  u16 index = pseu_def_variable(vm, &var);
   if (index == PSEU_INVALID_GLOBAL)
-    pseu_panic(vm->state, "Reached maximum number of globals");
+    pseu_panic(S(vm), "Reached maximum number of globals");
 }
 
-static inline void def_type(pseu_vm_t *vm,
-                            const char *ident,
-                            struct type **out)
+static inline
+void def_type(VM *vm, const char *ident, Type **out)
 {
-  struct type t = {
-    .ident = pseu_strdup(vm->state, ident),
+  Type type = {
+    .ident = pseu_strdup(S(vm), ident),
     .fields = NULL,
     .fields_count = -1
   };
 
-  uint16_t index = pseu_def_type(vm, &t);
-
+  u16 index = pseu_def_type(vm, &type);
   if (index == PSEU_INVALID_TYPE)
-    pseu_panic(vm->state, "Reached maximum number of types.");
-
+    pseu_panic(S(vm), "Reached maximum number of types.");
   *out = &vm->types[index];
 }
 
-static inline void def_func(pseu_vm_t *vm, 
-                            const char *ident, 
-                            const char *return_type_ident,
-                            const char **param_types_ident,
-                            uint8_t params_count,
-                            function_c_t fn)
+static inline
+void def_func(VM *vm, 
+              const char *ident, const char *return_type_ident,
+              const char **param_types_idents, u8 params_count,
+              FunctionC cfn)
 {
-  struct type *return_type = NULL;
-
+  Type *return_type = NULL;
   if (return_type_ident)
     return_type = resolve_type(vm, return_type_ident, "Unknown return type.");
 
-  struct type **param_types = pseu_alloc_nt(vm->state, struct type *, params_count);
+  Type **param_types = pseu_alloc_nt(S(vm), Type *, params_count);
+  for (u8 i = 0; i < params_count; i++)
+    param_types[i] = resolve_type(vm, param_types_idents[i], "Unknown parameter type.");
 
-  for (uint8_t i = 0; i < params_count; i++)
-    param_types[i] = resolve_type(vm, param_types_ident[i], "Unknown parameter type.");
-
-  struct function f = {
+  Function fn = {
     .type = FN_C,
-    .ident = pseu_strdup(vm->state, ident),
+    .ident = pseu_strdup(S(vm), ident),
     .param_types = param_types,
     .params_count = params_count,
     .return_type = return_type,
-    .as.c = fn
+    .as.c = cfn
   };
 
-  if (pseu_def_function(vm, &f) == PSEU_INVALID_FUNC)
-    pseu_panic(vm->state, "Reached maximum number of functions.");
+  if (pseu_def_function(vm, &fn) == PSEU_INVALID_FUNC)
+    pseu_panic(S(vm), "Reached maximum number of functions.");
 }
 
-void pseu_core_init(pseu_vm_t *vm);
+void pseu_core_init(VM *vm);
 
 #endif /* PSEU_CORE_H */
