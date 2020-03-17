@@ -211,10 +211,13 @@ static int parse_expr_primary(Parser *p)
 {
   switch (p->tok) {
   case '+':
+    eat(p);
+    return parse_expr_primary(p);
   case '-':
     eat(p);
-    /* TODO: Emit call to add or sub, or something. */
-    return parse_expr_primary(p);
+    int result = parse_expr_primary(p);
+    emit_call(p, "@neg");
+    return result;
 
   case '(':
     eat(p);

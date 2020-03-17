@@ -4,7 +4,7 @@
 #include "core.h"
 
 #define ARG(x) (&args[x])
-#define RET(x)  *ARGS(0) = (x)
+#define RET(x) *ARG(0) = (x)
 
 #define PSEU_ARITH_FUNC(x, op) \
   PSEU_FUNC(x) 					       \
@@ -25,10 +25,10 @@ PSEU_ARITH_FUNC(mul, *)
 
 PSEU_FUNC(output)
 {
+  pseu_unused(s);
+
   // TODO: Fix this see parse_err in parse.c.
   char buffer[256];
-
-  pseu_unused(s);
 
   switch (ARG(0)->type) {
   case VAL_BOOL:
@@ -41,14 +41,34 @@ PSEU_FUNC(output)
     sprintf(buffer, "%f\n", ARG(0)->as.real);
     break;
 
-  default: {
-    Type *t = v_type(s, ARG(0));
-    sprintf(buffer, "%s<%p>\n", t->ident, (void *)ARG(0));
+  default:
+    sprintf(buffer, "%s<%p>\n", v_type(s, ARG(0))->ident, (void *)ARG(0));
     break;
-    }
   }
 
   pseu_print(s, buffer);
+  return 0;
+}
+
+PSEU_FUNC(neg)
+{
+  pseu_unused(s);
+
+  switch (ARG(0)->type) {
+  case VAL_BOOL:
+    RET(v_bool(!ARG(0)->as.boolean));
+    break;
+  case VAL_INT:
+    RET(v_int(-ARG(0)->as.integer));
+    break;
+  case VAL_FLOAT:
+    RET(v_float(-ARG(0)->as.real));
+    break;
+
+  default:
+    return 1;
+  }
+
   return 0;
 }
 
@@ -61,10 +81,11 @@ void pseu_core_init(VM *vm)
 
   PSEU_DEF_PROC(output, PARAMS("ANY"));
 
-  PSEU_DEF_FUNC(add, 	  RETURN("ANY"), 	PARAMS("ANY", "ANY"));
-  PSEU_DEF_FUNC(sub, 	  RETURN("ANY"), 	PARAMS("ANY", "ANY"));
-  PSEU_DEF_FUNC(mul, 	  RETURN("ANY"), 	PARAMS("ANY", "ANY"));
-  PSEU_DEF_FUNC(div, 	  RETURN("ANY"), 	PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(add, 	  RETURN("ANY"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(sub, 	  RETURN("ANY"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(mul, 	  RETURN("ANY"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(div, 	  RETURN("ANY"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(neg,    RETURN("ANY"), PARAMS("ANY"));
 
   PSEU_DEF_CONST(TRUE,  v_bool(1));
   PSEU_DEF_CONST(FALSE, v_bool(0));
