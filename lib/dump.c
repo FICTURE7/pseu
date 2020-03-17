@@ -87,7 +87,7 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
   fprintf(f, "code %d\n", fn->as.pseu.code_count);
 
   #define READ_UINT8()  	(*ip++)
-  #define READ_UINT16() 	(*ip++) /* FIXME: Temp solution for now. */
+  #define READ_UINT16() 	(*ip++) /* TODO(u16) */
 
   #define INTERPRET               \
     BCode op;                     \
@@ -130,6 +130,18 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
 
       fprintf(f, " %05d %s ", IP, "ld.global");
       dump_variable(s, f, &VM(s)->vars[index]);
+      DISPATCH();
+    }
+    OP(GOTO): {
+      u16 index = READ_UINT16();
+
+      OP_DUMP1("goto", index);
+      DISPATCH();
+    }
+    OP(GOTO_FALSE): {
+      u16 index = READ_UINT16();
+
+      OP_DUMP1("goto.false", index);
       DISPATCH();
     }
     OP(CALL): {

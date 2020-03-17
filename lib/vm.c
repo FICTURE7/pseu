@@ -147,7 +147,7 @@ static int dispatch(State *s)
   #define READ_U16() 	(*ip++) /* FIXME: Temp solution for now. */
 
   #define PUSH(x) 		*s->sp++ = x
-  #define POP(x)  		*(--s->sp)
+  #define POP(x)  		(*(--s->sp))
 
   #ifdef PSEU_USE_COMPUTEDGOTO
     #error Computed gotos are not implemented yet
@@ -189,6 +189,19 @@ static int dispatch(State *s)
 
       /* TODO: Type checking. */
       *(frame->bp + index) = POP();
+      DISPATCH();
+    }
+    OP(GOTO): {
+      u16 index = READ_U16();
+
+      ip = &fn->as.pseu.code[index];
+      DISPATCH();
+    }
+    OP(GOTO_FALSE): {
+      u16 index = READ_U16();
+
+      if (!POP().as.boolean)
+        ip = &fn->as.pseu.code[index];
       DISPATCH();
     }
     OP(CALL): {

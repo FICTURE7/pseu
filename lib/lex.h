@@ -3,10 +3,7 @@
 
 #include "obj.h"
 
-typedef char token_t;
-typedef token_t Token;
-
-enum token {
+typedef enum TokenType {
 	TK_eof,
 	TK_identifier,
 	TK_op_not,
@@ -16,17 +13,25 @@ enum token {
 	TK_kw_procedure,
 	TK_kw_function,
 	TK_newline = 10,
+  TK_kw_if,
+  TK_kw_endif,
+  TK_kw_then,
 	TK_lit_real,
 	TK_lit_integer,
 	TK_lit_string,
-};
+} TokenType;
 
-typedef struct span {
+/* Represents a token. */
+typedef char Token;
+
+/* Represents a region of memory - usually is a region of a string. */
+typedef struct Span {
 	char *pos;
 	u32 len;
 } Span;
 
-typedef struct lexer {
+/* Represents a lexer. */
+typedef struct Lexer {
 	State *state;
 	char *pos;
 	char *start;

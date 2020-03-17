@@ -4,6 +4,9 @@ _(LD_LOCAL)     \
 _(ST_LOCAL)     \
 _(LD_GLOBAL)    \
 _(ST_GLOBAL)    \
+_(GOTO)         \
+_(GOTO_TRUE)    \
+_(GOTO_FALSE)   \
 _(CALL)         \
 _(RET)          \
 _(RET_VAL)

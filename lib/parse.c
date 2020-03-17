@@ -190,7 +190,7 @@ static void emit_ld_variable(Parser *p, const char *ident, size len)
     emit_ld_local(p, ident, len);
 }
 
-static void emit_call1(Parser *p, const char *ident, size len)
+static void emit_calln(Parser *p, const char *ident, size len)
 {
   int index = pseu_get_function(VM(p->lex.state), ident, len);
   if (index == PSEU_INVALID_FUNC) {
@@ -203,7 +203,22 @@ static void emit_call1(Parser *p, const char *ident, size len)
 
 static void emit_call(Parser *p, const char *ident)
 {
-  emit_call1(p, ident, strlen(ident));
+  emit_calln(p, ident, strlen(ident));
+}
+
+static void patch_goto(Parser *p, int offset)
+{
+  /* TODO: Fix when we have proper u16 support. */
+  p->code[offset] = (BCode)p->code_count;
+}
+
+static int emit_goto_false(Parser *p)
+{
+  /* TODO: Fix when we have proper u16 support. */
+  emit(p, OP_GOTO_FALSE);
+  int result = p->code_count;
+  p->code_count += 1;
+  return result;
 }
 
 /* Returns the precedence of the specifed token. */
@@ -222,9 +237,6 @@ static int op_precedence(Token tok)
   }
 }
 
-#define eat(P)        ((P)->tok = pseu_lex_scan(&(P)->lex))
-#define expect(P, t)	(eat(P) == t)
-
 #define next(P)           ((P)->tok = pseu_lex_scan(&(P)->lex))
 #define peek(P)           ((P)->tok)
 #define expect_next(P, t) (next(P) == t)
@@ -232,6 +244,7 @@ static int op_precedence(Token tok)
 
 /* == Forward declaration. */
 static void parse_expr(Parser *p);
+static void parse_statement(Parser *p);
 
 /* Parse an expression term. */
 static int parse_expr_primary(Parser *p)
@@ -319,6 +332,7 @@ static void parse_output(Parser *p)
   emit_call(p, "@output");
 }
 
+/* Parse a declare statement. */
 static void parse_declare(Parser *p)
 {
   if (!expect_next(p, TK_identifier)) {
@@ -363,6 +377,7 @@ static void parse_declare(Parser *p)
   }
 }
 
+/* Parse an assign statement. */
 static void parse_assignment(Parser *p)
 {
   Span ident = p->lex.span;
@@ -379,34 +394,70 @@ static void parse_assignment(Parser *p)
   emit_st_local(p, ident.pos, ident.len);
 }
 
+static void parse_if_block(Parser *p)
+{
+  next(p);
+  parse_expr(p);
+  if (!expect_peek(p, TK_kw_then)) {
+    parse_err(p, "Expected THEN keyword.");
+    return;
+  }
+
+  if (!expect_next(p, TK_newline)) {
+    parse_err(p, "Expected new line after if expression.");
+    return;
+  }
+
+  next(p);
+
+  int jmp = emit_goto_false(p);
+  while (peek(p) != TK_kw_endif && peek(p) != TK_eof)
+    parse_statement(p);
+
+  next(p);
+
+  if (peek(p) != TK_newline && peek(p) != TK_eof)
+    parse_err(p, "Expected new line or end of file after ENDIF.");
+
+  patch_goto(p, jmp);
+}
+
+static void parse_statement(Parser *p)
+{
+  switch (peek(p)) {
+  case TK_newline:
+  case TK_eof:
+    break;
+
+  case TK_kw_output:
+    parse_output(p);
+    break;
+  case TK_kw_declare:
+    parse_declare(p);
+    break;
+  case TK_kw_if:
+    parse_if_block(p);
+    break;
+  case TK_identifier:
+    parse_assignment(p);
+    break;
+
+  default:
+    parse_err(p, "Expected begining of statement.");
+    break;
+  }
+
+  if (peek(p) != TK_newline && peek(p) != TK_eof)
+    parse_err(p, "Expected new line or end of file.");
+  next(p);
+}
+
 static int parse_root(Parser *p)
 {
-  for (;;) {
-    switch (peek(p)) {
-    case TK_eof:
-      emit(p, OP_RET);
-      return 0;
-    case TK_newline:
-      next(p);
-      continue;
-
-    case TK_kw_output:
-      parse_output(p);
-      break;
-    case TK_kw_declare:
-      parse_declare(p);
-      break;
-    case TK_identifier:
-      parse_assignment(p);
-      break;
-
-    default:
-      parse_err(p, "Expected statement");
-      break;
-    }
-
-    next(p);
-  }
+  while (peek(p) != TK_eof)
+    parse_statement(p);
+  emit(p, OP_RET);
+  return 0;
 }
 
 int pseu_parse(State *s, Function *fn, const char *src)
