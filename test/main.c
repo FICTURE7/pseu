@@ -356,14 +356,17 @@ int main(int argc, const char **argv)
 	clock_t start = clock();
 
 	/* Run tests. */
+#if 0
+	test(&runner, "core/assign.pseut");
+#else
 	test(&runner, "core/output.pseut");
 	test(&runner, "core/constants.pseut");
 	test(&runner, "core/declare.pseut");
-	test(&runner, "core/assign.pseut");
 	//test(&runner, "core/function.pseut");
 	test(&runner, "core/comment.pseut");
 	test(&runner, "core/arithmetics.pseut");
 	test(&runner, "core/sandbox.pseut");
+#endif
 
 	clock_t end = clock();
 	double duration = (double)(end - start) / (CLOCKS_PER_SEC * 1000);

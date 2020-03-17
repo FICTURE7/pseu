@@ -323,24 +323,32 @@ static void parse_declare(Parser *p)
 
   Span ident = p->lex.span;
 
-  /* TODO: Non typed variable. */
   if (next(p) == ':') {
     if (!expect_next(p, TK_identifier)) {
       parse_err(p, "Expected variable type");
     } else {
       Span type_ident = p->lex.span;
+      Local lcl = {
+        .scope = p->scope,
+        .ident = ident,
+        .type_ident = type_ident,
+        .type = pseu_get_type(V(p->lex.state), type_ident.pos, type_ident.len)
+      };
 
-      Local lcl;
-      lcl.scope = p->scope;
-      lcl.ident = ident;
-      lcl.type_ident = type_ident;
-      lcl.type = pseu_get_type(
-          V(p->lex.state),
-          type_ident.pos,
-          type_ident.len);
       declare_local(p, &lcl);
+      next(p);
+
+      /* Parse assignment after declaration. */
+      if (peek(p) == TK_op_assign) {
+        next(p);
+        parse_expr(p);
+        emit_st_local(p, ident.pos, ident.len);
+      }
     }
-  } 
+  } else {
+    /* TODO: Non typed variable aka ANY. */
+    parse_err(p, "Expected type.");
+  }
 }
 
 static void parse_assignment(Parser *p)
@@ -350,7 +358,7 @@ static void parse_assignment(Parser *p)
   next(p);
 
   if (!expect_peek(p, TK_op_assign)) {
-    parse_err(p, "Expected assign operator '->'.");
+    parse_err(p, "Expected assign operator '<-'.");
     return;
   }
 
@@ -361,8 +369,11 @@ static void parse_assignment(Parser *p)
 
 static int parse_root(Parser *p)
 {
-  while (peek(p) != TK_eof) {
+  for (;;) {
     switch (peek(p)) {
+    case TK_eof:
+      emit(p, OP_RET);
+      return 0;
     case TK_newline:
       next(p);
       continue;
@@ -384,9 +395,6 @@ static int parse_root(Parser *p)
 
     next(p);
   }
-
-  emit(p, OP_RET);
-  return 0;
 }
 
 int pseu_parse(State *s, Function *fn, const char *src)
