@@ -190,15 +190,20 @@ static void emit_ld_variable(Parser *p, const char *ident, size len)
     emit_ld_local(p, ident, len);
 }
 
-static void emit_call(Parser *p, const char *ident)
+static void emit_call1(Parser *p, const char *ident, size len)
 {
-  int index = pseu_get_function(VM(p->lex.state), ident);
+  int index = pseu_get_function(VM(p->lex.state), ident, len);
   if (index == PSEU_INVALID_FUNC) {
     parse_err(p, "Function or procedure \"%s\" is not defined.", ident);
   } else {
     emit(p, OP_CALL);
     emit(p, index);
   }
+}
+
+static void emit_call(Parser *p, const char *ident)
+{
+  emit_call1(p, ident, strlen(ident));
 }
 
 /* Returns the precedence of the specifed token. */
@@ -328,17 +333,24 @@ static void parse_declare(Parser *p)
       parse_err(p, "Expected variable type");
     } else {
       Span type_ident = p->lex.span;
-      Local lcl = {
-        .scope = p->scope,
-        .ident = ident,
-        .type_ident = type_ident,
-        .type = pseu_get_type(V(p->lex.state), type_ident.pos, type_ident.len)
-      };
+      u16 type_index = pseu_get_type(V(p->lex.state), type_ident.pos, type_ident.len);
+      if (type_index == PSEU_INVALID_TYPE) {
+        parse_err(p, "Unknown type specified.");
+      } else {
+        Type *type = &V(p->lex.state)->types[type_index];
+        Local lcl = {
+          .scope = p->scope,
+          .ident = ident,
+          .type_ident = type_ident,
+          .type = type
+        };
 
-      declare_local(p, &lcl);
+        declare_local(p, &lcl);
+      }
+
       next(p);
 
-      /* Parse assignment after declaration. */
+      /* Parse assignment after declaration if its here. */
       if (peek(p) == TK_op_assign) {
         next(p);
         parse_expr(p);

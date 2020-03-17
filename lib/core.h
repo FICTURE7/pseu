@@ -20,10 +20,10 @@
 static inline
 Type *resolve_type(VM *vm, const char *type_ident, const char *error_message)
 {
-  Type *result = pseu_get_type(vm, type_ident, strlen(type_ident));
-  if (result == NULL)
+  u16 index = pseu_get_type(vm, type_ident, strlen(type_ident));
+  if (index == PSEU_INVALID_TYPE)
     pseu_panic(S(vm), error_message);
-  return result;
+  return &vm->types[index];
 }
 
 static inline

@@ -41,7 +41,7 @@ void dump_fn_sig(FILE *f, Function *fn)
     fprintf(f, "proc ");
 
   if (fn->ident)
-    fprintf(f, "%s", fn->ident);
+    fprintf(f, "'%s'", fn->ident);
   else
     fprintf(f, "<#>");
 

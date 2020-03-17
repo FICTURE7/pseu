@@ -78,7 +78,7 @@ static void arith_num(Value *a, Value *b, Value *o, ArithType op)
 }
 
 /* Attempts to coerce the specified value to a numeric one (float, int). */
-static int coerce_numeric(Value *i, Value *o)
+static int coerce_num(Value *i, Value *o)
 {
   if (v_isnum(i)) {
     *o = *i;
@@ -339,7 +339,7 @@ int pseu_arith_binary(Value *a, Value *b, Value *o, ArithType op)
 
   Value na;
   Value nb; 
-  if (coerce_numeric(a, &na) || coerce_numeric(b, &nb))
+  if (coerce_num(a, &na) || coerce_num(b, &nb))
     return 1;
 
   arith_num(&na, &nb, o, op);
@@ -370,20 +370,20 @@ u16 pseu_def_variable(VM *vm, Variable *var)
   return result;
 }
 
-Type *pseu_get_type(VM *vm, const char *ident, size len)
+u16 pseu_get_type(VM *vm, const char *ident, size len)
 {
   for (size i = 0; i < vm->types_count; i++) {
     if (strncmp(vm->types[i].ident, ident, len) == 0)
-      return &vm->types[i];
+      return i;
   }
 
-  return NULL;
+  return PSEU_INVALID_TYPE;
 }
 
-u16 pseu_get_function(VM *vm, const char *ident)
+u16 pseu_get_function(VM *vm, const char *ident, size len)
 {
   for (size i = 0; i < vm->fns_count; i++) {
-    if (strcmp(vm->fns[i].ident, ident) == 0)
+    if (strncmp(vm->fns[i].ident, ident, len) == 0)
       return i;
   }
 

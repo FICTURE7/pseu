@@ -98,9 +98,9 @@ u16 pseu_def_variable(VM *vm, Variable *var);
 u16 pseu_def_function(VM *vm, Function *fn);
 
 /* ----WIP---- */
-Type *pseu_get_type(VM *vm, const char *ident, size len);
+u16 pseu_get_type(VM *vm, const char *ident, size len);
 u16 pseu_get_variable(VM *vm, const char *ident, size len);
-u16 pseu_get_function(VM *vm, const char *ident);
+u16 pseu_get_function(VM *vm, const char *ident, size len);
 /* ----WIP---- */
 
 #endif /* PSEU_VM_H */
