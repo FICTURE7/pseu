@@ -43,6 +43,12 @@ static int spaneq(Span *a, Span *b)
   return strncmp(a->pos, b->pos, a->len) == 0;
 }
 
+static void spanval(Span *a, char *buf)
+{
+  memcpy(buf, a->pos, a->len);
+}
+
+/* TODO: Move this stuff to err.c */
 static void parse_err(Parser *p, const char *message, ...)
 {
   va_list args;
@@ -164,6 +170,17 @@ static void emit_ld_local(Parser *p, const char *ident, size len)
   }
 }
 
+static void emit_st_local(Parser *p, const char *ident, size len)
+{
+  int index = resolve_local(p, ident, len);
+  if (index == -1) {
+    parse_err(p, "Local \"%s\" not defined", ident);
+  } else {
+    emit(p, OP_ST_LOCAL);
+    emit(p, index);
+  }
+}
+
 static void emit_ld_variable(Parser *p, const char *ident, size len)
 {
   int index = resolve_global(p, ident, len);
@@ -200,8 +217,13 @@ static int op_precedence(Token tok)
   }
 }
 
-#define eat(P)        ((p)->tok = pseu_lex_scan(&(p)->lex))
-#define expect(P, t)	(eat(p) == t)
+#define eat(P)        ((P)->tok = pseu_lex_scan(&(P)->lex))
+#define expect(P, t)	(eat(P) == t)
+
+#define next(P)           ((P)->tok = pseu_lex_scan(&(P)->lex))
+#define peek(P)           ((P)->tok)
+#define expect_next(P, t) (next(P) == t)
+#define expect_peek(P, t) (peek(P) == t)
 
 /* == Forward declaration. */
 static void parse_expr(Parser *p);
@@ -211,19 +233,19 @@ static int parse_expr_primary(Parser *p)
 {
   switch (p->tok) {
   case '+':
-    eat(p);
+    next(p);
     return parse_expr_primary(p);
   case '-':
-    eat(p);
+    next(p);
     int result = parse_expr_primary(p);
     emit_call(p, "@neg");
     return result;
 
   case '(':
-    eat(p);
+    next(p);
     parse_expr(p);
     if (p->tok == ')') {
-      eat(p);
+      next(p);
       return 0;
     }
     parse_err(p, "Expected ')'");
@@ -233,12 +255,12 @@ static int parse_expr_primary(Parser *p)
   case TK_lit_integer:
   case TK_lit_string:
     emit_ld_const(p, &p->lex.value);
-    eat(p);
+    next(p);
     return 0;
 
   case TK_identifier:
     emit_ld_variable(p, p->lex.span.pos, p->lex.span.len);
-    eat(p);
+    next(p);
     return 0;
 
   default:
@@ -260,7 +282,7 @@ static void parse_expr_binop(Parser *p, int prece)
     if (cur_prece <= prece)
       return;
 
-    eat(p);
+    next(p);
     /* Parse rhs of expression. */
     parse_expr_binop(p, cur_prece);
 
@@ -286,7 +308,7 @@ static void parse_expr(Parser *p)
 /* Parse an output statement. */
 static void parse_output(Parser *p)
 {
-  eat(p);
+  next(p);
 
   parse_expr(p);
   emit_call(p, "@output");
@@ -294,7 +316,7 @@ static void parse_output(Parser *p)
 
 static void parse_declare(Parser *p)
 {
-  if (!expect(p, TK_identifier)) {
+  if (!expect_next(p, TK_identifier)) {
     parse_err(p, "Expected variable identifier");
     return;
   }
@@ -302,8 +324,8 @@ static void parse_declare(Parser *p)
   Span ident = p->lex.span;
 
   /* TODO: Non typed variable. */
-  if (eat(p) == ':') {
-    if (!expect(p, TK_identifier)) {
+  if (next(p) == ':') {
+    if (!expect_next(p, TK_identifier)) {
       parse_err(p, "Expected variable type");
     } else {
       Span type_ident = p->lex.span;
@@ -313,7 +335,7 @@ static void parse_declare(Parser *p)
       lcl.ident = ident;
       lcl.type_ident = type_ident;
       lcl.type = pseu_get_type(
-          VM(p->lex.state),
+          V(p->lex.state),
           type_ident.pos,
           type_ident.len);
       declare_local(p, &lcl);
@@ -321,22 +343,46 @@ static void parse_declare(Parser *p)
   } 
 }
 
+static void parse_assignment(Parser *p)
+{
+  Span ident = p->lex.span;
+
+  next(p);
+
+  if (!expect_peek(p, TK_op_assign)) {
+    parse_err(p, "Expected assign operator '->'.");
+    return;
+  }
+
+  next(p);
+  parse_expr(p);
+  emit_st_local(p, ident.pos, ident.len);
+}
+
 static int parse_root(Parser *p)
 {
-  while (eat(p) != TK_eof) {
-    switch (p->tok) {
+  while (peek(p) != TK_eof) {
+    switch (peek(p)) {
     case TK_newline:
+      next(p);
       continue;
+
     case TK_kw_output:
       parse_output(p);
       break;
     case TK_kw_declare:
       parse_declare(p);
       break;
+    case TK_identifier:
+      parse_assignment(p);
+      break;
+
     default:
       parse_err(p, "Expected statement");
       break;
     }
+
+    next(p);
   }
 
   emit(p, OP_RET);
@@ -370,6 +416,9 @@ int pseu_parse(State *s, Function *fn, const char *src)
 
   if (pseu_vec_init(s, &p.vars, p.vars_size, Local))
     goto fail_consts;
+
+  next(&p);
+
   if (parse_root(&p))
     goto fail_vars;
 

@@ -60,7 +60,7 @@ static Token lex_ident(Lexer *l)
 {
 	Token result;
 	char *start = l->pos;
-	size_t len = 0;
+	size len = 0;
 
 	do {
 		len++;

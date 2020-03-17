@@ -11,7 +11,6 @@ set(LIBPSEU_SRC
 	lex.c
 	parse.c
 	buf.c
-	gc.h
 	gc.c
 	core.c
 	core.h

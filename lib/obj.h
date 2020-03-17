@@ -22,13 +22,13 @@ typedef size_t    size;
 
 /* ** Forward references. ** */
 typedef struct Type Type;
-typedef struct Object Object;
+typedef union  Object Object;
+typedef struct State State;
 
 typedef struct PseuVM VM;
-typedef struct PseuState State;
 
 /* Opcodes which the pseu virtual machine supports. */
-enum code {
+enum opcode {
   #define _(x) OP_##x,
   #include "op.def" 
   #undef  _
@@ -51,8 +51,10 @@ typedef struct Field {
   Type *type;		        /* Type of field. */
 } Field;
 
-#define t_isany(S, t) ((t) == VM(S)->any_type)
-#define t_isint(S, t) ((t) == VM(S)->integer_type)
+#define t_isany(S, t)   ((t) == V(S)->any_type)
+#define t_isint(S, t)   ((t) == V(S)->integer_type)
+#define t_isfloat(S, t) ((t) == V(S)->real_type)
+#define t_isarray(S, t) ((t) == V(S)->array_type)
 
 /* A pseu type. */
 struct Type {
@@ -107,30 +109,45 @@ typedef struct Variable {
   Value value;            /* Value of variable. */
 } Variable;
 
-#define GC_HEADER u8 flags
+#define GC_HEADER u8 marked; Type *type; Object* next
 
 /* A pseu user object. */
-struct Object {
+typedef struct UObject {
   GC_HEADER;
-  Type *type;             /* Type of object. */
-  Value fields[1];        /* Field values of the object. */
-};
+  Value fields[];        /* Field values of the object. */
+} UObject;
 
 /* A pseu string object. */
 typedef struct String {
   GC_HEADER;
-  u32 hash;               /* Hash of string. */
   u32 length;	            /* Length of string. */
-  u8 buffer[1];           /* Buffer containing string. */
+  u8 buffer[];            /* Buffer containing string. */
 } String;
+
+String *string_new(State *s, const char* value);
 
 /* A pseu array object. */
 typedef struct Array {
   GC_HEADER;
-  u32 start;              /* Start of array. */
-  u32 end;                /* End of array. */
-  Value *val[1];   /* Values of array. */
+  u32 length;             /* Length of array. */
+  u32 capacity;           /* Capacity of array. */
+  Value items[];          /* Values of array. */
 } Array;
+
+Array *array_new(State *s, u32 cap);
+Array *array_push(State *s, Array* a, Value *v);
+Array *array_pop(State *s, Array *a);
+Value *array_get(State *s, Array *a, u32 i);
+
+/* A pseu user object. */
+union Object {
+  struct { GC_HEADER; } header;  /* Generic fields of an object. */
+  union {
+    UObject uobject;      /* As a user object. */
+    String string;        /* As a string object. */
+    Array array;          /* As an array. */
+  } as;
+};
 
 /* A char buffer. */
 typedef struct CBuffer {
@@ -191,6 +208,7 @@ typedef struct Frame {
 } Frame;
 
 /* Reference to the VM instance of state `S`. */
+/* @deprecated */
 #define VM(S) ((S)->vm)
 #define V(S)  ((S)->vm)
 
@@ -198,8 +216,8 @@ typedef struct Frame {
 #define S(V)  ((V)->state)
 
 /* A per thread pseu state. */
-typedef struct PseuState {
-  VM *vm;                 /* Reference to global VM state. */
+struct State {
+  VM *vm;                 /* Reference to owner VM state. */
 
   Value *sp;              /* Stack pointer. */
   size stack_size;        /* Capacity of evaluation stack. */	
@@ -208,14 +226,19 @@ typedef struct PseuState {
   size frames_count;      /* Number of frames in the call frame stack. */
   size frames_size;       /* Capacity of call frame stack. */
   Frame *frames;          /* Call frame stack; points to bottom. */
-} PseuState;
+};
 
-/* Global pseu virtual machine in a pseu instance. */
+/* A pseu garbage collector state. */
+typedef struct GC {
+  VM *vm;                 /* Reference to owner VM state. */
+
+  Object *objects;        /* Linked-list of allocated objects. */
+  Object *root;           /* Reference to GC root. */
+} GC;
+
+/* Global VM instance in a pseu instance. */
 struct PseuVM {
-  PseuState *state;       /* Current state executing. */
-  PseuConfig config;      /* Configuration of VM. */
-
-  // XXX
+  // TODO: Turn these into an Array object when we are up and running.
   size fns_count;
   size vars_count;
   size types_count;
@@ -224,15 +247,22 @@ struct PseuVM {
   Variable vars[8];
   Type types[8];
   // XXX
+  //
 
+  GC gc;                  /* Garbage collector of VM instance. */
+  State *state;           /* Current state executing. */
+
+  /* TODO: Wrap this in a struct called `primitives`. */
   Type *any_type;
   Type *real_type;
   Type *integer_type;
   Type *boolean_type;
+  Type *array_type;
 
   char *error;            /* Error message set; NULL when no error. */
   void *data;             /* User attached data; pseu_vm_{set,get}_data(). */
+  PseuConfig config;      /* Configuration of VM. */
 };
 
-Type *v_type(PseuState *s, Value *v);
+Type *v_type(State *s, Value *v);
 #endif /* PSEU_OBJ_H */

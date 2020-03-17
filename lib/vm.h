@@ -69,22 +69,26 @@
 State *pseu_state_new(VM *vm);
 void pseu_state_free(State *s);
 
-void *pseu_alloc(State *s, size_t sz);
-void *pseu_realloc(State *s, void *ptr, size_t sz);
+void *pseu_alloc(State *s, size sz);
+void *pseu_realloc(State *s, void *ptr, size sz);
 void pseu_free(State *s, void *ptr);
 void pseu_print(State *s, const char *text);
 void pseu_panic(State *s, const char *message);
 
 char *pseu_strdup(State *s, const char *str);
 
-int _pseu_vec_init(State *s, void **vec, size_t cap_elm, size_t size_elm);
-int _pseu_vec_grow(State *s, void **vec, size_t *cap_elm, size_t size_elm);
+int _pseu_vec_init(State *s, void **vec, size cap_elm, size size_elm);
+int _pseu_vec_grow(State *s, void **vec, size *cap_elm, size size_elm);
 
 int pseu_call(State *s, Function *fn);
 int pseu_parse(State *s, Function *fn, const char *src);
 
 void pseu_dump_stack(State *s, FILE* f);
 void pseu_dump_function(State *s, FILE* f, Function *fn);
+
+bool pseu_gc_poll(State *s);
+void pseu_gc_collect(State *s);
+Object *pseu_gc_new(State *s, Type *type, size n);
 
 int pseu_arith_unary(Value *a, ArithType op);
 int pseu_arith_binary(Value *a, Value *b, Value *o, ArithType op);
@@ -94,8 +98,8 @@ u16 pseu_def_variable(VM *vm, Variable *var);
 u16 pseu_def_function(VM *vm, Function *fn);
 
 /* ----WIP---- */
-Type *pseu_get_type(VM *vm, const char *ident, size_t len);
-u16 pseu_get_variable(VM *vm, const char *ident, size_t len);
+Type *pseu_get_type(VM *vm, const char *ident, size len);
+u16 pseu_get_variable(VM *vm, const char *ident, size len);
 u16 pseu_get_function(VM *vm, const char *ident);
 /* ----WIP---- */
 

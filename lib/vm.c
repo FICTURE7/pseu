@@ -90,18 +90,21 @@ static int coerce_numeric(Value *i, Value *o)
 }
 
 /* Ensures that the specified number of slots 'n' is available. */
-static int vm_ensure_stack(State *s, size n)
+static int ensure_stack(State *s, size n)
 {
   size k = s->sp - (s->stack + s->stack_size);
 
   if (k >= n)
     return 0;
 
-  /* TODO: Grow to the power 2 number closest to n. (or something) */
+  /* TODO: Grow to the power 2 number closest to n. (or something) 
+   * Should also be careful to update frame pointers and stuff. */
+  pseu_assert(0);
   return 1;
 }
 
-static int vm_init_stack(State *s, Frame *frame)
+/* Initialize stack space for the specified frame. */
+static int init_stack(State *s, Frame *frame)
 {
   Function *fn = frame->fn;
   pseu_assert(fn->type == FN_PSEU);
@@ -121,7 +124,7 @@ static int vm_init_stack(State *s, Frame *frame)
 }
 
 /* Appends the specified function as a call frame to the call stack. */
-static int vm_append_call(State *s, Function *fn)
+static int append_call(State *s, Function *fn)
 {
   if (s->frames_count >= s->frames_size)
     pseu_vec_grow(s, s->frames, &s->frames_size, Frame);
@@ -132,13 +135,13 @@ static int vm_append_call(State *s, Function *fn)
     .bp = s->sp,
   };
 
-  vm_init_stack(s, &s->frames[s->frames_count]);
+  init_stack(s, &s->frames[s->frames_count]);
   s->frames_count++;
   return 0;
 }
 
 /* Dispatches the last frame on the call stack. */
-static int vm_dispatch(State *s) 
+static int dispatch(State *s) 
 {
   #define READ_U8()  	(*ip++)
   #define READ_U16() 	(*ip++) /* FIXME: Temp solution for now. */
@@ -181,9 +184,18 @@ static int vm_dispatch(State *s)
       PUSH(*(frame->bp + index));
       DISPATCH();
     }
+    OP(ST_LOCAL): {
+      u8 index = READ_U8();
+
+      /* TODO: Type checking. */
+      *(frame->bp + index) = POP();
+      DISPATCH();
+    }
     OP(CALL): {
       u8 index = READ_U16();
       Function *f = &V(s)->fns[index];
+
+      pseu_assert((s->sp - frame->bp) >= f->params_count);
 
       if (f->type == FN_C) {
         f->as.c(s, s->sp - f->params_count);	
@@ -203,6 +215,11 @@ static int vm_dispatch(State *s)
       DISPATCH_EXIT(0);
     }
   }
+  
+  /* Check if we need to do a garbage collection. */
+  if (pseu_gc_poll(s))
+    pseu_gc_collect(s);
+
   return 1;
 }
 
@@ -246,11 +263,11 @@ int pseu_call(State *s, Function *fn)
   pseu_assert(s->sp - s->stack >= fn->params_count);
   pseu_assert(fn->type == FN_PSEU);
 
-  if (pseu_unlikely(vm_ensure_stack(s, fn->as.pseu.max_stack)))
+  if (pseu_unlikely(ensure_stack(s, fn->as.pseu.max_stack)))
     return 1;
-  if (pseu_unlikely(vm_append_call(s, fn)))
+  if (pseu_unlikely(append_call(s, fn)))
     return 1;
-  return vm_dispatch(s);
+  return dispatch(s);
 }
 
 void *pseu_alloc(State *s, size sz) 

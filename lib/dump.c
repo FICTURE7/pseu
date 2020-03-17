@@ -113,14 +113,18 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
       dump_value(s, f, &fn->as.pseu.consts[index]);
       DISPATCH();
     }
-
     OP(LD_LOCAL): {
-      u16 index = READ_UINT8();
+      u8 index = READ_UINT8();
 
       OP_DUMP1("ld.local", index);
       DISPATCH();
     }
-    
+    OP(ST_LOCAL): {
+      u8 index = READ_UINT8();
+
+      OP_DUMP1("st.local", index);
+      DISPATCH();
+    }
     OP(LD_GLOBAL): {
       u16 index = READ_UINT16(); 
 
@@ -128,7 +132,6 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
       dump_variable(s, f, &VM(s)->vars[index]);
       DISPATCH();
     }
-
     OP(CALL): {
       u16 index = READ_UINT16(); 
       Function *nfn = &VM(s)->fns[index]; 
@@ -137,12 +140,10 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
       dump_fn_sig(f, nfn);
       DISPATCH();
     }
-
     OP(RET): {
       OP_DUMP0("ret");
       DISPATCH_EXIT();
     }
-
     OP_UNDEF(): {
       OP_DUMP0("undef");
       DISPATCH_EXIT();

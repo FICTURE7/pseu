@@ -78,6 +78,7 @@ void pseu_core_init(VM *vm)
   PSEU_DEF_TYPE(REAL,    &vm->real_type);
   PSEU_DEF_TYPE(BOOLEAN, &vm->boolean_type);
   PSEU_DEF_TYPE(INTEGER, &vm->integer_type);
+  PSEU_DEF_TYPE(ARRAY,   &vm->array_type);
 
   PSEU_DEF_PROC(output, PARAMS("ANY"));
 
