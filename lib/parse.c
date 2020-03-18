@@ -206,16 +206,25 @@ static void emit_call(Parser *p, const char *ident)
   emit_calln(p, ident, strlen(ident));
 }
 
-static void patch_goto(Parser *p, int offset)
+static void patch_br(Parser *p, int offset)
 {
-  /* TODO: Fix when we have proper u16 support. */
+  /* TODO(u16) */
   p->code[offset] = (BCode)p->code_count;
 }
 
-static int emit_goto_false(Parser *p)
+static int emit_br(Parser *p)
 {
-  /* TODO: Fix when we have proper u16 support. */
-  emit(p, OP_GOTO_FALSE);
+  /* TODO(u16) */
+  emit(p, OP_BR);
+  int result = p->code_count;
+  p->code_count += 1;
+  return result;
+}
+
+static int emit_br_false(Parser *p)
+{
+  /* TODO(u16) */
+  emit(p, OP_BR_FALSE);
   int result = p->code_count;
   p->code_count += 1;
   return result;
@@ -404,22 +413,36 @@ static void parse_if_block(Parser *p)
   }
 
   if (!expect_next(p, TK_newline)) {
-    parse_err(p, "Expected new line after if expression.");
+    parse_err(p, "Expected new line after THEN keyword.");
     return;
   }
 
   next(p);
 
-  int jmp = emit_goto_false(p);
-  while (peek(p) != TK_kw_endif && peek(p) != TK_eof)
+  int if_jmp = emit_br_false(p);
+  while (peek(p) != TK_kw_else && peek(p) != TK_kw_endif && peek(p) != TK_eof)
     parse_statement(p);
+
+  /* If ELSE, parse else block. */
+  if (peek(p) == TK_kw_else) {
+    if (!expect_next(p, TK_newline)) {
+      parse_err(p, "Expected new line after ELSE keyword.");
+      return;
+    }
+    
+    int else_jmp = emit_br(p);
+    patch_br(p, if_jmp);
+    while (peek(p) != TK_kw_endif && peek(p) != TK_eof)
+      parse_statement(p);
+    patch_br(p, else_jmp);
+  } else {
+    patch_br(p, if_jmp);
+  }
 
   next(p);
 
   if (peek(p) != TK_newline && peek(p) != TK_eof)
     parse_err(p, "Expected new line or end of file after ENDIF.");
-
-  patch_goto(p, jmp);
 }
 
 static void parse_statement(Parser *p)

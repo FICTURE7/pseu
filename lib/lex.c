@@ -80,6 +80,8 @@ static Token lex_ident(Lexer *l)
 		result = TK_kw_declare;
 	} else if (strncmp("IF", start, len) == 0) {
 		result = TK_kw_if;
+	} else if (strncmp("ELSE", start, len) == 0) {
+		result = TK_kw_else;
 	} else if (strncmp("ENDIF", start, len) == 0) {
 		result = TK_kw_endif;
 	} else if (strncmp("THEN", start, len) == 0) {

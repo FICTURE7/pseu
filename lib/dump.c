@@ -132,16 +132,16 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
       dump_variable(s, f, &VM(s)->vars[index]);
       DISPATCH();
     }
-    OP(GOTO): {
+    OP(BR): {
       u16 index = READ_UINT16();
 
-      OP_DUMP1("goto", index);
+      OP_DUMP1("br", index);
       DISPATCH();
     }
-    OP(GOTO_FALSE): {
+    OP(BR_FALSE): {
       u16 index = READ_UINT16();
 
-      OP_DUMP1("goto.false", index);
+      OP_DUMP1("br.false", index);
       DISPATCH();
     }
     OP(CALL): {

@@ -14,6 +14,7 @@ typedef enum TokenType {
 	TK_kw_function,
 	TK_newline = 10,
   TK_kw_if,
+  TK_kw_else,
   TK_kw_endif,
   TK_kw_then,
 	TK_lit_real,

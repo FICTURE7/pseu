@@ -191,13 +191,13 @@ static int dispatch(State *s)
       *(frame->bp + index) = POP();
       DISPATCH();
     }
-    OP(GOTO): {
+    OP(BR): {
       u16 index = READ_U16();
 
       ip = &fn->as.pseu.code[index];
       DISPATCH();
     }
-    OP(GOTO_FALSE): {
+    OP(BR_FALSE): {
       u16 index = READ_U16();
 
       if (!POP().as.boolean)
