@@ -243,9 +243,9 @@ struct PseuVM {
   size vars_count;
   size types_count;
 
-  Function fns[8];
-  Variable vars[8];
-  Type types[8];
+  Function fns[16];
+  Variable vars[16];
+  Type types[16];
   // XXX
   //
 

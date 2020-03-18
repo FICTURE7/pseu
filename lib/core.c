@@ -6,22 +6,38 @@
 #define ARG(x) (&args[x])
 #define RET(x) *ARG(0) = (x)
 
-#define PSEU_ARITH_FUNC(x, op) \
-  PSEU_FUNC(x) 					       \
-  {                            \
-    pseu_unused(s);            \
-    return pseu_arith_binary(  \
-        ARG(0),                \
-        ARG(1),                \
-        ARG(0),                \
-        #op[0]                 \
-    );                         \
+#define PSEU_ARITH_FUNC(x, op)   \
+  PSEU_FUNC(x)                   \
+  {                              \
+    pseu_unused(s);              \
+    return pseu_arith_binary(    \
+        ARG(0),                  \
+        ARG(1),                  \
+        ARG(0),                  \
+        #op[0]                   \
+    );                           \
+  }
+
+#define PSEU_LARITH_FUNC(x, op)  \
+  PSEU_FUNC(x)                   \
+  {                              \
+    pseu_unused(s);              \
+    if (!v_isbool(ARG(0)) ||     \
+        !v_isbool(ARG(1)))       \
+      return 1;                  \
+    RET(v_bool(                  \
+          v_asbool(ARG(0)) op    \
+          v_asbool(ARG(1))));    \
+    return 0;                    \
   }
 
 PSEU_ARITH_FUNC(add, +)
 PSEU_ARITH_FUNC(sub, -)
 PSEU_ARITH_FUNC(div, /)
 PSEU_ARITH_FUNC(mul, *)
+
+PSEU_LARITH_FUNC(and, &&)
+PSEU_LARITH_FUNC(or, ||)
 
 PSEU_FUNC(output)
 {
@@ -32,13 +48,13 @@ PSEU_FUNC(output)
 
   switch (ARG(0)->type) {
   case VAL_BOOL:
-    sprintf(buffer, ARG(0)->as.boolean == 0 ? "false\n" : "true\n");
+    sprintf(buffer, v_asbool(ARG(0)) == false ? "false\n" : "true\n");
     break;
   case VAL_INT:
-    sprintf(buffer, "%d\n", ARG(0)->as.integer);
+    sprintf(buffer, "%d\n", v_asint(ARG(0)));
     break;
   case VAL_FLOAT:
-    sprintf(buffer, "%f\n", ARG(0)->as.real);
+    sprintf(buffer, "%f\n", v_asfloat(ARG(0)));
     break;
 
   default:
@@ -55,20 +71,27 @@ PSEU_FUNC(neg)
   pseu_unused(s);
 
   switch (ARG(0)->type) {
-  case VAL_BOOL:
-    RET(v_bool(!ARG(0)->as.boolean));
-    break;
   case VAL_INT:
-    RET(v_int(-ARG(0)->as.integer));
+    RET(v_int(-v_asint(ARG(0))));
     break;
   case VAL_FLOAT:
-    RET(v_float(-ARG(0)->as.real));
+    RET(v_float(-v_asfloat(ARG(0))));
     break;
 
   default:
     return 1;
   }
 
+  return 0;
+}
+
+PSEU_FUNC(not)
+{
+  pseu_unused(s);
+
+  if (ARG(0)->type != VAL_BOOL)
+    return 1;
+  RET(v_bool(!v_asbool(ARG(0))));
   return 0;
 }
 
@@ -87,6 +110,10 @@ void pseu_core_init(VM *vm)
   PSEU_DEF_FUNC(mul, 	  RETURN("ANY"), PARAMS("ANY", "ANY"));
   PSEU_DEF_FUNC(div, 	  RETURN("ANY"), PARAMS("ANY", "ANY"));
   PSEU_DEF_FUNC(neg,    RETURN("ANY"), PARAMS("ANY"));
+
+  PSEU_DEF_FUNC(and,    RETURN("BOOLEAN"), PARAMS("BOOLEAN", "BOOLEAN"));
+  PSEU_DEF_FUNC(or,     RETURN("BOOLEAN"), PARAMS("BOOLEAN", "BOOLEAN"));
+  PSEU_DEF_FUNC(not,    RETURN("BOOLEAN"), PARAMS("BOOLEAN"));
 
   PSEU_DEF_CONST(TRUE,  v_bool(1));
   PSEU_DEF_CONST(FALSE, v_bool(0));

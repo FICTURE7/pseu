@@ -231,12 +231,16 @@ static void patch_br(Parser *p, int offset)
 static int op_precedence(Token tok)
 {
   switch (tok) {
+    case TK_kw_or:
+      return 1;
+    case TK_kw_and:
+      return 2;
     case '+':
     case '-':
-      return 1;
+      return 3;
     case '*':
     case '/':
-      return 2;
+      return 4;
 
     default:
       return -1;
@@ -257,13 +261,18 @@ static int parse_expr_primary(Parser *p)
 {
   switch (p->tok) {
   case '+':
-    next(p);
-    return parse_expr_primary(p);
   case '-':
+  case TK_kw_not: {
+    Token op = peek(p);
     next(p);
     int result = parse_expr_primary(p);
-    emit_call(p, "@neg");
+
+    if (op == '-')
+      emit_call(p, "@neg");
+    else if (op == TK_kw_not)
+      emit_call(p, "@not");
     return result;
+  }
 
   case '(':
     next(p);
@@ -278,13 +287,13 @@ static int parse_expr_primary(Parser *p)
   case TK_lit_real:
   case TK_lit_integer:
   case TK_lit_string:
-    emit_ld_const(p, &p->lex.value);
     next(p);
+    emit_ld_const(p, &p->lex.value);
     return 0;
 
   case TK_identifier:
-    emit_ld_variable(p, p->lex.span.pos, p->lex.span.len);
     next(p);
+    emit_ld_variable(p, p->lex.span.pos, p->lex.span.len);
     return 0;
 
   default:
@@ -315,6 +324,8 @@ static void parse_expr_binop(Parser *p, int prece)
     case '-': emit_call(p, "@sub"); break;
     case '*': emit_call(p, "@mul"); break;
     case '/': emit_call(p, "@div"); break;
+    case TK_kw_and: emit_call(p, "@and"); break;
+    case TK_kw_or:  emit_call(p, "@or"); break;
 
     default:
       pseu_unreachable();

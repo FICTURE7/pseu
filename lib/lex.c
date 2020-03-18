@@ -78,6 +78,12 @@ static Token lex_ident(Lexer *l)
 		result = TK_kw_output;
 	} else if (strncmp("DECLARE", start, len) == 0) {
 		result = TK_kw_declare;
+	} else if (strncmp("NOT", start, len) == 0) {
+		result = TK_kw_not;
+	} else if (strncmp("AND", start, len) == 0) {
+		result = TK_kw_and;
+	} else if (strncmp("OR", start, len) == 0) {
+		result = TK_kw_or;
 	} else if (strncmp("IF", start, len) == 0) {
 		result = TK_kw_if;
 	} else if (strncmp("ELSE", start, len) == 0) {
