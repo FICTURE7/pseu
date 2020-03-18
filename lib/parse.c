@@ -82,12 +82,7 @@ static int resolve_local(Parser *p, const char *ident, size len) {
   return -1;
 }
 
-static u16 resolve_global(Parser *p, const char *ident, size len)
-{
-  return pseu_get_variable(VM(p->lex.state), ident, len);
-}
-
-static int declare_const(Parser *p, Value *v)
+static u8 declare_const(Parser *p, Value *v)
 {
   if (p->consts_count >= PSEU_MAX_CONST)
     return -1;
@@ -100,8 +95,8 @@ static int declare_const(Parser *p, Value *v)
 static int declare_local(Parser *p, Local *lcl)
 {
   /* Look for duplicate ident in globals. */
-  u16 index = resolve_global(p, lcl->ident.pos, lcl->ident.len);
-  if (index != 0xFFFF) {
+  u16 index = pseu_get_variable(V(p->lex.state), lcl->ident.pos, lcl->ident.len);
+  if (index != PSEU_INVALID_GLOBAL) {
     parse_err(p, "Global already defined with same identifier");
     return 1;
   }
@@ -122,13 +117,19 @@ static int declare_local(Parser *p, Local *lcl)
   return 0;
 }
 
-static void emit(Parser *p, BCode code)
+static void emit_u8(Parser *p, u8 code)
 {
   if (p->failed)
     return;
   if (p->code_count >= p->code_size)
     pseu_vec_grow(p->lex.state, &p->code, &p->code_size, BCode);
   p->code[p->code_count++] = code;
+}
+
+static void emit_u16(Parser *p, u16 value)
+{
+  emit_u8(p, (value >> 8) & 0xFF);
+  emit_u8(p, (value) & 0xFF);
 }
 
 static void emit_ld_const(Parser *p, Value *v)
@@ -139,22 +140,17 @@ static void emit_ld_const(Parser *p, Value *v)
   } else {
     p->max_stack++;
 
-    emit(p, OP_LD_CONST);
-    emit(p, index);
+    emit_u8(p, OP_LD_CONST);
+    emit_u8(p, index);
   }
 }
 
-static void emit_ld_global(Parser *p, const char *ident, size len)
+static void emit_ld_global(Parser *p, int index)
 {
-  u16 index = pseu_get_variable(VM(p->lex.state), ident, len);
-  if (index == 0xFFFF) {
-    parse_err(p, "Global not defined");
-  } else {
-    p->max_stack++;
+  p->max_stack++;
 
-    emit(p, OP_LD_GLOBAL);
-    emit(p, index);
-  }
+  emit_u8(p, OP_LD_GLOBAL);
+  emit_u16(p, index);
 }
 
 static void emit_ld_local(Parser *p, const char *ident, size len)
@@ -165,8 +161,8 @@ static void emit_ld_local(Parser *p, const char *ident, size len)
   } else {
     p->max_stack++;
 
-    emit(p, OP_LD_LOCAL);
-    emit(p, index);
+    emit_u8(p, OP_LD_LOCAL);
+    emit_u8(p, index);
   }
 }
 
@@ -176,28 +172,28 @@ static void emit_st_local(Parser *p, const char *ident, size len)
   if (index == -1) {
     parse_err(p, "Local \"%s\" not defined", ident);
   } else {
-    emit(p, OP_ST_LOCAL);
-    emit(p, index);
+    emit_u8(p, OP_ST_LOCAL);
+    emit_u8(p, index);
   }
 }
 
 static void emit_ld_variable(Parser *p, const char *ident, size len)
 {
-  int index = resolve_global(p, ident, len);
-  if (index != 0xFFFF)
-    emit_ld_global(p, ident, len);
+  u16 index = pseu_get_variable(V(p->lex.state), ident, len);
+  if (index != PSEU_INVALID_GLOBAL)
+    emit_ld_global(p, index);
   else
     emit_ld_local(p, ident, len);
 }
 
 static void emit_calln(Parser *p, const char *ident, size len)
 {
-  int index = pseu_get_function(VM(p->lex.state), ident, len);
+  u16 index = pseu_get_function(VM(p->lex.state), ident, len);
   if (index == PSEU_INVALID_FUNC) {
     parse_err(p, "Function or procedure \"%s\" is not defined.", ident);
   } else {
-    emit(p, OP_CALL);
-    emit(p, index);
+    emit_u8(p, OP_CALL);
+    emit_u16(p, index);
   }
 }
 
@@ -206,28 +202,29 @@ static void emit_call(Parser *p, const char *ident)
   emit_calln(p, ident, strlen(ident));
 }
 
-static void patch_br(Parser *p, int offset)
-{
-  /* TODO(u16) */
-  p->code[offset] = (BCode)p->code_count;
-}
-
 static int emit_br(Parser *p)
 {
-  /* TODO(u16) */
-  emit(p, OP_BR);
+  emit_u8(p, OP_BR);
+
   int result = p->code_count;
-  p->code_count += 1;
+  p->code_count += sizeof(u16);
   return result;
 }
 
 static int emit_br_false(Parser *p)
 {
-  /* TODO(u16) */
-  emit(p, OP_BR_FALSE);
+  emit_u8(p, OP_BR_FALSE);
+
   int result = p->code_count;
-  p->code_count += 1;
+  p->code_count += sizeof(u16);
   return result;
+}
+
+static void patch_br(Parser *p, int offset)
+{
+  u16 address = p->code_count;
+  p->code[offset] = (address >> 8) & 0xFF;
+  p->code[offset + 1] = (address) & 0xFF;
 }
 
 /* Returns the precedence of the specifed token. */
@@ -479,7 +476,7 @@ static int parse_root(Parser *p)
 {
   while (peek(p) != TK_eof)
     parse_statement(p);
-  emit(p, OP_RET);
+  emit_u8(p, OP_RET);
   return 0;
 }
 

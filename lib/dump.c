@@ -87,8 +87,7 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
   fprintf(f, "code %d\n", fn->as.pseu.code_count);
 
   #define READ_UINT8()  	(*ip++)
-  #define READ_UINT16() 	(*ip++) /* TODO(u16) */
-
+  #define READ_UINT16() 	(ip += 2, (u16)(ip[-2] << 8 | ip[-1]));
   #define INTERPRET               \
     BCode op;                     \
     decode:                       \
@@ -107,7 +106,7 @@ void dump_fn_code(State *s, FILE *f, Function *fn)
 
   INTERPRET {
     OP(LD_CONST): {
-      u16 index = READ_UINT16(); 
+      u8 index = READ_UINT8(); 
 
       fprintf(f, " %05d %s ", IP, "ld.const");
       dump_value(s, f, &fn->as.pseu.consts[index]);

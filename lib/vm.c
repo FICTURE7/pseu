@@ -144,7 +144,7 @@ static int append_call(State *s, Function *fn)
 static int dispatch(State *s) 
 {
   #define READ_U8()  	(*ip++)
-  #define READ_U16() 	(*ip++) /* FIXME: Temp solution for now. */
+  #define READ_U16() 	(ip += 2, (u16)(ip[-2] << 8 | ip[-1]))
 
   #define PUSH(x) 		*s->sp++ = x
   #define POP(x)  		(*(--s->sp))
@@ -167,7 +167,7 @@ static int dispatch(State *s)
 
   INTERPRET {
     OP(LD_CONST): {
-      u16 index = READ_U16(); 
+      u8 index = READ_U8(); 
 
       PUSH(fn->as.pseu.consts[index]);
       DISPATCH();
@@ -205,7 +205,7 @@ static int dispatch(State *s)
       DISPATCH();
     }
     OP(CALL): {
-      u8 index = READ_U16();
+      u16 index = READ_U16();
       Function *f = &V(s)->fns[index];
 
       pseu_assert((s->sp - frame->bp) >= f->params_count);
