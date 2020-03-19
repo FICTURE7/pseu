@@ -1,64 +1,38 @@
 #include "vm.h"
 #include "obj.h"
 
+/* TODO: Figure out some way to reduce the amount of code duplication in here.
+ * Will probably end up with some kind of macro mayhem though.
+ */
+
 /* Do int32 arithmetic operation 'op' on value 'a' and 'b', outputs result in
  * value 'o'. 
  */
-static void arith_int(Value *a, Value *b, Value *o, ArithType op)
+static i32 arith_i32(i32 a, i32 b, ArithType op)
 {
-  u32 vr;
-
   switch (op) {
-  case ARITH_ADD:
-    vr = v_asint(a) + v_asint(b);
-    break;
-  case ARITH_SUB:
-    vr = v_asint(a) - v_asint(b);
-    break;
-  case ARITH_MUL:
-    vr = v_asint(a) * v_asint(b);
-    break;
-  case ARITH_DIV:
-    vr = v_asint(a) / v_asint(b);
-    break;
-
+  case ARITH_add: return a + b;
+  case ARITH_sub: return a - b;
+  case ARITH_mul: return a * b;
+  case ARITH_div: return a / b;
   default:
     pseu_unreachable();
-    break;
   }
-
-  o->type = VAL_INT;
-  o->as.integer = vr;
 }
 
 /* Do float arithmetic operation 'op' on value 'a' and 'b', outputs result in
  * value 'o'. 
  */
-static void arith_float(Value *a, Value *b, Value *o, ArithType op)
+static f32 arith_f32(f32 a, f32 b, ArithType op)
 {
-  f32 vr;
-
   switch (op) {
-  case ARITH_ADD:
-    vr = v_asfloat(a) + v_asfloat(b);
-    break;
-  case ARITH_SUB:
-    vr = v_asfloat(a) - v_asfloat(b);
-    break;
-  case ARITH_MUL:
-    vr = v_asfloat(a) * v_asfloat(b);
-    break;
-  case ARITH_DIV:
-    vr = v_asfloat(a) / v_asfloat(b);
-    break;
-    
+  case ARITH_add: return a + b;
+  case ARITH_sub: return a - b;
+  case ARITH_mul: return a * b;
+  case ARITH_div: return a / b;
   default:
     pseu_unreachable();
-    break;
   }
-
-  o->type = VAL_FLOAT;
-  o->as.real = vr;
 }
 
 /* Do arithmetic operation 'op' on value 'a' and 'b', outputs result in value
@@ -66,14 +40,75 @@ static void arith_float(Value *a, Value *b, Value *o, ArithType op)
  */
 static void arith_num(Value *a, Value *b, Value *o, ArithType op)
 {
-  if (v_isint(a) && v_isint(b)) {
-    arith_int(a, b, o, op);
-  } else if (v_isfloat(a) && v_isfloat(b)) {
-    arith_float(a, b, o, op);
+  if (v_isi32(a) && v_isi32(b)) {
+    i32 ia = v_asi32(a);
+    i32 ib = v_asi32(b);
+
+    *o = v_i32(arith_i32(ia, ib, op));
   } else {
-    Value na = v_float(v_isint(a) ? v_i2f(a) : v_asfloat(a));
-    Value nb = v_float(v_isint(b) ? v_i2f(b) : v_asfloat(b));
-    arith_float(&na, &nb, o, op);
+    float fa;
+    float fb;
+
+    if (v_isf32(a) && v_isf32(b)) {
+      fa = v_asf32(a);
+      fb = v_asf32(b);
+    } else {
+      /* Convert both values to float. */
+      fa = v_isi32(a) ? v_i2f(a) : v_asf32(a);
+      fb = v_isi32(b) ? v_i2f(b) : v_asf32(b);
+    }
+
+    *o = v_float(arith_f32(fa, fb, op));
+  }
+}
+
+static bool compare_i32(i32 a, i32 b, CompareType op)
+{
+  switch (op) {
+  case COMP_lt: return a < b;
+  case COMP_gt: return a > b;
+  case COMP_le: return a <= b;
+  case COMP_ge: return a >= b;
+  case COMP_eq: return a == b;
+  default:
+    pseu_unreachable();
+  }
+}
+
+static bool compare_f32(f32 a, f32 b, CompareType op)
+{
+  switch (op) {
+  case COMP_lt: return a < b;
+  case COMP_gt: return a > b;
+  case COMP_le: return a <= b;
+  case COMP_ge: return a >= b;
+  case COMP_eq: return a == b;
+  default:
+    pseu_unreachable();
+  }
+}
+
+static void compare_num(Value *a, Value *b, Value *o, CompareType op)
+{
+  if (v_isi32(a) && v_isi32(b)) {
+    int ia = v_asi32(a);
+    int ib = v_asi32(b);
+
+    *o = v_bool(compare_i32(ia, ib, op));
+  } else {
+    float fa;
+    float fb;
+
+    if (v_isf32(a) && v_isf32(b)) {
+      fa = v_asf32(a);
+      fb = v_asf32(b);
+    } else {
+      /* Convert both values to float. */
+      fa = v_isi32(a) ? v_i2f(a) : v_asf32(a);
+      fb = v_isi32(b) ? v_i2f(b) : v_asf32(b);
+    }
+
+    *o = v_bool(compare_f32(fa, fb, op));
   }
 }
 
@@ -356,6 +391,22 @@ int pseu_arith_binary(Value *a, Value *b, Value *o, ArithType op)
     return 1;
 
   arith_num(&na, &nb, o, op);
+  return 0;
+}
+
+int pseu_compare_binary(Value *a, Value *b, Value *o, CompareType op)
+{
+  if (v_isnum(a) && v_isnum(b)) {
+    compare_num(a, b, o, op);
+    return 0;
+  }
+
+  Value na;
+  Value nb;
+  if (coerce_num(a, &na) || coerce_num(b, &nb))
+    return 1;
+
+  compare_num(&na, &nb, o, op);
   return 0;
 }
 

@@ -183,10 +183,15 @@ Token pseu_lex_scan(Lexer *l)
 		case '-':
 		case '*':
 		case '=':
-		case '>':
 		case ':':
 			lex_eat(l);
 			return c;
+
+		case '>':
+      lex_eat(l);
+      if (l->peek == '=')
+        return lex_eat(l), TK_op_ge;
+      return '>';
 
 		case '_':
 			return lex_ident(l);
@@ -208,6 +213,8 @@ Token pseu_lex_scan(Lexer *l)
 				return lex_eat(l), TK_op_not;
 			else if (l->peek == '-')
 				return lex_eat(l), TK_op_assign;
+      else if (l->peek == '=')
+        return lex_eat(l), TK_op_le;
 			return '<';
 		case '.':
 			lex_eat(l);

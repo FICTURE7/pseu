@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "obj.h"
@@ -36,7 +37,7 @@
 /* Represents an invalid type handle. */
 #define PSEU_INVALID_TYPE   PSEU_MAX_TYPE
 
-#define pseu_unused(x)    (void)(x)
+#define pseu_unused(x) (void)(x)
 
 #if defined(PSEU_USE_ASSERT)
 #define pseu_assert(cond)	assert(cond);
@@ -45,11 +46,11 @@
 #endif
 
 #if defined(__GNUC__)
-#define pseu_likely(x)		__builtin_expect(!!(x), 1)
-#define pseu_unlikely(x)	__builtin_expect(!!(x), 0)
+#define pseu_likely(x)   __builtin_expect(!!(x), 1)
+#define pseu_unlikely(x) __builtin_expect(!!(x), 0)
 #else
-#define pseu_likely(x)		(x)
-#define pseu_unlikely(x)	(x)
+#define pseu_likely(x)   (x)
+#define pseu_unlikely(x) (x)
 #endif
 
 #if defined(__GNUC__)
@@ -58,10 +59,10 @@
 #define pseu_unreachable(x)  __assume(0 && "Unreachable code reached")
 #endif
 
-#define pseu_config_flag(S, x)	  ((VM(S)->config.flags & (x)) != 0)
+#define pseu_config_flag(S, x) ((V(S)->config.flags & (x)) != 0)
 
-#define pseu_alloc_t(s, t)        pseu_alloc((s), sizeof(t))
-#define pseu_alloc_nt(s, t, n)    pseu_alloc((s), sizeof(t) * (n))
+#define pseu_alloc_t(s, t)     pseu_alloc((s), sizeof(t))
+#define pseu_alloc_nt(s, t, n) pseu_alloc((s), sizeof(t) * (n))
 
 #define pseu_vec_init(S, v, c, t) _pseu_vec_init(S, (void **)(v), c, sizeof(t))
 #define pseu_vec_grow(S, v, c, t) _pseu_vec_grow(S, (void **)(v), c, sizeof(t))
@@ -90,17 +91,15 @@ bool pseu_gc_poll(State *s);
 void pseu_gc_collect(State *s);
 Object *pseu_gc_new(State *s, Type *type, size n);
 
-int pseu_arith_unary(Value *a, ArithType op);
 int pseu_arith_binary(Value *a, Value *b, Value *o, ArithType op);
+int pseu_compare_binary(Value *a, Value *b, Value *o, CompareType op);
 
 u16 pseu_def_type(VM *vm, Type *type);
 u16 pseu_def_variable(VM *vm, Variable *var);
 u16 pseu_def_function(VM *vm, Function *fn);
 
-/* ----WIP---- */
 u16 pseu_get_type(VM *vm, const char *ident, size len);
 u16 pseu_get_variable(VM *vm, const char *ident, size len);
 u16 pseu_get_function(VM *vm, const char *ident, size len);
-/* ----WIP---- */
 
 #endif /* PSEU_VM_H */

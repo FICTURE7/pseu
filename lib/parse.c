@@ -235,12 +235,21 @@ static int op_precedence(Token tok)
       return 1;
     case TK_kw_and:
       return 2;
+
+    case '=':
+    case '>':
+    case '<':
+    case TK_op_ge:
+    case TK_op_le:
+      return 3;
+
     case '+':
     case '-':
-      return 3;
+      return 4;
+
     case '*':
     case '/':
-      return 4;
+      return 5;
 
     default:
       return -1;
@@ -324,8 +333,15 @@ static void parse_expr_binop(Parser *p, int prece)
     case '-': emit_call(p, "@sub"); break;
     case '*': emit_call(p, "@mul"); break;
     case '/': emit_call(p, "@div"); break;
+
+    case '=': emit_call(p, "@eq"); break;
+    case '>': emit_call(p, "@gt"); break;
+    case '<': emit_call(p, "@lt"); break;
+    case TK_op_ge: emit_call(p, "@ge"); break;
+    case TK_op_le: emit_call(p, "@le"); break;
+
     case TK_kw_and: emit_call(p, "@and"); break;
-    case TK_kw_or:  emit_call(p, "@or"); break;
+    case TK_kw_or:  emit_call(p, "@or");  break;
 
     default:
       pseu_unreachable();

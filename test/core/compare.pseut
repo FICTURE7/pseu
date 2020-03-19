@@ -1,0 +1,36 @@
+OUTPUT 1 > 0 // true
+OUTPUT 1 > 1 // false
+OUTPUT 0 > 1 // false
+
+OUTPUT 1 < 0 // false
+OUTPUT 1 < 1 // false
+OUTPUT 0 < 1 // true
+
+OUTPUT 1 >= 0 // true
+OUTPUT 1 >= 1 // true
+OUTPUT 0 >= 1 // false
+
+OUTPUT 1 <= 0 // false
+OUTPUT 1 <= 1 // true
+OUTPUT 0 <= 1 // true
+
+OUTPUT 1 = 0 // false
+OUTPUT 1 = 1 // true
+OUTPUT 0 = 1 // false
+---
+true
+false
+false
+false
+false
+true
+true
+true
+false
+false
+true
+true
+false
+true
+false
+

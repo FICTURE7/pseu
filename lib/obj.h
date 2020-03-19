@@ -28,7 +28,7 @@ typedef struct State State;
 typedef struct PseuVM VM;
 
 /* Opcodes which the pseu virtual machine supports. */
-enum opcode {
+enum OpCode {
   #define _(x) OP_##x,
   #include "op.def" 
   #undef  _
@@ -38,12 +38,21 @@ enum opcode {
 typedef u8 BCode;
 
 /* Types of pseu arithmetics. */
-typedef enum Arith {
-  ARITH_ADD = '+',
-  ARITH_SUB = '-',
-  ARITH_MUL = '*',
-  ARITH_DIV = '/'
+typedef enum ArithType {
+  ARITH_add = '+',
+  ARITH_sub = '-',
+  ARITH_mul = '*',
+  ARITH_div = '/'
 } ArithType;
+
+/* Types of pseu compares. */
+typedef enum CompareType {
+  COMP_lt,
+  COMP_gt,
+  COMP_le,
+  COMP_ge,
+  COMP_eq
+} CompareType;
 
 /* A pseu type field. */
 typedef struct Field {
@@ -88,16 +97,22 @@ typedef struct Value {
 #define v_isint(v)   ((v)->type == VAL_INT)
 #define v_isfloat(v) ((v)->type == VAL_FLOAT)
 #define v_isnum(v)   (v_isint(v) || v_isfloat(v))
+#define v_isi32(v)   v_isint(v)
+#define v_isf32(v)   v_isfloat(v)
 
 #define v_asbool(v)  ((v)->as.boolean)
 #define v_asobj(v)   ((v)->as.object)
 #define v_asint(v)   ((v)->as.integer)
 #define v_asfloat(v) ((v)->as.real)
+#define v_asi32(v)   v_asint(v)
+#define v_asf32(v)   v_asfloat(v)
 
 #define v_bool(k)    ((Value) {.type = VAL_BOOL,  .as.boolean = (k)})
 #define v_obj(k)     ((Value) {.type = VAL_OBJ,   .as.object = (k)})
 #define v_int(k)     ((Value) {.type = VAL_INT,   .as.integer = (k)})
 #define v_float(k)   ((Value) {.type = VAL_FLOAT, .as.real = (k)})
+#define v_i32(k)     v_int(k)
+#define v_f32(k)     v_float(k)
 
 #define v_i2f(v)     ((float)v_asint(v))
 #define v_f2i(v)     ((int32_t)v_asfloat(v))
@@ -264,5 +279,8 @@ struct PseuVM {
   PseuConfig config;      /* Configuration of VM. */
 };
 
+/* @deprecated Use v_get_type(s, v) instead. */
 Type *v_type(State *s, Value *v);
+/* Slowly start using this one through the code base. */
+#define v_get_type(s, v) v_type(s, v)
 #endif /* PSEU_OBJ_H */

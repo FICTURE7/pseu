@@ -23,6 +23,8 @@ typedef enum TokenType {
 	TK_lit_real,
 	TK_lit_integer,
 	TK_lit_string,
+  TK_op_le,
+  TK_op_ge,
 } TokenType;
 
 /* Represents a token. */

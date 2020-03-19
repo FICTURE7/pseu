@@ -17,6 +17,8 @@
 #define PSEU_FUNC(x) \
   static int impl_##x(State *s, Value *args)
 
+/* TODO: We should probably remove those inlines. */
+
 static inline
 Type *resolve_type(VM *vm, const char *type_ident, const char *error_message)
 {

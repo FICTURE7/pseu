@@ -3,41 +3,56 @@
 
 #include "core.h"
 
-#define ARG(x) (&args[x])
-#define RET(x) *ARG(0) = (x)
+#define arg(x)      (&args[x])
+#define return_v(x) do {*arg(0) = (x); return 0;} while(0)
 
-#define PSEU_ARITH_FUNC(x, op)   \
-  PSEU_FUNC(x)                   \
-  {                              \
-    pseu_unused(s);              \
-    return pseu_arith_binary(    \
-        ARG(0),                  \
-        ARG(1),                  \
-        ARG(0),                  \
-        #op[0]                   \
-    );                           \
+#define PSEU_ARITH_FUNC(x)      \
+  PSEU_FUNC(x)                  \
+  {                             \
+    pseu_unused(s);             \
+    return pseu_arith_binary(   \
+        arg(0),                 \
+        arg(1),                 \
+        arg(0),                 \
+        ARITH_##x);             \
   }
 
-#define PSEU_LARITH_FUNC(x, op)  \
-  PSEU_FUNC(x)                   \
-  {                              \
-    pseu_unused(s);              \
-    if (!v_isbool(ARG(0)) ||     \
-        !v_isbool(ARG(1)))       \
-      return 1;                  \
-    RET(v_bool(                  \
-          v_asbool(ARG(0)) op    \
-          v_asbool(ARG(1))));    \
-    return 0;                    \
+#define PSEU_COMP_FUNC(x)       \
+  PSEU_FUNC(x)                  \
+  {                             \
+    pseu_unused(s);             \
+    return pseu_compare_binary( \
+        arg(0),                 \
+        arg(1),                 \
+        arg(0),                 \
+        COMP_##x);              \
   }
 
-PSEU_ARITH_FUNC(add, +)
-PSEU_ARITH_FUNC(sub, -)
-PSEU_ARITH_FUNC(div, /)
-PSEU_ARITH_FUNC(mul, *)
+#define PSEU_LOGIC_FUNC(x, op)  \
+  PSEU_FUNC(x)                  \
+  {                             \
+    pseu_unused(s);             \
+    if (!v_isbool(arg(0)) ||    \
+        !v_isbool(arg(1)))      \
+      return 1;                 \
+    return_v(v_bool(            \
+          v_asbool(arg(0)) op   \
+          v_asbool(arg(1))));   \
+  }
 
-PSEU_LARITH_FUNC(and, &&)
-PSEU_LARITH_FUNC(or, ||)
+PSEU_ARITH_FUNC(add)
+PSEU_ARITH_FUNC(sub)
+PSEU_ARITH_FUNC(div)
+PSEU_ARITH_FUNC(mul)
+
+PSEU_COMP_FUNC(lt)
+PSEU_COMP_FUNC(gt)
+PSEU_COMP_FUNC(le)
+PSEU_COMP_FUNC(ge)
+PSEU_COMP_FUNC(eq)
+
+PSEU_LOGIC_FUNC(and, &&)
+PSEU_LOGIC_FUNC(or,  ||)
 
 PSEU_FUNC(output)
 {
@@ -46,19 +61,19 @@ PSEU_FUNC(output)
   // TODO: Fix this see parse_err in parse.c.
   char buffer[256];
 
-  switch (ARG(0)->type) {
+  switch (arg(0)->type) {
   case VAL_BOOL:
-    sprintf(buffer, v_asbool(ARG(0)) == false ? "false\n" : "true\n");
+    sprintf(buffer, v_asbool(arg(0)) == false ? "false\n" : "true\n");
     break;
   case VAL_INT:
-    sprintf(buffer, "%d\n", v_asint(ARG(0)));
+    sprintf(buffer, "%d\n", v_asint(arg(0)));
     break;
   case VAL_FLOAT:
-    sprintf(buffer, "%f\n", v_asfloat(ARG(0)));
+    sprintf(buffer, "%f\n", v_asfloat(arg(0)));
     break;
 
   default:
-    sprintf(buffer, "%s<%p>\n", v_type(s, ARG(0))->ident, (void *)ARG(0));
+    sprintf(buffer, "%s<%p>\n", v_get_type(s, arg(0))->ident, (void *)arg(0));
     break;
   }
 
@@ -70,29 +85,24 @@ PSEU_FUNC(neg)
 {
   pseu_unused(s);
 
-  switch (ARG(0)->type) {
+  switch (arg(0)->type) {
   case VAL_INT:
-    RET(v_int(-v_asint(ARG(0))));
-    break;
+    return_v(v_int(-v_asint(arg(0))));
   case VAL_FLOAT:
-    RET(v_float(-v_asfloat(ARG(0))));
-    break;
+    return_v(v_float(-v_asfloat(arg(0))));
 
   default:
     return 1;
   }
-
-  return 0;
 }
 
 PSEU_FUNC(not)
 {
   pseu_unused(s);
 
-  if (ARG(0)->type != VAL_BOOL)
+  if (arg(0)->type != VAL_BOOL)
     return 1;
-  RET(v_bool(!v_asbool(ARG(0))));
-  return 0;
+  return_v(v_bool(!v_asbool(arg(0))));
 }
 
 void pseu_core_init(VM *vm)
@@ -114,6 +124,12 @@ void pseu_core_init(VM *vm)
   PSEU_DEF_FUNC(and,    RETURN("BOOLEAN"), PARAMS("BOOLEAN", "BOOLEAN"));
   PSEU_DEF_FUNC(or,     RETURN("BOOLEAN"), PARAMS("BOOLEAN", "BOOLEAN"));
   PSEU_DEF_FUNC(not,    RETURN("BOOLEAN"), PARAMS("BOOLEAN"));
+
+  PSEU_DEF_FUNC(lt,     RETURN("BOOLEAN"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(gt,     RETURN("BOOLEAN"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(le,     RETURN("BOOLEAN"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(ge,     RETURN("BOOLEAN"), PARAMS("ANY", "ANY"));
+  PSEU_DEF_FUNC(eq,     RETURN("BOOLEAN"), PARAMS("ANY", "ANY"));
 
   PSEU_DEF_CONST(TRUE,  v_bool(1));
   PSEU_DEF_CONST(FALSE, v_bool(0));

@@ -357,16 +357,16 @@ int main(int argc, const char **argv)
 
 	/* Run tests. */
 #if 0
-	test(&runner, "core/if.pseut");
+	test(&runner, "core/compare.pseut");
 #else
 	test(&runner, "core/output.pseut");
 	test(&runner, "core/constants.pseut");
 	test(&runner, "core/declare.pseut");
 	test(&runner, "core/assign.pseut");
-	//test(&runner, "core/function.pseut");
 	test(&runner, "core/comment.pseut");
 	test(&runner, "core/arithmetics.pseut");
 	test(&runner, "core/if.pseut");
+	test(&runner, "core/compare.pseut");
 	test(&runner, "core/sandbox.pseut");
 #endif
 
