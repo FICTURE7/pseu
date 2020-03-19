@@ -92,7 +92,7 @@ static u8 declare_const(Parser *p, Value *v)
    */
   for (u8 i = 0; i < p->consts_count; i++) {
     Value is_equal;
-    pseu_compare_binary(&p->consts[i], v, &k, COMP_eq);
+    pseu_compare_binary(&p->consts[i], v, &is_equal, COMP_eq);
     if (v_asbool(&is_equal))
       return i;
   }

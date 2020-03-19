@@ -39,10 +39,10 @@ typedef u8 BCode;
 
 /* Types of pseu arithmetics. */
 typedef enum ArithType {
-  ARITH_add = '+',
-  ARITH_sub = '-',
-  ARITH_mul = '*',
-  ARITH_div = '/'
+  ARITH_add,
+  ARITH_sub,
+  ARITH_mul,
+  ARITH_div
 } ArithType;
 
 /* Types of pseu compares. */
