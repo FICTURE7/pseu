@@ -32,9 +32,6 @@
   PSEU_FUNC(x)                  \
   {                             \
     pseu_unused(s);             \
-    if (!v_isbool(arg(0)) ||    \
-        !v_isbool(arg(1)))      \
-      return 1;                 \
     return_v(v_bool(            \
           v_asbool(arg(0)) op   \
           v_asbool(arg(1))));   \
@@ -99,9 +96,6 @@ PSEU_FUNC(neg)
 PSEU_FUNC(not)
 {
   pseu_unused(s);
-
-  if (arg(0)->type != VAL_BOOL)
-    return 1;
   return_v(v_bool(!v_asbool(arg(0))));
 }
 
