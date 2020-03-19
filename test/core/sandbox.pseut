@@ -1,9 +1,2 @@
-/*
-FUNCTION x(x: INTEGER): INTEGER
-	x <- x + 1 
-ENDFUNCTION
-*/
-
-// OUTPUT (1+1)
-// OUTPUT 1 + TRUE
-OUTPUT -1
+OUTPUT 1 > 0 OR 1 < 0
+OUTPUT 1 > 0 AND 1 < 0

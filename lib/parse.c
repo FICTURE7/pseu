@@ -86,6 +86,18 @@ static u8 declare_const(Parser *p, Value *v)
 {
   if (p->consts_count >= PSEU_MAX_CONST)
     return -1;
+
+  /* Check if there already exists a constant with the specified value in the
+   * constant table.
+   */
+  for (u8 i = 0; i < p->consts_count; i++) {
+    Value is_equal;
+    pseu_compare_binary(&p->consts[i], v, &k, COMP_eq);
+    if (v_asbool(&is_equal))
+      return i;
+  }
+
+  /* If not, we insert the new value into the constant table. */
   if (p->consts_count >= p->consts_size)
     pseu_vec_grow(p->lex.state, &p->consts, &p->consts_size, Value);
   p->consts[p->consts_count] = *v;
