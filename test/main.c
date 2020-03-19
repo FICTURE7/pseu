@@ -364,7 +364,8 @@ int main(int argc, const char **argv)
 	test(&runner, "core/declare.pseut");
 	test(&runner, "core/assign.pseut");
 	test(&runner, "core/comment.pseut");
-	test(&runner, "core/arithmetics.pseut");
+	test(&runner, "core/arith.pseut");
+	test(&runner, "core/logic.pseut");
 	test(&runner, "core/if.pseut");
 	test(&runner, "core/compare.pseut");
 	test(&runner, "core/sandbox.pseut");
