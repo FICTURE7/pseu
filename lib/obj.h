@@ -37,21 +37,33 @@ enum OpCode {
 /* Represents a pseu virutal machine instruction byte code. */
 typedef u8 BCode;
 
+/* NOTE: The extra parameters (a, b, c, o, T) are used in vm.c */
+#define PSEU_ARITH_TYPES(_, a, b, o, T) \
+  _(add, +, a, b, o, T)                 \
+  _(sub, -, a, b, o, T)                 \
+  _(mul, *, a, b, o, T)                 \
+  _(div, /, a, b, o, T)
+
 /* Types of pseu arithmetics. */
 typedef enum ArithType {
-  ARITH_add,
-  ARITH_sub,
-  ARITH_mul,
-  ARITH_div
+  #define ARITH_TYPE(n, _, __, ___, ____, _____) ARITH_##n,
+  PSEU_ARITH_TYPES(ARITH_TYPE, _, __, ___, ____)
+  #undef  ARITH_TYPE
 } ArithType;
+
+/* NOTE: The extra parameters (a, b, c, o) are used in vm.c */
+#define PSEU_COMP_TYPES(_, a, b, o)     \
+  _(lt, <,  a, b, o)                    \
+  _(gt, >,  a, b, o)                    \
+  _(le, <=, a, b, o)                    \
+  _(ge, >=, a, b, o)                    \
+  _(eq, ==, a, b, o)
 
 /* Types of pseu compares. */
 typedef enum CompareType {
-  COMP_lt,
-  COMP_gt,
-  COMP_le,
-  COMP_ge,
-  COMP_eq
+  #define COMP_TYPE(n, _, __, ___, ____) COMP_##n,
+  PSEU_COMP_TYPES(COMP_TYPE, _, __, ___)
+  #undef  COMP_TYPE
 } CompareType;
 
 /* A pseu type field. */
@@ -254,9 +266,9 @@ typedef struct GC {
 /* Global VM instance in a pseu instance. */
 struct PseuVM {
   // TODO: Turn these into an Array object when we are up and running.
-  size fns_count;
-  size vars_count;
-  size types_count;
+  u16 fns_count;
+  u16 vars_count;
+  u16 types_count;
 
   Function fns[16];
   Variable vars[16];

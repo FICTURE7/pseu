@@ -1,90 +1,38 @@
 #include "vm.h"
 #include "obj.h"
 
-/* TODO: Figure out some way to reduce the amount of code duplication in here.
- * Will probably end up with some kind of macro mayhem though.
- */
+#define PSEU_ARITH_CASE(n, op, a, b, o, T)         \
+  case ARITH_##n: *(o) = v_##T((a) op (b)); break;
 
-/* Do int32 arithmetic operation 'op' on value 'a' and 'b', outputs result in
- * value 'o'. 
- */
-static i32 arith_i32(i32 a, i32 b, ArithType op)
-{
-  switch (op) {
-  case ARITH_add: return a + b;
-  case ARITH_sub: return a - b;
-  case ARITH_mul: return a * b;
-  case ARITH_div: return a / b;
-  default:
-    pseu_unreachable();
+#define PSEU_ARITH(a, b, o, op, T)                 \
+  switch (op) {                                    \
+    PSEU_ARITH_TYPES(PSEU_ARITH_CASE, a, b, o, T)  \
+  default:                                         \
+    pseu_unreachable();                            \
   }
-}
 
-/* Do float arithmetic operation 'op' on value 'a' and 'b', outputs result in
- * value 'o'. 
- */
-static f32 arith_f32(f32 a, f32 b, ArithType op)
-{
-  switch (op) {
-  case ARITH_add: return a + b;
-  case ARITH_sub: return a - b;
-  case ARITH_mul: return a * b;
-  case ARITH_div: return a / b;
-  default:
-    pseu_unreachable();
+#define PSEU_COMP_CASE(n, op, a, b, o)             \
+  case COMP_##n: *(o) = v_bool((a) op (b)); break;
+
+#define PSEU_COMP(a, b, o, op)                     \
+  switch (op) {                                    \
+    PSEU_COMP_TYPES(PSEU_COMP_CASE, a, b, o)       \
+  default:                                         \
+    pseu_unreachable();                            \
   }
-}
 
-/* Do arithmetic operation 'op' on value 'a' and 'b', outputs result in value
- * 'o'. 
- */
 static void arith_num(Value *a, Value *b, Value *o, ArithType op)
 {
   if (v_isi32(a) && v_isi32(b)) {
     i32 ia = v_asi32(a);
     i32 ib = v_asi32(b);
 
-    *o = v_i32(arith_i32(ia, ib, op));
+    PSEU_ARITH(ia, ib, o, op, i32);
   } else {
-    float fa;
-    float fb;
+    f32 fa = v_isi32(a) ? v_i2f(a) : v_asf32(a);
+    f32 fb = v_isi32(b) ? v_i2f(b) : v_asf32(b);
 
-    if (v_isf32(a) && v_isf32(b)) {
-      fa = v_asf32(a);
-      fb = v_asf32(b);
-    } else {
-      /* Convert both values to float. */
-      fa = v_isi32(a) ? v_i2f(a) : v_asf32(a);
-      fb = v_isi32(b) ? v_i2f(b) : v_asf32(b);
-    }
-
-    *o = v_float(arith_f32(fa, fb, op));
-  }
-}
-
-static bool compare_i32(i32 a, i32 b, CompareType op)
-{
-  switch (op) {
-  case COMP_lt: return a < b;
-  case COMP_gt: return a > b;
-  case COMP_le: return a <= b;
-  case COMP_ge: return a >= b;
-  case COMP_eq: return a == b;
-  default:
-    pseu_unreachable();
-  }
-}
-
-static bool compare_f32(f32 a, f32 b, CompareType op)
-{
-  switch (op) {
-  case COMP_lt: return a < b;
-  case COMP_gt: return a > b;
-  case COMP_le: return a <= b;
-  case COMP_ge: return a >= b;
-  case COMP_eq: return a == b;
-  default:
-    pseu_unreachable();
+    PSEU_ARITH(fa, fb, o, op, f32);
   }
 }
 
@@ -94,21 +42,12 @@ static void compare_num(Value *a, Value *b, Value *o, CompareType op)
     int ia = v_asi32(a);
     int ib = v_asi32(b);
 
-    *o = v_bool(compare_i32(ia, ib, op));
+    PSEU_COMP(ia, ib, o, op);
   } else {
-    float fa;
-    float fb;
+    f32 fa = v_isi32(a) ? v_i2f(a) : v_asf32(a);
+    f32 fb = v_isi32(b) ? v_i2f(b) : v_asf32(b);
 
-    if (v_isf32(a) && v_isf32(b)) {
-      fa = v_asf32(a);
-      fb = v_asf32(b);
-    } else {
-      /* Convert both values to float. */
-      fa = v_isi32(a) ? v_i2f(a) : v_asf32(a);
-      fb = v_isi32(b) ? v_i2f(b) : v_asf32(b);
-    }
-
-    *o = v_bool(compare_f32(fa, fb, op));
+    PSEU_COMP(fa, fb, o, op);
   }
 }
 

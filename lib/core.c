@@ -125,7 +125,7 @@ void pseu_core_init(VM *vm)
   PSEU_DEF_FUNC(ge,     RETURN("BOOLEAN"), PARAMS("ANY", "ANY"));
   PSEU_DEF_FUNC(eq,     RETURN("BOOLEAN"), PARAMS("ANY", "ANY"));
 
-  PSEU_DEF_CONST(TRUE,  v_bool(1));
-  PSEU_DEF_CONST(FALSE, v_bool(0));
+  PSEU_DEF_CONST(TRUE,  v_bool(true));
+  PSEU_DEF_CONST(FALSE, v_bool(false));
   PSEU_DEF_CONST(PI,    v_float(M_PI));
 }
